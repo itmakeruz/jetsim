@@ -1,34 +1,41 @@
-// @ts-check
-import eslint from '@eslint/js';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
-import globals from 'globals';
-import tseslint from 'typescript-eslint';
+// eslint.config.js
+const prettierPlugin = require('eslint-plugin-prettier')
+const typescriptPlugin = require('@typescript-eslint/eslint-plugin')
+const typescriptParser = require('@typescript-eslint/parser')
 
-export default tseslint.config(
+module.exports = [
   {
-    ignores: ['eslint.config.mjs'],
-  },
-  eslint.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
-  eslintPluginPrettierRecommended,
-  {
+    files: ['**/*.{js,ts}'],
+    ignores: [
+      '.git/**',
+      '.idea/**',
+      '.vscode/**',
+      'node_modules/**',
+      'dist/**',
+      'build/**',
+      'lib/**',
+      '**/*.min.js',
+      '**/*.spec.js',
+      'uploads/**',
+    ],
     languageOptions: {
-      globals: {
-        ...globals.node,
-        ...globals.jest,
-      },
-      sourceType: 'commonjs',
+      parser: typescriptParser,
       parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        project: './tsconfig.json',
+        warnOnUnsupportedTypeScriptVersion: false,
       },
     },
-  },
-  {
+    plugins: {
+      'prettier': prettierPlugin,
+      '@typescript-eslint': typescriptPlugin,
+    },
     rules: {
+      'semi': 'true',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn'
+      '@typescript-eslint/no-unused-vars': 'warn',
+      'prettier/prettier': 'error',
     },
   },
-);
+]

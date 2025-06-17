@@ -3,11 +3,9 @@ import { AppModule } from './modules/app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as basicAuth from 'express-basic-auth';
-// import { APP_PORT } from './config';
+import { APP_PORT } from './config';
 // import { MyLogger } from './common/logger/logger.service';
 // import { ParseFiltersPipe } from './common/pipes/filter-pipe';
-
-const APP_PORT = 2991
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,17 +15,19 @@ async function bootstrap() {
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true
+    credentials: true,
   });
-  // new ParseFiltersPipe(), 
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true,
-    whitelist: true,
-    transformOptions: {
-      enableImplicitConversion: true,
-    },
-  }));
-  
+  // new ParseFiltersPipe(),
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
+
   // app.useGlobalFilters(new AllExceptionFilter)
 
   app.use(
@@ -35,7 +35,7 @@ async function bootstrap() {
     basicAuth({
       challenge: true,
       users: {
-        labbaypay: 'password_labbay',
+        'labbaypay': 'password_labbay',
         '1': '1',
       },
     }),

@@ -32,5 +32,7 @@
       "@http": ["./src/http"],
       "@modules": ["./src/modules"]
     }
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "lib/**/*"]
 }
