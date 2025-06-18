@@ -29,6 +29,8 @@
       "@interfaces": ["./src/common/interfaces"],
       "@exceptions": ["./src/common/exceptions"],
       "@middlewares": ["./src/common/middleweares"],
+      "@interceptors": ["./src/common/interceptors"],
+      "@pipes": ["./src/common/pipes"],
       "@http": ["./src/http"],
       "@modules": ["./src/modules"]
     }

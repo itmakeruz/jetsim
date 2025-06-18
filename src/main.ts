@@ -1,56 +1,64 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './modules/app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as basicAuth from 'express-basic-auth';
-// import { APP_PORT } from './config';
-// import { MyLogger } from './common/logger/logger.service';
-// import { ParseFiltersPipe } from './common/pipes/filter-pipe';
-
-const APP_PORT = 2991
+import { APP_PORT } from './config';
+import { WinstonLoggerService } from '@logger';
+import { LoggingInterceptor } from '@interceptors';
+import { ParseFiltersPipe } from '@pipes';
+import { AllExceptionFilter } from '@exceptions';
+import { globalHeaderParametrs } from '@enums';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // app.useLogger(new MyLogger())
+  const logger = app.get(WinstonLoggerService);
+  app.useGlobalInterceptors(new LoggingInterceptor(logger));
 
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true
+    credentials: true,
   });
-  // new ParseFiltersPipe(), 
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true,
-    whitelist: true,
-    transformOptions: {
-      enableImplicitConversion: true,
-    },
-  }));
-  
-  // app.useGlobalFilters(new AllExceptionFilter)
+
+  app.enableVersioning({
+    type: VersioningType.URI,
+    prefix: 'api/v',
+  });
+
+  new ParseFiltersPipe(),
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    );
+
+  app.useGlobalFilters(new AllExceptionFilter());
 
   app.use(
     '/docs',
     basicAuth({
       challenge: true,
       users: {
-        labbaypay: 'password_labbay',
         '1': '1',
       },
     }),
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Labbay Pay API')
-    .setDescription('The Labbay Pay API description')
+    .setTitle('Happy Tel API')
+    .setDescription('The Happy Tel API description')
     .setVersion('1.0')
     .addBearerAuth({
       type: 'http',
       scheme: 'bearer',
       bearerFormat: 'JWT',
     })
-    // .addGlobalParameters(...globalHeaderParametrs)
+    .addGlobalParameters(...globalHeaderParametrs)
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
