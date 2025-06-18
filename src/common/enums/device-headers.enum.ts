@@ -9,23 +9,11 @@ enum Lang {
 }
 
 export class DeviceHeadersDto {
-  @IsString()
-  'x-device-id': string;
-
   @IsEnum(Lang)
   'lang': Lang;
 }
 
 export const globalHeaderParametrs: ParameterObject[] = [
-  {
-    in: 'header',
-    name: 'x-device-id',
-    required: true,
-    schema: {
-      type: 'string',
-      default: '112233445566',
-    },
-  },
   {
     in: 'header',
     name: 'lang',
