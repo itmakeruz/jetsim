@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PrismaClient } from '@prisma/client';
+import { Type } from 'class-transformer';
 import { IsNumber, IsNumberString, IsOptional } from 'class-validator';
 
 export type Models = keyof Omit<
@@ -69,6 +70,7 @@ export class PaginationResponse<T> {
 
 export class ParamId {
   @ApiProperty({ type: String, required: false })
+  @Type(() => Number)
   @IsNumber()
   @IsOptional()
   id: number;

@@ -1,19 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { BranchService } from './branch.service';
-import { CreateBranchDto, UpdateBranchDto } from './dto';
+import { CreateBranchDto, UpdateBranchDto, GetBranchtDto } from './dto';
+import { ParamId } from '@enums';
 
 @Controller('branch')
 export class BranchController {
   constructor(private readonly branchService: BranchService) {}
 
   @Get()
-  findAll() {
-    return this.branchService.findAll();
+  findAll(@Query() query: GetBranchtDto) {
+    return this.branchService.findAll(query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.branchService.findOne(+id);
+  findOne(@Param('id') param: ParamId) {
+    return this.branchService.findOne(param.id);
   }
 
   @Post()

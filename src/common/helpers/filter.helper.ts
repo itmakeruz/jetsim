@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { Models } from '@interfaces';
+import { Models } from '@enums';
 
 export class FilterService {
   static applyFilters(

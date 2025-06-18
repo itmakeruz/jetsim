@@ -1,13 +1,40 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateBranchDto, UpdateBranchDto } from './dto';
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { CreateBranchDto, UpdateBranchDto, GetBranchtDto } from './dto';
 import { PrismaService } from '@prisma';
+import { paginate } from '@helpers';
 
 @Injectable()
 export class BranchService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
-    return `This action returns all branch`;
+  async findAll(query: GetBranchtDto) {
+    const branches = await paginate('branch', {
+      page: query?.page,
+      size: query?.size,
+      filter: query?.filters,
+      sort: query?.sort,
+      select: {
+        id: true,
+        name_uz: true,
+        name_ru: true,
+        name_en: true,
+        region: {
+          select: {
+            id: true,
+            name_uz: true,
+            name_ru: true,
+            name_eng: true,
+            created_at: true,
+          },
+        },
+        created_at: true,
+      },
+    });
+
+    return {
+      status: HttpStatus.OK,
+      data: branches,
+    };
   }
 
   async findOne(id: number) {
@@ -18,11 +45,31 @@ export class BranchService {
           equals: null,
         },
       },
+      select: {
+        id: true,
+        name_uz: true,
+        name_ru: true,
+        name_en: true,
+        region: {
+          select: {
+            id: true,
+            name_uz: true,
+            name_ru: true,
+            name_eng: true,
+            created_at: true,
+          },
+        },
+        created_at: true,
+      },
     });
 
     if (!branch) {
       throw new NotFoundException('Филиал с таким идентификатором не найден!');
     }
+    return {
+      status: HttpStatus.OK,
+      data: branch,
+    };
   }
 
   create(createBranchDto: CreateBranchDto) {
