@@ -1,5 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { IsPort, IsString, IsNotEmpty, validateSync } from 'class-validator';
+import 'dotenv/config';
 
 import { ConfigService } from '@nestjs/config';
 

@@ -16,4 +16,64 @@ datasource db {
 model User {
   id   Int     @id @default(autoincrement())
   name String?
+
+  @@map("user")
+}
+
+model Region {
+  id       Int     @id @default(autoincrement())
+  name_uz  String?
+  name_ru  String?
+  name_eng String?
+
+  structures Branch[]
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  deleted_At DateTime? @db.Timestamptz(5)
+
+  @@map("region")
+}
+
+model Branch {
+  id        Int     @id @default(autoincrement())
+  name_uz   String?
+  name_ru   String?
+  name_en   String
+  region_id Int
+  region    Region  @relation(fields: [region_id], references: [id])
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  deleted_at DateTime? @db.Timestamptz(5)
+
+  @@map("branch")
+}
+
+model Tariff {
+  id             Int     @id @default(autoincrement())
+  title          String
+  description_uz String?
+  description_ru String?
+  description_en String?
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  deleted_At DateTime? @db.Timestamptz(5)
+
+  @@map("tariff")
+}
+
+model Service {
+  id             Int     @id @default(autoincrement())
+  title          String
+  description_uz String?
+  description_ru String?
+  description_en String?
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  deleted_At DateTime? @db.Timestamptz(5)
+
+  @@map("service")
 }
