@@ -1,4 +1,15 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateRegionDto } from './create-region.dto';
+import { IsOptional, IsString } from 'class-validator';
 
-export class UpdateRegionDto extends PartialType(CreateRegionDto) {}
+export class UpdateRegionDto {
+  @IsOptional()
+  @IsString()
+  name_uz: string;
+
+  @IsOptional()
+  @IsString()
+  name_ru: string;
+
+  @IsOptional()
+  @IsString()
+  name_en: string;
+}

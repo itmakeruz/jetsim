@@ -1,24 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { RegionService } from './region.service';
-import { CreateRegionDto, UpdateRegionDto } from './dto'
+import { CreateRegionDto, GetRegionDto, UpdateRegionDto } from './dto';
+import { ParamId } from '@enums';
 
 @Controller('region')
 export class RegionController {
   constructor(private readonly regionService: RegionService) {}
+  @Get()
+  findAll(@Query() query: GetRegionDto) {
+    return this.regionService.findAll(query);
+  }
+
+  @Get(':id')
+  findOne(@Param() param: ParamId) {
+    return this.regionService.findOne(param.id);
+  }
 
   @Post()
   create(@Body() createRegionDto: CreateRegionDto) {
     return this.regionService.create(createRegionDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.regionService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.regionService.findOne(+id);
   }
 
   @Patch(':id')

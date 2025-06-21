@@ -23,7 +23,7 @@ export class BranchService {
             id: true,
             name_uz: true,
             name_ru: true,
-            name_eng: true,
+            name_en: true,
             created_at: true,
           },
         },
@@ -55,7 +55,7 @@ export class BranchService {
             id: true,
             name_uz: true,
             name_ru: true,
-            name_eng: true,
+            name_en: true,
             created_at: true,
           },
         },
@@ -72,15 +72,86 @@ export class BranchService {
     };
   }
 
-  create(createBranchDto: CreateBranchDto) {
-    return 'This action adds a new branch';
+  async create(data: CreateBranchDto) {
+    const region = await this.prisma.region.findUnique({
+      where: {
+        id: data.region_id,
+        deleted_at: {
+          equals: null,
+        },
+      },
+    });
+
+    if (!region) {
+      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+    }
+
+    await this.prisma.branch.create({
+      data: {
+        name_uz: data.name_uz,
+        name_ru: data.name_ru,
+        name_en: data.name_en,
+        region_id: data.region_id,
+      },
+    });
+
+    return {
+      status: HttpStatus.CREATED,
+    };
   }
 
-  update(id: number, updateBranchDto: UpdateBranchDto) {
-    return `This action updates a #${id} branch`;
+  async update(id: number, data: UpdateBranchDto) {
+    const existBranch = await this.prisma.branch.findUnique({
+      where: {
+        id: id,
+        deleted_at: {
+          equals: null,
+        },
+      },
+    });
+
+    if (!existBranch) {
+      throw new NotFoundException('Филиал с таким идентификатором не найден!');
+    }
+
+    await this.prisma.branch.update({
+      where: {
+        id: existBranch.id,
+      },
+      data: {
+        name_uz: data.name_uz ?? existBranch.name_uz,
+        name_ru: data.name_ru ?? existBranch.name_ru,
+        name_en: data.name_en ?? existBranch.name_en,
+        region_id: data.region_id ?? existBranch.region_id,
+      },
+    });
+
+    return {
+      status: HttpStatus.OK,
+    };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} branch`;
+  async remove(id: number) {
+    const branch = await this.prisma.branch.findUnique({
+      where: {
+        id: id,
+        deleted_at: {
+          equals: null,
+        },
+      },
+    });
+
+    if (!branch) {
+      throw new NotFoundException('Филиал с таким идентификатором не найден!');
+    }
+
+    await this.prisma.branch.update({
+      where: {
+        id: branch.id,
+      },
+      data: {
+        deleted_at: new Date(),
+      },
+    });
   }
 }
