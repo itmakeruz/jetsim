@@ -1,4 +1,23 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateTariffDto } from './create-tariff.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
+export class UpdateTariffDto {
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  @IsString()
+  title: string;
 
-export class UpdateTariffDto extends PartialType(CreateTariffDto) {}
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  @IsString()
+  description_uz: string;
+
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  @IsString()
+  description_ru: string;
+
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  @IsString()
+  description_en: string;
+}

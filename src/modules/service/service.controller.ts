@@ -1,33 +1,34 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ServiceService } from './service.service';
-import { CreateServiceDto, UpdateServiceDto } from './dto';
+import { CreateServiceDto, GetServicetDto, UpdateServiceDto } from './dto';
+import { ParamId } from '@enums';
 
 @Controller('service')
 export class ServiceController {
   constructor(private readonly serviceService: ServiceService) {}
 
   @Get()
-  findAll() {
-    return this.serviceService.findAll();
+  async findAll(@Query() query: GetServicetDto) {
+    return this.serviceService.findAll(query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.serviceService.findOne(+id);
+  async findOne(@Param() param: ParamId) {
+    return this.serviceService.findOne(param.id);
   }
 
   @Post()
-  create(@Body() data: CreateServiceDto) {
+  async create(@Body() data: CreateServiceDto) {
     return this.serviceService.create(data);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() data: UpdateServiceDto) {
-    return this.serviceService.update(+id, data);
+  async update(@Param() param: ParamId, @Body() data: UpdateServiceDto) {
+    return this.serviceService.update(param.id, data);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.serviceService.remove(+id);
+  async remove(@Param() param: ParamId) {
+    return this.serviceService.remove(param.id);
   }
 }

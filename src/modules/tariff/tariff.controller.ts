@@ -1,19 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { TariffService } from './tariff.service';
-import { CreateTariffDto, UpdateTariffDto } from './dto';
+import { CreateTariffDto, GetTarifftDto, UpdateTariffDto } from './dto';
+import { ParamId } from '@enums';
 
 @Controller('tariff')
 export class TariffController {
   constructor(private readonly tariffService: TariffService) {}
 
   @Get()
-  findAll() {
-    return this.tariffService.findAll();
+  async findAll(@Query() query: GetTarifftDto) {
+    return this.tariffService.findAll(query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tariffService.findOne(+id);
+  findOne(@Param() param: ParamId) {
+    return this.tariffService.findOne(param.id);
   }
 
   @Post()
@@ -22,12 +23,12 @@ export class TariffController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() data: UpdateTariffDto) {
-    return this.tariffService.update(+id, data);
+  update(@Param() param: ParamId, @Body() data: UpdateTariffDto) {
+    return this.tariffService.update(param.id, data);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.tariffService.remove(+id);
+  remove(@Param() param: ParamId) {
+    return this.tariffService.remove(param.id);
   }
 }
