@@ -23,12 +23,13 @@ model User {
 }
 
 model Region {
-  id      Int     @id @default(autoincrement())
-  name_uz String?
-  name_ru String?
-  name_en String?
+  id Int @id @default(autoincrement())
+  name Json
+  description Json
+  image String?
 
-  branches Branch[]
+  cities City[]
+  tariffs Tariff[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -37,27 +38,26 @@ model Region {
   @@map("region")
 }
 
-model Branch {
-  id        Int     @id @default(autoincrement())
-  name_uz   String?
-  name_ru   String?
-  name_en   String
+model City {
+  id Int @id @default(autoincrement())
+  name Json
+  description Json
   region_id Int
-  region    Region  @relation(fields: [region_id], references: [id])
+  region Region @relation(fields: [region_id], references: [id])
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
   deleted_at DateTime? @db.Timestamptz(5)
 
-  @@map("branch")
+  @@map("city")
 }
 
 model Tariff {
   id             Int     @id @default(autoincrement())
-  title          String
-  description_uz String?
-  description_ru String?
-  description_en String?
+  title          Json
+  description Json
+  region_id Int
+  region Region @relation(fields: [region_id], references: [id])
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -78,4 +78,50 @@ model Service {
   deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("service")
+}
+
+model Sims {
+  id Int @id @default(autoincrement())
+  title Json
+  description Json
+  image String?
+
+  partner_id Int
+  partner Partner @relation(fields: [partner_id], references: [id])
+
+  request Json
+  response Json
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  deleted_at DateTime? @db.Timestamptz(5)
+
+  @@map("sims")
+}
+
+model Partner {
+  id Int @id @default(autoincrement())
+  title Json
+  description Json
+  image String?
+  
+  sims Sims[]
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  deleted_at DateTime? @db.Timestamptz(5)
+
+  @@map("partner")
+}
+
+model Error {
+  id Int @id @default(autoincrement())
+  code Int
+  name Json
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  deleted_at DateTime? @db.Timestamptz(5)
+
+  @@map("error")
 }

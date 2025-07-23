@@ -1,8 +1,41 @@
 import { config } from './validate.config';
 
+// app
 const APP_PORT = config.get<string>('APP_PORT') ?? 1722;
+
+//database
 const DATABASE_URL = config.get<string>('DATABASE_URL') ?? '';
+
+//jwt
 const JWT_ACCESS_SECRET = config.get<string>('JWT_ACCESS_SECRET') ?? '';
 const JWT_REFRESH_SECRET = config.get<string>('JWT_REFRESH_SECRET') ?? '';
+const JWT_ACCESS_EXPIRE_TIME = config.get<string>('JWT_ACCESS_EXPIRE_TIME') ?? '15m';
+const JWT_REFRESH_EXPIRE_TIME = config.get<string>('JWT_REFRESH_EXPIRE_TIME') ?? '7d';
 
-export { APP_PORT, DATABASE_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET };
+//joytel
+const JOYTEL_URL = config.get<string>('JOYTEL_URL') ?? '';
+const JOYTEL_SECRET_ID = config.get<string>('JOYTEL_SECRET_ID') ?? '';
+const JOYTEL_SECRET_KEY = config.get<string>('JOYTEL_SECRET_KEY') ?? '';
+
+//billion connect
+const BILLION_CONNECT_URL = config.get<string>('BILLION_CONNECT_URL') ?? '';
+const BILLION_CONNECT_SECRET_ID = config.get<string>('BILLION_CONNECT_SECRET_ID') ?? '';
+const BILLION_CONNECT_SECRET_KEY = config.get<string>('BILLION_CONNECT_SECRET_KEY') ?? '';
+
+const ROLES_DECORATOR_KEY = config.get<string>('ROLES_DECORATOR_KEY') ?? '';
+
+export {
+  APP_PORT,
+  DATABASE_URL,
+  JWT_ACCESS_SECRET,
+  JWT_REFRESH_SECRET,
+  JWT_ACCESS_EXPIRE_TIME,
+  JWT_REFRESH_EXPIRE_TIME,
+  JOYTEL_URL,
+  JOYTEL_SECRET_ID,
+  JOYTEL_SECRET_KEY,
+  BILLION_CONNECT_URL,
+  BILLION_CONNECT_SECRET_ID,
+  BILLION_CONNECT_SECRET_KEY,
+  ROLES_DECORATOR_KEY,
+};

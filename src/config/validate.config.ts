@@ -22,6 +22,42 @@ class EnvironmentVariables {
   @IsNotEmpty()
   @IsString()
   JWT_REFRESH_SECRET: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JWT_ACCESS_EXPIRE_TIME: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JWT_REFRESH_EXPIRE_TIME: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JOYTEL_URL: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JOYTEL_SECRET_ID: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JOYTEL_SECRET_KEY: string;
+
+  @IsNotEmpty()
+  @IsString()
+  BILLION_CONNECT_URL: string;
+
+  @IsNotEmpty()
+  @IsString()
+  BILLION_CONNECT_SECRET_ID: string;
+
+  @IsNotEmpty()
+  @IsString()
+  BILLION_CONNECT_SECRET_KEY: string;
+
+  @IsNotEmpty()
+  @IsString()
+  ROLES_DECORATOR_KEY: string;
 }
 
 export function validate(config: Record<string, unknown>) {
