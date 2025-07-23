@@ -1,9 +1,9 @@
+import { validate } from '@config';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { validate } from '@config';
-import { AuthModule, RegionModule, BranchModule, PrismaModule, ServiceModule, TariffModule } from '@modules';
 import { WinstonLoggerService } from '@logger';
 import { LoggingInterceptor } from '@interceptors';
+import { AuthModule, RegionModule, BranchModule, PrismaModule, ServiceModule, TariffModule } from '@modules';
 @Module({
   imports: [
     ConfigModule.forRoot({

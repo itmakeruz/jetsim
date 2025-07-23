@@ -16,19 +16,36 @@ datasource db {
 model User {
   id       Int     @id @default(autoincrement())
   name     String?
-  login    String?
+  email    String?
   password String?
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("user")
 }
 
-model Region {
-  id Int @id @default(autoincrement())
-  name Json
-  description Json
-  image String?
+model Staff {
+  id       Int    @id @default(autoincrement())
+  name     String
+  email    String
+  password String
 
-  cities City[]
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  deleted_at DateTime? @db.Timestamptz(5)
+
+  @@map("staff")
+}
+
+model Region {
+  id          Int     @id @default(autoincrement())
+  name        Json
+  description Json
+  image       String?
+
+  cities  City[]
   tariffs Tariff[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
@@ -39,11 +56,11 @@ model Region {
 }
 
 model City {
-  id Int @id @default(autoincrement())
-  name Json
+  id          Int    @id @default(autoincrement())
+  name        Json
   description Json
-  region_id Int
-  region Region @relation(fields: [region_id], references: [id])
+  region_id   Int
+  region      Region @relation(fields: [region_id], references: [id])
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -53,11 +70,15 @@ model City {
 }
 
 model Tariff {
-  id             Int     @id @default(autoincrement())
-  title          Json
+  id          Int    @id @default(autoincrement())
+  title       Json
   description Json
-  region_id Int
-  region Region @relation(fields: [region_id], references: [id])
+  region_id   Int
+  region      Region @relation(fields: [region_id], references: [id])
+  cost        String
+
+  partner_id Int
+  partner    Partner @relation(fields: [partner_id], references: [id])
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -81,15 +102,15 @@ model Service {
 }
 
 model Sims {
-  id Int @id @default(autoincrement())
-  title Json
+  id          Int     @id @default(autoincrement())
+  title       Json
   description Json
-  image String?
+  image       String?
 
   partner_id Int
-  partner Partner @relation(fields: [partner_id], references: [id])
+  partner    Partner @relation(fields: [partner_id], references: [id])
 
-  request Json
+  request  Json
   response Json
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
@@ -100,12 +121,13 @@ model Sims {
 }
 
 model Partner {
-  id Int @id @default(autoincrement())
-  title Json
+  id          Int     @id @default(autoincrement())
+  title       Json
   description Json
-  image String?
-  
-  sims Sims[]
+  image       String?
+
+  sims   Sims[]
+  Tariff Tariff[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -115,9 +137,9 @@ model Partner {
 }
 
 model Error {
-  id Int @id @default(autoincrement())
-  code Int
-  name Json
+  id      Int  @id @default(autoincrement())
+  code    Int
+  message Json
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
