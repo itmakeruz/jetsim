@@ -31,6 +31,7 @@ model Staff {
   name     String
   email    String
   password String
+  status   Status
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -44,6 +45,7 @@ model Region {
   name        Json
   description Json
   image       String?
+  status      Status
 
   cities  City[]
   tariffs Tariff[]
@@ -59,8 +61,10 @@ model City {
   id          Int    @id @default(autoincrement())
   name        Json
   description Json
-  region_id   Int
-  region      Region @relation(fields: [region_id], references: [id])
+  status      Status
+
+  region_id Int
+  region    Region @relation(fields: [region_id], references: [id])
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -73,12 +77,14 @@ model Tariff {
   id          Int    @id @default(autoincrement())
   title       Json
   description Json
-  region_id   Int
-  region      Region @relation(fields: [region_id], references: [id])
   cost        String
+  status      Status
 
   partner_id Int
-  partner    Partner @relation(fields: [partner_id], references: [id])
+  region_id  Int
+
+  region  Region  @relation(fields: [region_id], references: [id])
+  partner Partner @relation(fields: [partner_id], references: [id])
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -106,6 +112,7 @@ model Sims {
   title       Json
   description Json
   image       String?
+  status      Status
 
   partner_id Int
   partner    Partner @relation(fields: [partner_id], references: [id])
@@ -125,6 +132,7 @@ model Partner {
   title       Json
   description Json
   image       String?
+  status      Status
 
   sims   Sims[]
   Tariff Tariff[]
@@ -146,4 +154,9 @@ model Error {
   deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("error")
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
 }
