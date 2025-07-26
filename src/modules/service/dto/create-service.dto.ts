@@ -5,12 +5,12 @@ export class CreateServiceDto {
   @ApiProperty({ type: String, required: true })
   @IsNotEmpty()
   @IsString()
-  title: string;
+  name_ru: string;
 
   @ApiProperty({ type: String, required: true })
   @IsNotEmpty()
   @IsString()
-  description_uz: string;
+  name_en: string;
 
   @ApiProperty({ type: String, required: true })
   @IsNotEmpty()

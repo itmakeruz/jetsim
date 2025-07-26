@@ -8,11 +8,11 @@ export class AuthService {
   async validate(login: string) {
     const user = await this.prisma.user.findFirst({
       where: {
-        login: login,
+        email: login,
       },
       select: {
         id: true,
-        login: true,
+        email: true,
         name: true,
         password: true,
       },
@@ -24,7 +24,7 @@ export class AuthService {
 
     return {
       id: user?.id,
-      login: user?.login,
+      login: user?.email,
       name: user?.name,
       password: user?.password,
     };

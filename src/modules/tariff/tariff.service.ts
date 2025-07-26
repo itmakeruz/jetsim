@@ -2,6 +2,7 @@ import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTariffDto, GetTarifftDto, UpdateTariffDto } from './dto';
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
+import { Status } from '@prisma/client';
 
 @Injectable()
 export class TariffService {
@@ -14,8 +15,8 @@ export class TariffService {
       sort: query?.sort,
       select: {
         id: true,
-        title: true,
-        description_uz: true,
+        name_ru: true,
+        name_en: true,
         description_ru: true,
         description_en: true,
       },
@@ -37,8 +38,8 @@ export class TariffService {
       },
       select: {
         id: true,
-        title: true,
-        description_uz: true,
+        name_ru: true,
+        name_en: true,
         description_ru: true,
         description_en: true,
         created_at: true,
@@ -58,10 +59,13 @@ export class TariffService {
   async create(data: CreateTariffDto) {
     await this.prisma.tariff.create({
       data: {
-        title: data.title,
-        description_uz: data.description_uz,
+        name_ru: data.name_ru,
+        name_en: data.name_en,
         description_ru: data.description_ru,
         description_en: data.description_en,
+        status: data.status as Status,
+        partner_id: data.partner_id,
+        region_id: data.region_id,
       },
     });
 
@@ -92,8 +96,8 @@ export class TariffService {
         },
       },
       data: {
-        title: service?.title ?? data?.title,
-        description_uz: service?.description_uz ?? data?.description_uz,
+        name_ru: service?.name_ru ?? data?.name_ru,
+        name_en: service?.name_en ?? data?.name_en,
         description_ru: service?.description_ru ?? data?.description_ru,
         description_en: service?.description_en ?? data?.description_en,
         updated_at: new Date(),

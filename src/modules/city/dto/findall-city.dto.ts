@@ -5,9 +5,9 @@ import { IsArray, IsEnum, IsIn, IsOptional, IsString, ValidateNested } from 'cla
 import { OperatorTypes, PaginationOptionalDto } from '@enums';
 import { prisma } from '@helpers';
 
-const depositFields = Object.keys(prisma.branch.fields);
+const depositFields = Object.keys(prisma.city.fields);
 
-class BranchFilter {
+class CityFilter {
   @IsIn(depositFields)
   @ApiProperty({ enum: depositFields })
   column: string;
@@ -21,7 +21,7 @@ class BranchFilter {
   value: string;
 }
 
-class BranchSort {
+class CitySort {
   @ApiProperty({ enum: depositFields })
   @IsIn(depositFields)
   column: string;
@@ -31,17 +31,17 @@ class BranchSort {
   value: Prisma.SortOrder;
 }
 
-export class GetBranchtDto extends PaginationOptionalDto {
+export class GetCityDto extends PaginationOptionalDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => BranchFilter)
-  @ApiProperty({ type: BranchFilter, isArray: true })
-  filters?: BranchFilter[];
+  @Type(() => CityFilter)
+  @ApiProperty({ type: CityFilter, isArray: true })
+  filters?: CityFilter[];
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => BranchSort)
-  @ApiProperty({ type: BranchSort })
-  sort?: BranchSort;
+  @Type(() => CitySort)
+  @ApiProperty({ type: CitySort })
+  sort?: CitySort;
 }

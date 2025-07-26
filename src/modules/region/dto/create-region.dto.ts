@@ -1,12 +1,8 @@
+import { Status } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateRegionDto {
-  @ApiProperty({ type: String, required: true })
-  @IsNotEmpty()
-  @IsString()
-  name_uz: string;
-
   @ApiProperty({ type: String, required: true })
   @IsNotEmpty()
   @IsString()
@@ -16,4 +12,18 @@ export class CreateRegionDto {
   @IsNotEmpty()
   @IsString()
   name_en: string;
+
+  @ApiProperty({
+    description: 'Region Flag Image',
+    example: 'icon.png',
+    required: true,
+    type: String,
+    format: 'binary',
+  })
+  icon: string;
+
+  @ApiProperty({ type: String, required: false, enum: Status })
+  @IsOptional()
+  @IsEnum(Status)
+  status: Status;
 }

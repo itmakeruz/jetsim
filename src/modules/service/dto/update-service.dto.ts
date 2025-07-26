@@ -4,12 +4,12 @@ export class UpdateServiceDto {
   @ApiProperty({ type: String, required: false })
   @IsOptional()
   @IsString()
-  title: string;
+  name_ru: string;
 
   @ApiProperty({ type: String, required: false })
   @IsOptional()
   @IsString()
-  description_uz: string;
+  name_en: string;
 
   @ApiProperty({ type: String, required: false })
   @IsOptional()

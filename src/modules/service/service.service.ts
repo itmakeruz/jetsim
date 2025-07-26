@@ -14,8 +14,8 @@ export class ServiceService {
       sort: query?.sort,
       select: {
         id: true,
-        title: true,
-        description_uz: true,
+        name_ru: true,
+        name_en: true,
         description_ru: true,
         description_en: true,
         created_at: true,
@@ -38,8 +38,8 @@ export class ServiceService {
       },
       select: {
         id: true,
-        title: true,
-        description_uz: true,
+        name_ru: true,
+        name_en: true,
         description_ru: true,
         description_en: true,
         created_at: true,
@@ -59,8 +59,8 @@ export class ServiceService {
   async create(data: CreateServiceDto) {
     await this.prisma.service.create({
       data: {
-        title: data.title,
-        description_uz: data.description_uz,
+        name_ru: data.name_ru,
+        name_en: data.name_en,
         description_ru: data.description_ru,
         description_en: data.description_en,
       },
@@ -93,8 +93,8 @@ export class ServiceService {
         },
       },
       data: {
-        title: service?.title ?? data?.title,
-        description_uz: service?.description_uz ?? data?.description_uz,
+        name_ru: service?.name_ru ?? data?.name_ru,
+        name_en: service?.name_en ?? data?.name_en,
         description_ru: service?.description_ru ?? data?.description_ru,
         description_en: service?.description_en ?? data?.description_en,
         updated_at: new Date(),
