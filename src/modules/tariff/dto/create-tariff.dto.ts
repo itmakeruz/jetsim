@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateTariffDto {
   @ApiProperty({ type: String, required: true, example: 'Название тарифа' })
@@ -36,4 +36,19 @@ export class CreateTariffDto {
   @IsNotEmpty()
   @IsNumber()
   region_id: number;
+
+  @ApiProperty({ type: Boolean, required: false, example: true, default: false })
+  @IsOptional()
+  @IsBoolean()
+  is_popular: boolean;
+
+  @ApiProperty({ type: Boolean, required: false, example: true, default: false })
+  @IsOptional()
+  @IsBoolean()
+  is_4g: boolean;
+
+  @ApiProperty({ type: Boolean, required: false, example: true, default: false })
+  @IsOptional()
+  @IsBoolean()
+  is_5g: boolean;
 }

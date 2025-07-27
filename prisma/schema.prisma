@@ -95,9 +95,14 @@ model Tariff {
   id             Int     @id @default(autoincrement())
   name_ru        String
   name_en        String
+  title_ru       String?
+  title_en       String?
   description_ru String?
   description_en String?
   status         Status
+  is_popular     Boolean @default(false)
+  is_4g          Boolean @default(false)
+  is_5g          Boolean @default(false)
 
   partner_id Int
   region_id  Int
@@ -114,15 +119,12 @@ model Tariff {
 }
 
 model Package {
-  id             Int     @id @default(autoincrement())
-  name_ru        String
-  name_en        String
-  description_ru String?
-  description_en String?
-  sms_count      Int?
-  minutes_count  Int?
-  mb_count       Int?
-  status         Status
+  id            Int    @id @default(autoincrement())
+  sms_count     Int?
+  minutes_count Int?
+  mb_count      Int?
+  sku_id        String
+  status        Status
 
   tariff_id Int
   tariff    Tariff @relation(fields: [tariff_id], references: [id])

@@ -13,16 +13,6 @@ export class CreateCityDto {
   @IsString()
   name_en: string;
 
-  @ApiProperty({ type: String, required: true, example: 'Описание города' })
-  @IsNotEmpty()
-  @IsString()
-  description_ru: string;
-
-  @ApiProperty({ type: String, required: true, example: 'City description' })
-  @IsNotEmpty()
-  @IsString()
-  description_en: string;
-
   @ApiProperty({ type: Number, required: true, example: 1 })
   @IsNotEmpty()
   @IsNumber()

@@ -1,15 +1,24 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { TariffService } from './tariff.service';
 import { CreateTariffDto, GetTarifftDto, UpdateTariffDto } from './dto';
-import { ParamId } from '@enums';
+import { DeviceHeadersDto, ParamId } from '@enums';
+import { ApiOperation } from '@nestjs/swagger';
+import { HeadersValidation } from '@decorators';
 
 @Controller('tariff')
 export class TariffController {
   constructor(private readonly tariffService: TariffService) {}
 
+  @ApiOperation({ summary: 'Get all tariffs mobile', description: 'Get all tariffs mobile' })
   @Get()
-  async findAll(@Query() query: GetTarifftDto) {
-    return this.tariffService.findAll(query);
+  async findAll(@Query() query: GetTarifftDto, @HeadersValidation() headers: DeviceHeadersDto) {
+    return this.tariffService.findAll(query, headers.lang);
+  }
+
+  @ApiOperation({ summary: 'Get all tariffs admin', description: 'Get all tariffs admin' })
+  @Get('admin')
+  async findAllAdmin(@Query() query: GetTarifftDto) {
+    return this.tariffService.findAllAdmin(query);
   }
 
   @Get(':id')

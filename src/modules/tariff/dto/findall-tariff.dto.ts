@@ -36,12 +36,12 @@ export class GetTarifftDto extends PaginationOptionalDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => TariffFilter)
-  @ApiProperty({ type: TariffFilter, isArray: true })
+  @ApiProperty({ type: TariffFilter, isArray: true, required: false })
   filters?: TariffFilter[];
 
   @IsOptional()
   @ValidateNested()
   @Type(() => TariffSort)
-  @ApiProperty({ type: TariffSort })
+  @ApiProperty({ type: TariffSort, required: false })
   sort?: TariffSort;
 }

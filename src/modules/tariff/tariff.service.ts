@@ -7,7 +7,43 @@ import { Status } from '@prisma/client';
 @Injectable()
 export class TariffService {
   constructor(private readonly prisma: PrismaService) {}
-  async findAll(query: GetTarifftDto) {
+  async findAll(query: GetTarifftDto, lang: string) {
+    const tariffs = await paginate('tariff', {
+      page: query?.page,
+      size: query?.size,
+      filter: query?.filters,
+      sort: query?.sort,
+      select: {
+        id: true,
+        [`name_${lang}`]: true,
+        [`title_${lang}`]: true,
+        [`description_${lang}`]: true,
+        status: true,
+        is_popular: true,
+        is_4g: true,
+        is_5g: true,
+        created_at: true,
+      },
+    });
+
+    return {
+      status: HttpStatus.OK,
+      data: tariffs?.data?.map((tariff) => ({
+        id: tariff?.id,
+        name: tariff?.[`name_${lang}`],
+        title: tariff?.[`title_${lang}`],
+        description: tariff?.[`description_${lang}`],
+        status: tariff?.status,
+        is_popular: tariff?.is_popular,
+        is_4g: tariff?.is_4g,
+        is_5g: tariff?.is_5g,
+        created_at: tariff?.created_at,
+      })),
+      ...tariffs,
+    };
+  }
+
+  async findAllAdmin(query: GetTarifftDto) {
     const tariffs = await paginate('tariff', {
       page: query?.page,
       size: query?.size,
@@ -19,6 +55,7 @@ export class TariffService {
         name_en: true,
         description_ru: true,
         description_en: true,
+        created_at: true,
       },
     });
 

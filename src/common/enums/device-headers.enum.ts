@@ -3,7 +3,6 @@ import { ParameterObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.i
 import { IsEnum, IsString } from 'class-validator';
 
 enum Lang {
-  uz = 'uz',
   ru = 'ru',
   en = 'en',
 }
@@ -19,9 +18,9 @@ export const globalHeaderParametrs: ParameterObject[] = [
     name: 'lang',
     required: false,
     schema: {
-      enum: ['uz', 'ru', 'en'],
+      enum: ['ru', 'en'],
       type: 'string',
-      default: 'uz',
+      default: 'ru',
     },
   },
 ];
