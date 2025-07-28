@@ -21,7 +21,6 @@ model User {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   transaction Transaction[]
   basket      Basket[]
@@ -38,7 +37,6 @@ model Staff {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("staff")
 }
@@ -51,11 +49,10 @@ model Region {
   status  Status
 
   cities  City[]
-  tariffs     Tariff[]  @relation("tariff_regions")
+  tariffs Tariff[] @relation("tariff_regions")
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("region")
 }
@@ -71,7 +68,6 @@ model City {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("city")
 }
@@ -86,7 +82,6 @@ model Transaction {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("transaction")
 }
@@ -105,14 +100,13 @@ model Tariff {
   is_5g          Boolean @default(false)
 
   partner_id Int
-   
-  regions    Region[]  @relation("tariff_regions")
+
+  regions Region[]  @relation("tariff_regions")
   partner Partner   @relation(fields: [partner_id], references: [id])
   package Package[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("tariff")
 }
@@ -130,7 +124,6 @@ model Package {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("package")
 }
@@ -144,7 +137,6 @@ model Service {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("service")
 }
@@ -166,7 +158,6 @@ model Sims {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("sims")
 }
@@ -185,7 +176,6 @@ model Partner {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("partner")
 }
@@ -202,7 +192,6 @@ model Basket {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("basket")
 }
@@ -220,7 +209,6 @@ model BasketItem {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("basket_item")
 }
@@ -232,7 +220,6 @@ model Error {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("error")
 }

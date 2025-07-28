@@ -32,9 +32,6 @@ export class ServiceService {
     const service = await this.prisma.service.findUnique({
       where: {
         id: id,
-        deleted_at: {
-          equals: null,
-        },
       },
       select: {
         id: true,
@@ -75,9 +72,6 @@ export class ServiceService {
     const service = await this.prisma.service.findUnique({
       where: {
         id: id,
-        deleted_at: {
-          equals: null,
-        },
       },
     });
 
@@ -88,9 +82,6 @@ export class ServiceService {
     await this.prisma.service.update({
       where: {
         id: id,
-        deleted_at: {
-          equals: null,
-        },
       },
       data: {
         name_ru: service?.name_ru ?? data?.name_ru,
@@ -110,9 +101,6 @@ export class ServiceService {
     const service = await this.prisma.service.findUnique({
       where: {
         id: id,
-        deleted_at: {
-          equals: null,
-        },
       },
     });
 
@@ -120,12 +108,9 @@ export class ServiceService {
       throw new NotFoundException('Служба с указанным идентификатором не найдена!');
     }
 
-    await this.prisma.service.update({
+    await this.prisma.service.delete({
       where: {
         id: service.id,
-      },
-      data: {
-        deleted_at: new Date(),
       },
     });
     return {

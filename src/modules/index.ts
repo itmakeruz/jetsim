@@ -4,3 +4,4 @@ export * from './tariff';
 export * from './region';
 export * from './prisma';
 export * from './service';
+export * from './package';

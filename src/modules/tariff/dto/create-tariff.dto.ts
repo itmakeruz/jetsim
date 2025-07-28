@@ -1,8 +1,43 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Status } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 
+class Package {
+  @ApiProperty({ type: Number, required: true, example: 100 })
+  @IsNotEmpty()
+  @IsNumber()
+  sms_count: number;
+
+  @ApiProperty({ type: Number, required: true, example: 100 })
+  @IsNotEmpty()
+  @IsNumber()
+  minutes_count: number;
+
+  @ApiProperty({ type: Number, required: true, example: 100 })
+  @IsNotEmpty()
+  @IsNumber()
+  mb_count: number;
+
+  @ApiProperty({ type: String, required: true, example: 'sku_id' })
+  @IsNotEmpty()
+  @IsString()
+  sku_id: string;
+
+  @ApiProperty({ type: String, required: true, example: 'status', enum: Status })
+  @IsNotEmpty()
+  @IsEnum(Status)
+  status: Status;
+}
 export class CreateTariffDto {
   @ApiProperty({ type: String, required: true, example: 'Название тарифа' })
   @IsNotEmpty()
@@ -54,4 +89,15 @@ export class CreateTariffDto {
   @IsOptional()
   @IsBoolean()
   is_5g: boolean;
+
+  @ApiProperty({
+    type: [Package],
+    required: true,
+    example: [{ sms_count: 100, minutes_count: 100, mb_count: 100, sku_id: 'sku_id', status: Status.ACTIVE }],
+  })
+  @IsNotEmpty()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => Package)
+  packages: Package[];
 }

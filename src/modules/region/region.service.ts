@@ -3,6 +3,7 @@ import { CreateRegionDto, GetRegionDto, UpdateRegionDto } from './dto';
 import { paginate } from '@helpers';
 import { FilePath } from '@constants';
 import { PrismaService } from '@prisma';
+import { Status } from '@prisma/client';
 
 @Injectable()
 export class RegionService {
@@ -20,11 +21,6 @@ export class RegionService {
         image: true,
         status: true,
         created_at: true,
-      },
-      where: {
-        deleted_at: {
-          equals: null,
-        },
       },
     });
 
@@ -59,9 +55,7 @@ export class RegionService {
         created_at: true,
       },
       where: {
-        deleted_at: {
-          equals: null,
-        },
+        status: Status.ACTIVE,
       },
     });
 
@@ -85,9 +79,6 @@ export class RegionService {
     const region = await this.prisma.region.findUnique({
       where: {
         id: id,
-        deleted_at: {
-          equals: null,
-        },
       },
       select: {
         id: true,
@@ -120,9 +111,7 @@ export class RegionService {
     const region = await this.prisma.region.findUnique({
       where: {
         id: id,
-        deleted_at: {
-          equals: null,
-        },
+        status: Status.ACTIVE,
       },
       select: {
         id: true,
@@ -167,9 +156,6 @@ export class RegionService {
     const existRegion = await this.prisma.region.findUnique({
       where: {
         id: id,
-        deleted_at: {
-          equals: null,
-        },
       },
     });
 
@@ -198,9 +184,6 @@ export class RegionService {
     const existRegion = await this.prisma.region.findUnique({
       where: {
         id: id,
-        deleted_at: {
-          equals: null,
-        },
       },
       select: {
         id: true,
@@ -216,17 +199,15 @@ export class RegionService {
       throw new BadRequestException('Регион не может быть удален, так как есть города в нем!');
     }
 
-    await this.prisma.region.update({
+    await this.prisma.region.delete({
       where: {
         id: existRegion.id,
-      },
-      data: {
-        deleted_at: new Date(),
       },
     });
 
     return {
       status: HttpStatus.NO_CONTENT,
+      message: 'Регион успешно удален!',
     };
   }
 }

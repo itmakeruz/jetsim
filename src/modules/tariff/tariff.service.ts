@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTariffDto, GetTarifftDto, UpdateTariffDto } from './dto';
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
@@ -32,6 +32,11 @@ export class TariffService {
             created_at: true,
           },
         },
+        _count: {
+          select: {
+            package: true,
+          },
+        },
         created_at: true,
       },
     });
@@ -52,6 +57,7 @@ export class TariffService {
           name: region?.[`name_${lang}`],
           created_at: region?.created_at,
         })),
+        package_count: tariff?._count?.package,
         created_at: tariff?.created_at,
       })),
       ...meta,
@@ -82,12 +88,25 @@ export class TariffService {
             created_at: true,
           },
         },
+        _count: {
+          select: {
+            package: true,
+          },
+        },
         created_at: true,
+      },
+      where: {
+        status: Status.ACTIVE,
       },
     });
 
     return {
       status: HttpStatus.OK,
+      message: 'Тарифы успешно найдены!',
+      data: tariffs?.data?.map((tariff: any) => ({
+        ...tariff,
+        package_count: tariff?._count?.package,
+      })),
       ...tariffs,
     };
   }
@@ -97,9 +116,6 @@ export class TariffService {
       where: {
         id: id,
         status: Status.ACTIVE,
-        deleted_at: {
-          equals: null,
-        },
       },
       select: {
         id: true,
@@ -114,6 +130,17 @@ export class TariffService {
           select: {
             id: true,
             [`name_${lang}`]: true,
+            created_at: true,
+          },
+        },
+        package: {
+          select: {
+            id: true,
+            sms_count: true,
+            minutes_count: true,
+            mb_count: true,
+            sku_id: true,
+            status: true,
             created_at: true,
           },
         },
@@ -140,18 +167,24 @@ export class TariffService {
           id: region?.id,
           name: region?.[`name_${lang}`],
         })),
+        package: tariffs?.package?.map((pck) => ({
+          id: pck?.id,
+          sms_count: pck?.sms_count,
+          minutes_count: pck?.minutes_count,
+          mb_count: pck?.mb_count,
+          sku_id: pck?.sku_id,
+          status: pck?.status,
+          created_at: pck?.created_at,
+        })),
       },
     };
   }
 
   async findOneAdmin(id: number) {
-    const tariffs = await this.prisma.tariff.findUnique({
+    const tariff = await this.prisma.tariff.findUnique({
       where: {
         id: id,
         status: Status.ACTIVE,
-        deleted_at: {
-          equals: null,
-        },
       },
       select: {
         id: true,
@@ -171,23 +204,29 @@ export class TariffService {
             created_at: true,
           },
         },
+        package: {
+          select: {
+            id: true,
+            sms_count: true,
+            minutes_count: true,
+            mb_count: true,
+            sku_id: true,
+            status: true,
+            created_at: true,
+          },
+        },
         created_at: true,
       },
     });
 
-    if (!tariffs) {
+    if (!tariff) {
       throw new NotFoundException('Тариф с указанным идентификатором не найдена!');
     }
 
     return {
       status: HttpStatus.OK,
-      data: {
-        ...tariffs,
-        regions: tariffs?.regions?.map((region) => ({
-          id: region?.id,
-          name: region?.name_ru,
-        })),
-      },
+      message: 'Тариф успешно найден!',
+      data: tariff,
     };
   }
 
@@ -206,11 +245,21 @@ export class TariffService {
               id: region,
             })) ?? [],
         },
+        package: {
+          create: data.packages.map((pck) => ({
+            sms_count: pck.sms_count,
+            minutes_count: pck.minutes_count,
+            mb_count: pck.mb_count,
+            sku_id: pck.sku_id,
+            status: pck.status as Status,
+          })),
+        },
       },
     });
 
     return {
       status: HttpStatus.CREATED,
+      message: 'Тариф успешно создан!',
     };
   }
 
@@ -218,9 +267,6 @@ export class TariffService {
     const service = await this.prisma.tariff.findUnique({
       where: {
         id: id,
-        deleted_at: {
-          equals: null,
-        },
       },
     });
 
@@ -231,9 +277,6 @@ export class TariffService {
     await this.prisma.tariff.update({
       where: {
         id: id,
-        deleted_at: {
-          equals: null,
-        },
       },
       data: {
         name_ru: service?.name_ru ?? data?.name_ru,
@@ -252,6 +295,64 @@ export class TariffService {
 
     return {
       status: HttpStatus.OK,
+      message: 'Тариф успешно обновлен!',
+    };
+  }
+
+  async changeStatusTariff(id: number, status: Status) {
+    const tariff = await this.prisma.tariff.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!tariff) {
+      throw new NotFoundException('Тариф с указанным идентификатором не найдена!');
+    }
+
+    if (status === tariff.status) {
+      throw new BadRequestException(`Статус тарифа ${tariff.status} уже установлен!`);
+    }
+
+    await this.prisma.tariff.update({
+      where: {
+        id: id,
+      },
+      data: {
+        status: status,
+      },
+    });
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Статус тарифа успешно обновлен!',
+    };
+  }
+
+  async changeStatusPackage(id: number, status: Status) {
+    const packageData = await this.prisma.package.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!packageData) {
+      throw new NotFoundException('Пакет с указанным идентификатором не найдена!');
+    }
+
+    if (status === packageData.status) {
+      throw new BadRequestException(`Статус пакета ${packageData.status} уже установлен!`);
+    }
+
+    await this.prisma.package.delete({
+      where: {
+        id: packageData.id,
+      },
+    });
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Статус пакета успешно обновлен!',
     };
   }
 
@@ -259,9 +360,6 @@ export class TariffService {
     const service = await this.prisma.tariff.findUnique({
       where: {
         id: id,
-        deleted_at: {
-          equals: null,
-        },
       },
     });
 
@@ -269,16 +367,37 @@ export class TariffService {
       throw new NotFoundException('Тариф с указанным идентификатором не найдена!');
     }
 
-    await this.prisma.tariff.update({
+    await this.prisma.tariff.delete({
       where: {
         id: service.id,
-      },
-      data: {
-        deleted_at: new Date(),
       },
     });
     return {
       status: HttpStatus.NO_CONTENT,
+      message: 'Тариф успешно удален!',
+    };
+  }
+
+  async removePackage(id: number) {
+    const packageData = await this.prisma.package.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!packageData) {
+      throw new NotFoundException('Пакет с указанным идентификатором не найдена!');
+    }
+
+    await this.prisma.package.delete({
+      where: {
+        id: packageData.id,
+      },
+    });
+
+    return {
+      status: HttpStatus.NO_CONTENT,
+      message: 'Пакет успешно удален!',
     };
   }
 }
