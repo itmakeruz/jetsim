@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '@prisma';
 import * as bcrypt from 'bcrypt';
+import { RegisterDto } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -42,5 +43,29 @@ export class AuthService {
     if (!isMatch) {
       throw new UnauthorizedException('Недействительные учетные данные!');
     }
+  }
+
+  async register(data: RegisterDto) {
+    const isExist = await this.prisma.user.findFirst({
+      where: {
+        email: data.email,
+      },
+    });
+
+    if (isExist) {
+      throw new BadRequestException('Этот электронный адрес уже занят!');
+    }
+
+    await this.prisma.user.create({
+      data: {
+        email: data.email,
+        password: await bcrypt.hash(data.password, 10),
+      },
+    });
+
+    return {
+      status: HttpStatus.CREATED,
+      message: 'Пользователь успешно создан!',
+    };
   }
 }

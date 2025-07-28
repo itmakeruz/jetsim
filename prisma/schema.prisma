@@ -14,10 +14,11 @@ datasource db {
 }
 
 model User {
-  id       Int     @id @default(autoincrement())
-  name     String?
-  email    String?
-  password String?
+  id          Int     @id @default(autoincrement())
+  name        String?
+  email       String?
+  password    String?
+  is_verified Boolean @default(false)
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
