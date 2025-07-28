@@ -22,8 +22,13 @@ export class TariffController {
   }
 
   @Get(':id')
-  findOne(@Param() param: ParamId) {
-    return this.tariffService.findOne(param.id);
+  async findOne(@Param() param: ParamId, @HeadersValidation() headers: DeviceHeadersDto) {
+    return this.tariffService.findOne(param.id, headers.lang);
+  }
+
+  @Get('admin/:id')
+  async findOneAdmin(@Param() param: ParamId) {
+    return this.tariffService.findOneAdmin(param.id);
   }
 
   @Post()

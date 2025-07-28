@@ -8,11 +8,14 @@ import { Status } from '@prisma/client';
 export class TariffService {
   constructor(private readonly prisma: PrismaService) {}
   async findAll(query: GetTarifftDto, lang: string) {
-    const tariffs = await paginate('tariff', {
+    const { data, ...meta } = await paginate('tariff', {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
       sort: query?.sort,
+      where: {
+        status: Status.ACTIVE,
+      },
       select: {
         id: true,
         [`name_${lang}`]: true,
@@ -22,13 +25,20 @@ export class TariffService {
         is_popular: true,
         is_4g: true,
         is_5g: true,
+        regions: {
+          select: {
+            id: true,
+            [`name_${lang}`]: true,
+            created_at: true,
+          },
+        },
         created_at: true,
       },
     });
 
     return {
       status: HttpStatus.OK,
-      data: tariffs?.data?.map((tariff) => ({
+      data: data?.map((tariff: any) => ({
         id: tariff?.id,
         name: tariff?.[`name_${lang}`],
         title: tariff?.[`title_${lang}`],
@@ -37,9 +47,14 @@ export class TariffService {
         is_popular: tariff?.is_popular,
         is_4g: tariff?.is_4g,
         is_5g: tariff?.is_5g,
+        regions: tariff?.regions?.map((region) => ({
+          id: region?.id,
+          name: region?.[`name_${lang}`],
+          created_at: region?.created_at,
+        })),
         created_at: tariff?.created_at,
       })),
-      ...tariffs,
+      ...meta,
     };
   }
 
@@ -55,30 +70,53 @@ export class TariffService {
         name_en: true,
         description_ru: true,
         description_en: true,
+        status: true,
+        is_popular: true,
+        is_4g: true,
+        is_5g: true,
+        regions: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+            created_at: true,
+          },
+        },
         created_at: true,
       },
     });
 
     return {
       status: HttpStatus.OK,
-      data: tariffs,
+      ...tariffs,
     };
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, lang: string) {
     const tariffs = await this.prisma.tariff.findUnique({
       where: {
         id: id,
+        status: Status.ACTIVE,
         deleted_at: {
           equals: null,
         },
       },
       select: {
         id: true,
-        name_ru: true,
-        name_en: true,
-        description_ru: true,
-        description_en: true,
+        [`name_${lang}`]: true,
+        [`title_${lang}`]: true,
+        [`description_${lang}`]: true,
+        status: true,
+        is_popular: true,
+        is_4g: true,
+        is_5g: true,
+        regions: {
+          select: {
+            id: true,
+            [`name_${lang}`]: true,
+            created_at: true,
+          },
+        },
         created_at: true,
       },
     });
@@ -89,7 +127,67 @@ export class TariffService {
 
     return {
       status: HttpStatus.OK,
-      data: tariffs,
+      data: {
+        id: tariffs?.id,
+        name: tariffs?.[`name_${lang}`],
+        title: tariffs?.[`title_${lang}`],
+        description: tariffs?.[`description_${lang}`],
+        status: tariffs?.status,
+        is_popular: tariffs?.is_popular,
+        is_4g: tariffs?.is_4g,
+        is_5g: tariffs?.is_5g,
+        regions: tariffs?.regions?.map((region) => ({
+          id: region?.id,
+          name: region?.[`name_${lang}`],
+        })),
+      },
+    };
+  }
+
+  async findOneAdmin(id: number) {
+    const tariffs = await this.prisma.tariff.findUnique({
+      where: {
+        id: id,
+        status: Status.ACTIVE,
+        deleted_at: {
+          equals: null,
+        },
+      },
+      select: {
+        id: true,
+        name_ru: true,
+        name_en: true,
+        description_ru: true,
+        description_en: true,
+        status: true,
+        is_popular: true,
+        is_4g: true,
+        is_5g: true,
+        regions: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+            created_at: true,
+          },
+        },
+        created_at: true,
+      },
+    });
+
+    if (!tariffs) {
+      throw new NotFoundException('Тариф с указанным идентификатором не найдена!');
+    }
+
+    return {
+      status: HttpStatus.OK,
+      data: {
+        ...tariffs,
+        regions: tariffs?.regions?.map((region) => ({
+          id: region?.id,
+          name: region?.name_ru,
+        })),
+      },
     };
   }
 
@@ -102,7 +200,12 @@ export class TariffService {
         description_en: data.description_en,
         status: data.status as Status,
         partner_id: data.partner_id,
-        region_id: data.region_id,
+        regions: {
+          connect:
+            data.region_ids.map((region) => ({
+              id: region,
+            })) ?? [],
+        },
       },
     });
 
@@ -137,6 +240,12 @@ export class TariffService {
         name_en: service?.name_en ?? data?.name_en,
         description_ru: service?.description_ru ?? data?.description_ru,
         description_en: service?.description_en ?? data?.description_en,
+        regions: {
+          set:
+            data.region_ids?.map((region) => ({
+              id: region,
+            })) ?? [],
+        },
         updated_at: new Date(),
       },
     });

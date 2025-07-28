@@ -51,7 +51,7 @@ model Region {
   status  Status
 
   cities  City[]
-  tariffs Tariff[]
+  tariffs     Tariff[]  @relation("tariff_regions")
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -105,9 +105,8 @@ model Tariff {
   is_5g          Boolean @default(false)
 
   partner_id Int
-  region_id  Int
-
-  region  Region    @relation(fields: [region_id], references: [id])
+   
+  regions    Region[]  @relation("tariff_regions")
   partner Partner   @relation(fields: [partner_id], references: [id])
   package Package[]
 

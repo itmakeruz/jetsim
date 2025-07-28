@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateTariffDto {
   @ApiProperty({ type: String, required: false, example: 'Название тарифа' })
@@ -32,10 +33,11 @@ export class UpdateTariffDto {
   @IsNumber()
   partner_id: number;
 
-  @ApiProperty({ type: Number, required: false, example: 1 })
-  @IsOptional()
-  @IsNumber()
-  region_id: number;
+  @ApiProperty({ type: Array, required: false, example: [1, 2, 3, 4, 5] })
+  @IsArray()
+  @Type(() => Number)
+  @IsNumber({}, { each: true })
+  region_ids: number[];
 
   @ApiProperty({ type: Boolean, required: false, example: true, description: 'gets existed value' })
   @IsOptional()

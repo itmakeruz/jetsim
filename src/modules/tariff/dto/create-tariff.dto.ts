@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Status } from '@prisma/client';
+import { Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateTariffDto {
   @ApiProperty({ type: String, required: true, example: 'Название тарифа' })
@@ -22,20 +24,21 @@ export class CreateTariffDto {
   @IsString()
   description_en: string;
 
-  @ApiProperty({ type: String, required: false, example: 'status' })
+  @ApiProperty({ type: String, required: false, enum: Status })
   @IsNotEmpty()
-  @IsString()
-  status: string;
+  @IsEnum(Status)
+  status: Status;
 
   @ApiProperty({ type: Number, required: true, example: 1 })
   @IsNotEmpty()
   @IsNumber()
   partner_id: number;
 
-  @ApiProperty({ type: Number, required: true, example: 1 })
-  @IsNotEmpty()
-  @IsNumber()
-  region_id: number;
+  @ApiProperty({ type: Array, required: true, example: [1, 2, 3, 4, 5] })
+  @IsArray()
+  @Type(() => Number)
+  @IsNumber({}, { each: true })
+  region_ids: number[];
 
   @ApiProperty({ type: Boolean, required: false, example: true, default: false })
   @IsOptional()
