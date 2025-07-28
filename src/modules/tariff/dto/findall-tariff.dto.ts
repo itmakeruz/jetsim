@@ -5,7 +5,7 @@ import { IsArray, IsEnum, IsIn, IsOptional, IsString, ValidateNested } from 'cla
 import { OperatorTypes, PaginationOptionalDto } from '@enums';
 import { prisma } from '@helpers';
 
-const depositFields = Object.keys(prisma.service.fields);
+const depositFields = Object.keys(prisma.tariff.fields);
 
 class TariffFilter {
   @IsIn(depositFields)

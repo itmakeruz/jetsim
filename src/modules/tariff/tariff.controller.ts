@@ -9,7 +9,7 @@ import { HeadersValidation } from '@decorators';
 export class TariffController {
   constructor(private readonly tariffService: TariffService) {}
 
-  @ApiOperation({ summary: 'Get all tariffs mobile', description: 'Get all tariffs mobile' })
+  @ApiOperation({ summary: 'Get all tariffs public', description: 'Get all tariffs public' })
   @Get()
   async findAll(@Query() query: GetTarifftDto, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.tariffService.findAll(query, headers.lang);
@@ -21,7 +21,7 @@ export class TariffController {
     return this.tariffService.findAllAdmin(query);
   }
 
-  @ApiOperation({ summary: 'Get tariff mobile', description: 'Get tariff mobile' })
+  @ApiOperation({ summary: 'Get tariff public', description: 'Get tariff public' })
   @Get(':id')
   async findOne(@Param() param: ParamId, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.tariffService.findOne(param.id, headers.lang);

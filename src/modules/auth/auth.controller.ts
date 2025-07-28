@@ -8,25 +8,25 @@ import { IRequest } from '@interfaces';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiOperation({ summary: 'Register mobile', description: 'Register mobile' })
+  @ApiOperation({ summary: 'Register public', description: 'Register public' })
   @Post('register')
   async register(data: RegisterDto) {
     return await this.authService.register(data);
   }
 
-  @ApiOperation({ summary: 'Login mobile', description: 'Login mobile' })
+  @ApiOperation({ summary: 'Login public', description: 'Login public' })
   @Post('login')
   async login(data: LoginDto) {
     return await this.authService.login(data);
   }
 
-  @ApiOperation({ summary: 'Get me mobile', description: 'Get me mobile' })
-  @Get('me-user')
+  @ApiOperation({ summary: 'Get me public', description: 'Get me public' })
+  @Get('me')
   async getMeUser(@Req() request: IRequest) {
     return await this.authService.getMeUser(request.user.id);
   }
 
-  @ApiOperation({ summary: 'Update Fcm Token mobile', description: 'Update Fcm Token mobile' })
+  @ApiOperation({ summary: 'Update Fcm Token public', description: 'Update Fcm Token public' })
   @Patch('device/fcm-token')
   async updateDeviceFcmToken(@Req() request: IRequest, data: DeviceFcmTokenUpdateDto) {
     return await this.authService.deviceFcmTokenUpdate(request.user.id, data);

@@ -130,19 +130,6 @@ model Package {
   @@map("package")
 }
 
-model Service {
-  id             Int     @id @default(autoincrement())
-  name_ru        String
-  name_en        String
-  description_ru String?
-  description_en String?
-
-  created_at DateTime  @default(now()) @db.Timestamptz(5)
-  updated_at DateTime? @updatedAt @db.Timestamptz(5)
-
-  @@map("service")
-}
-
 model Sims {
   id             Int     @id @default(autoincrement())
   name_ru        String

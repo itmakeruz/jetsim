@@ -3,15 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { WinstonLoggerService } from '@logger';
 import { LoggingInterceptor } from '@interceptors';
-import {
-  AuthModule,
-  RegionModule,
-  PrismaModule,
-  ServiceModule,
-  TariffModule,
-  CityModule,
-  PackageModule,
-} from '@modules';
+import { AuthModule, RegionModule, PrismaModule, TariffModule, CityModule, PackageModule } from '@modules';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -23,7 +15,6 @@ import {
     RegionModule,
     TariffModule,
     PrismaModule,
-    ServiceModule,
     CityModule,
     PackageModule,
   ],

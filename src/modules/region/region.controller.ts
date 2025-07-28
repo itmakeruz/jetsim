@@ -9,7 +9,7 @@ import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 export class RegionController {
   constructor(private readonly regionService: RegionService) {}
 
-  @ApiOperation({ summary: 'Get all regions mobile', description: 'Get all regions mobile' })
+  @ApiOperation({ summary: 'Get all regions public', description: 'Get all regions public' })
   @Get()
   async findAll(@Query() query: GetRegionDto, @HeadersValidation() headers: DeviceHeadersDto) {
     return await this.regionService.findAll(query, headers.lang);
@@ -21,7 +21,7 @@ export class RegionController {
     return await this.regionService.findAllAdmin(query, headers.lang);
   }
 
-  @ApiOperation({ summary: 'Get region by id mobile', description: 'Get region by id mobile' })
+  @ApiOperation({ summary: 'Get region by id public', description: 'Get region by id public' })
   @Get(':id')
   async findOne(@Param() param: ParamId, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.regionService.findOne(param.id, headers.lang);

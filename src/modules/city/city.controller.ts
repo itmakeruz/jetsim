@@ -9,7 +9,7 @@ import { ApiOperation } from '@nestjs/swagger';
 export class CityController {
   constructor(private readonly cityService: CityService) {}
 
-  @ApiOperation({ summary: 'Get all cities mobile', description: 'Get all cities mobile' })
+  @ApiOperation({ summary: 'Get all cities public', description: 'Get all cities public' })
   @Get()
   async findAll(@Query() query: GetCityDto, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.cityService.findAll(query, headers.lang);
@@ -21,7 +21,7 @@ export class CityController {
     return this.cityService.findAllAdmin(query);
   }
 
-  @ApiOperation({ summary: 'Get city mobile', description: 'Get city mobile' })
+  @ApiOperation({ summary: 'Get city public', description: 'Get city public' })
   @Get(':id')
   async findOne(@Param('id') id: string, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.cityService.findOne(+id, headers.lang);
