@@ -26,6 +26,7 @@ model User {
 
   transaction Transaction[]
   basket      Basket[]
+  orders      Order[]
 
   @@map("user")
 }
@@ -103,8 +104,8 @@ model Tariff {
 
   partner_id Int
 
-  regions Region[]  @relation("tariff_regions")
-  partner Partner   @relation(fields: [partner_id], references: [id])
+  regions  Region[]  @relation("tariff_regions")
+  partner  Partner   @relation(fields: [partner_id], references: [id])
   packages Package[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
@@ -122,7 +123,8 @@ model Package {
   status        Status
 
   tariff_id Int
-  tariff    Tariff @relation(fields: [tariff_id], references: [id])
+  tariff    Tariff  @relation(fields: [tariff_id], references: [id])
+  orders    Order[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -161,12 +163,28 @@ model Partner {
   status         Status
 
   sims   Sims[]
-  Tariff Tariff[]
+  tariff Tariff[]
+  orders Order[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
 
   @@map("partner")
+}
+
+model Order {
+  id         Int    @id @default(autoincrement())
+  status     OrderStatus
+  partner_id Int
+  user_id    Int
+  package_id Int
+
+  user    User    @relation(fields: [user_id], references: [id])
+  partner Partner @relation(fields: [partner_id], references: [id])
+  package Package @relation(fields: [package_id], references: [id])
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
 }
 
 model Basket {
@@ -221,6 +239,13 @@ enum Status {
 enum BasketStatus {
   PENDING
   ORDERED
+  ACTIVATED
+  FAILED
+}
+
+enum OrderStatus {
+  CREATED
+  PENDING
   ACTIVATED
   FAILED
 }

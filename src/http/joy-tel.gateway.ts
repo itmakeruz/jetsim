@@ -30,7 +30,7 @@ export class JoyTel extends HttpService {
     return await this.setUrl(url).setHeaders(headers).setBody(body).send();
   }
 
-  async sumbitEsimOrder(
+  async submitEsimOrder(
     receiverName: string,
     phoneNumber: string,
     email: string,
@@ -103,8 +103,6 @@ export class JoyTel extends HttpService {
   generateTimeStamp() {
     return Date.now().toString();
   }
-
-  async submitEsimOrder() {}
 
   // async assignUrl(url: string) {
   //   return url || '';

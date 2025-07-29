@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { WinstonLoggerService } from '@logger';
 import { LoggingInterceptor } from '@interceptors';
 import { AuthModule, RegionModule, PrismaModule, TariffModule, CityModule, PackageModule } from '@modules';
+import { OrderModule } from './modules/order/order.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -17,6 +18,7 @@ import { AuthModule, RegionModule, PrismaModule, TariffModule, CityModule, Packa
     PrismaModule,
     CityModule,
     PackageModule,
+    OrderModule,
   ],
   controllers: [],
   providers: [WinstonLoggerService, LoggingInterceptor],
