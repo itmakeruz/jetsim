@@ -37,11 +37,23 @@ class EnvironmentVariables {
 
   @IsNotEmpty()
   @IsString()
-  JOYTEL_SECRET_ID: string;
+  JOY_TEL_ORDER_URL: string;
 
   @IsNotEmpty()
   @IsString()
-  JOYTEL_SECRET_KEY: string;
+  JOYTEL_APP_ID: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JOYTEL_APP_SECRET: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JOYTEL_CUSTOMER_CODE: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JOYTEL_CUSTOMER_AUTH: string;
 
   @IsNotEmpty()
   @IsString()

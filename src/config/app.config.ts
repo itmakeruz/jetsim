@@ -14,8 +14,11 @@ const JWT_REFRESH_EXPIRE_TIME = config.get<string>('JWT_REFRESH_EXPIRE_TIME') ??
 
 //joytel
 const JOYTEL_URL = config.get<string>('JOYTEL_URL') ?? '';
-const JOYTEL_SECRET_ID = config.get<string>('JOYTEL_SECRET_ID') ?? '';
-const JOYTEL_SECRET_KEY = config.get<string>('JOYTEL_SECRET_KEY') ?? '';
+const JOYTEL_APP_ID = config.get<string>('JOYTEL_APP_ID') ?? '';
+const JOYTEL_APP_SECRET = config.get<string>('JOYTEL_APP_SECRET') ?? '';
+const JOYTEL_CUSTOMER_CODE = config.get<string>('JOYTEL_CUSTOMER_ID') ?? '';
+const JOYTEL_CUSTOMER_AUTH = config.get<string>('JOYTEL_CUSTOMER_AUTH') ?? '';
+const JOY_TEL_ORDER_URL = config.get<string>('JOY_TEL_ORDER_URL') ?? '';
 
 //billion connect
 const BILLION_CONNECT_URL = config.get<string>('BILLION_CONNECT_URL') ?? '';
@@ -32,8 +35,11 @@ export {
   JWT_ACCESS_EXPIRE_TIME,
   JWT_REFRESH_EXPIRE_TIME,
   JOYTEL_URL,
-  JOYTEL_SECRET_ID,
-  JOYTEL_SECRET_KEY,
+  JOY_TEL_ORDER_URL,
+  JOYTEL_APP_ID,
+  JOYTEL_APP_SECRET,
+  JOYTEL_CUSTOMER_CODE,
+  JOYTEL_CUSTOMER_AUTH,
   BILLION_CONNECT_URL,
   BILLION_CONNECT_SECRET_ID,
   BILLION_CONNECT_SECRET_KEY,
