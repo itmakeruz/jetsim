@@ -173,11 +173,13 @@ model Partner {
 }
 
 model Order {
-  id         Int    @id @default(autoincrement())
+  id         Int         @id @default(autoincrement())
   status     OrderStatus
   partner_id Int
   user_id    Int
   package_id Int
+  order_tid  String?
+  order_code String?
 
   user    User    @relation(fields: [user_id], references: [id])
   partner Partner @relation(fields: [partner_id], references: [id])
@@ -185,6 +187,21 @@ model Order {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
+
+  @@index([id, order_tid, order_code, user_id])
+  @@map("order")
+}
+
+model OrderJob {
+  id         Int     @id @default(autoincrement())
+  order_id   Int
+  order_tid  String?
+  order_code String?
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+
+  @@map("order_job")
 }
 
 model Basket {
@@ -248,4 +265,10 @@ enum OrderStatus {
   PENDING
   ACTIVATED
   FAILED
+}
+
+enum OrderJobStatus {
+  PENDING
+  SUCCESS
+  ERROR
 }

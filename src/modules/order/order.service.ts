@@ -83,7 +83,18 @@ export class OrderService {
       newOrder.id,
     );
 
+    console.log(response);
     return response;
+
+    // await this.prisma.order.update({
+    //   where: {
+    //     id: newOrder.id,
+    //   },
+    //   data: {
+    //     status: OrderStatus.PENDING,
+
+    //   }
+    // });
     // }
   }
 

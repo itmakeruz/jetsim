@@ -18,7 +18,7 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'create order', description: 'create order' })
-  @Post()
+  @Post('esim')
   async create(@Body() createOrderDto: CreateOrderDto) {
     let user_id = 1;
     return this.orderService.create(createOrderDto, user_id);
