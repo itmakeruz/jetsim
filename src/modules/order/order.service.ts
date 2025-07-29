@@ -1,10 +1,11 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { PrismaService } from '@prisma';
 import { identity } from 'rxjs';
 import { OrderStatus, Status } from '@prisma/client';
 import { BillionConnect, JoyTel } from '@http';
+import { PartnerIds } from '@enums';
 
 @Injectable()
 export class OrderService {
@@ -13,8 +14,22 @@ export class OrderService {
     private readonly joyTel: JoyTel,
     private readonly billionConnect: BillionConnect,
   ) {}
-  findAll() {
+  async findAll() {
     return `This action returns all order`;
+  }
+
+  async staticOrders(userId: number) {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        user_id: userId,
+      },
+    });
+
+    return {
+      status: HttpStatus.OK,
+      message: 'success',
+      data: orders,
+    };
   }
 
   findOne(id: number) {
@@ -73,29 +88,14 @@ export class OrderService {
       },
     });
 
-    // if (partner_id === 1) {
-    const response = this.joyTel.submitEsimOrder(
-      'mendirman osha',
-      '9989991221213',
-      user.email,
-      pck.sku_id,
-      1,
-      newOrder.id,
-    );
+    if (partner_id === 1) {
+      return this.joyTel.submitEsimOrder(user.name, user.email, user.email, pck.sku_id, 1, newOrder.id);
+    }
 
-    console.log(response);
-    return response;
-
-    // await this.prisma.order.update({
-    //   where: {
-    //     id: newOrder.id,
-    //   },
-    //   data: {
-    //     status: OrderStatus.PENDING,
-
-    //   }
-    // });
-    // }
+    return {
+      status: HttpStatus.CREATED,
+      message: 'order created successfully!',
+    };
   }
 
   update(id: number, updateOrderDto: UpdateOrderDto) {

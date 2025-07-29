@@ -1,19 +1,25 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto, UpdateOrderDto } from './dto';
 import { ApiOperation } from '@nestjs/swagger';
+import { IRequest } from '@interfaces';
 
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Get()
-  findAll() {
+  async findAll() {
     return this.orderService.findAll();
   }
 
+  @Get('static')
+  async findStaticOrders(@Req() request: IRequest) {
+    return this.orderService.staticOrders(request.user.id);
+  }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.orderService.findOne(+id);
   }
 
