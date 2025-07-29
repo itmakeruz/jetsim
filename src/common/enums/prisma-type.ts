@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Status } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsNumber, IsNumberString, IsOptional } from 'class-validator';
+import { IsNumber, IsNumberString, IsOptional, IsString } from 'class-validator';
 
 export type Models = keyof Omit<
   PrismaClient,
@@ -74,4 +74,11 @@ export class ParamId {
   @IsNumber()
   @IsOptional()
   id: number;
+}
+
+export class QueryStatus {
+  @ApiProperty({ type: String, required: false, enum: Status })
+  @IsOptional()
+  @IsString()
+  status: Status;
 }

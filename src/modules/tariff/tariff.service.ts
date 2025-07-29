@@ -34,7 +34,7 @@ export class TariffService {
         },
         _count: {
           select: {
-            package: true,
+            packages: true,
           },
         },
         created_at: true,
@@ -90,13 +90,10 @@ export class TariffService {
         },
         _count: {
           select: {
-            package: true,
+            packages: true,
           },
         },
         created_at: true,
-      },
-      where: {
-        status: Status.ACTIVE,
       },
     });
 
@@ -133,7 +130,10 @@ export class TariffService {
             created_at: true,
           },
         },
-        package: {
+        packages: {
+          where: {
+            status: Status.ACTIVE,
+          },
           select: {
             id: true,
             sms_count: true,
@@ -184,7 +184,6 @@ export class TariffService {
     const tariff = await this.prisma.tariff.findUnique({
       where: {
         id: id,
-        status: Status.ACTIVE,
       },
       select: {
         id: true,
@@ -204,7 +203,7 @@ export class TariffService {
             created_at: true,
           },
         },
-        package: {
+        packages: {
           select: {
             id: true,
             sms_count: true,
@@ -245,7 +244,7 @@ export class TariffService {
               id: region,
             })) ?? [],
         },
-        package: {
+        packages: {
           create: data.packages.map((pck) => ({
             sms_count: pck.sms_count,
             minutes_count: pck.minutes_count,
@@ -344,9 +343,12 @@ export class TariffService {
       throw new BadRequestException(`Статус пакета ${packageData.status} уже установлен!`);
     }
 
-    await this.prisma.package.delete({
+    await this.prisma.package.update({
       where: {
         id: packageData.id,
+      },
+      data: {
+        status: status,
       },
     });
 

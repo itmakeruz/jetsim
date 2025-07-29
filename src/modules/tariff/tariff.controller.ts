@@ -1,9 +1,10 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { TariffService } from './tariff.service';
 import { CreateTariffDto, GetTarifftDto, UpdateTariffDto } from './dto';
-import { DeviceHeadersDto, ParamId } from '@enums';
+import { DeviceHeadersDto, ParamId, QueryStatus } from '@enums';
 import { ApiOperation } from '@nestjs/swagger';
 import { HeadersValidation } from '@decorators';
+import { Status } from '@prisma/client';
 
 @Controller('tariff')
 export class TariffController {
@@ -37,6 +38,18 @@ export class TariffController {
   @Post()
   async create(@Body() data: CreateTariffDto) {
     return this.tariffService.create(data);
+  }
+
+  @ApiOperation({ summary: 'Update tariff', description: 'Update tariff' })
+  @Patch(':id/change-status')
+  async changeStatusTariff(@Param() param: ParamId, @Query() query: QueryStatus) {
+    return this.tariffService.changeStatusTariff(param.id, query.status);
+  }
+
+  @ApiOperation({ summary: 'Update tariff', description: 'Update tariff' })
+  @Patch('package/:id/change-status')
+  async changeStatusPackage(@Param() param: ParamId, @Query() query: QueryStatus) {
+    return this.tariffService.changeStatusPackage(param.id, query.status);
   }
 
   @ApiOperation({ summary: 'Update tariff', description: 'Update tariff' })

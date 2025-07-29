@@ -105,7 +105,7 @@ model Tariff {
 
   regions Region[]  @relation("tariff_regions")
   partner Partner   @relation(fields: [partner_id], references: [id])
-  package Package[]
+  packages Package[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)

@@ -45,6 +45,7 @@ async function bootstrap() {
       challenge: true,
       users: {
         '1': '1',
+        'happy_tel': 'happy_tel',
       },
     }),
   );
