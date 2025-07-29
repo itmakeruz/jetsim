@@ -82,7 +82,6 @@ export class JoyTel extends HttpService {
   }
 
   // HELPERS
-
   generateCiphertext(transaction_id: string): string {
     return crypto
       .createHash('md5')
@@ -103,12 +102,6 @@ export class JoyTel extends HttpService {
   generateTimeStamp() {
     return Date.now().toString();
   }
-
-  // async assignUrl(url: string) {
-  //   return url || '';
-  // }
-
-  // async geturl() {}
 
   async prepareRequest() {}
 }
