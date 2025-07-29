@@ -36,12 +36,17 @@ export class GetRegionDto extends PaginationOptionalDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RegionFilter)
-  @ApiProperty({ type: RegionFilter, isArray: true })
+  @ApiProperty({ type: RegionFilter, isArray: true, required: false })
   filters?: RegionFilter[];
 
   @IsOptional()
   @ValidateNested()
   @Type(() => RegionSort)
-  @ApiProperty({ type: RegionSort })
+  @ApiProperty({ type: RegionSort, required: false })
   sort?: RegionSort;
+
+  @ApiProperty({ type: String, required: false, example: 'kent' })
+  @IsOptional()
+  @IsString()
+  search: string;
 }

@@ -4,6 +4,8 @@ import { paginate } from '@helpers';
 import { FilePath } from '@constants';
 import { PrismaService } from '@prisma';
 import { Status } from '@prisma/client';
+import * as path from 'path';
+import * as fs from 'fs';
 
 @Injectable()
 export class RegionService {
@@ -14,10 +16,29 @@ export class RegionService {
       size: query?.size,
       filter: query?.filters,
       sort: query?.sort,
+      where: {
+        OR: [
+          {
+            [`name_${lan}`]: {
+              contains: query?.search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            cities: {
+              some: {
+                [`name_${lan}`]: {
+                  contains: query?.search,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          },
+        ],
+      },
       select: {
         id: true,
         [`name_${lan}`]: true,
-        [`description_${lan}`]: true,
         image: true,
         status: true,
         created_at: true,
@@ -26,17 +47,14 @@ export class RegionService {
 
     return {
       status: HttpStatus.OK,
-      data: {
-        ...regions,
-        data: regions.data.map((region) => ({
-          id: region?.id,
-          name: region?.[`name_${lan}`],
-          description: region?.[`description_${lan}`],
-          icon: `${FilePath.REGION_ICON}/${region?.image}`,
-          status: region?.status,
-          created_at: region?.created_at,
-        })),
-      },
+      ...regions,
+      data: regions.data.map((region) => ({
+        id: region?.id,
+        name: region?.[`name_${lan}`],
+        image: `${FilePath.REGION_ICON}/${region?.image}`,
+        status: region?.status,
+        created_at: region?.created_at,
+      })),
     };
   }
 
@@ -61,17 +79,15 @@ export class RegionService {
 
     return {
       status: HttpStatus.OK,
-      data: {
-        ...regions,
-        data: regions.data.map((region) => ({
-          id: region?.id,
-          name_ru: region?.name_ru,
-          name_en: region?.name_en,
-          icon: region?.image ? `${FilePath.REGION_ICON}/${region?.image}` : null,
-          status: region?.status,
-          created_at: region?.created_at,
-        })),
-      },
+      data: regions.data.map((region) => ({
+        id: region?.id,
+        name_ru: region?.name_ru,
+        name_en: region?.name_en,
+        image: region?.image ? `${FilePath.REGION_ICON}/${region?.image}` : null,
+        status: region?.status,
+        created_at: region?.created_at,
+      })),
+      ...regions,
     };
   }
 
@@ -99,8 +115,7 @@ export class RegionService {
       data: {
         id: region?.id,
         name: region?.[`name_${lan}`],
-        description: region?.[`description_${lan}`],
-        icon: `${FilePath.REGION_ICON}/${region?.image}`,
+        image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
         created_at: region?.created_at,
       },
@@ -132,27 +147,28 @@ export class RegionService {
         id: region?.id,
         name_ru: region?.name_ru,
         name_en: region?.name_en,
-        icon: `${FilePath.REGION_ICON}/${region?.image}`,
+        image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
       },
     };
   }
 
-  async create(data: CreateRegionDto) {
+  async create(data: CreateRegionDto, fileName: string) {
     await this.prisma.region.create({
       data: {
         name_ru: data.name_ru,
         name_en: data.name_en,
-        image: data.icon,
+        image: fileName,
         status: data.status,
       },
     });
     return {
       status: HttpStatus.CREATED,
+      message: 'Регион успешно создан!',
     };
   }
 
-  async update(id: number, data: UpdateRegionDto) {
+  async update(id: number, data: UpdateRegionDto, fileName: string) {
     const existRegion = await this.prisma.region.findUnique({
       where: {
         id: id,
@@ -163,20 +179,29 @@ export class RegionService {
       throw new NotFoundException('Регион с указанным идентификатором не найден!');
     }
 
+    if (fileName) {
+      const imagePath = path.join(process.cwd(), 'uploads', 'region_icons', existRegion.image);
+
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
     await this.prisma.region.update({
       where: {
         id: existRegion.id,
       },
       data: {
-        name_ru: existRegion.name_ru ?? data?.name_ru,
-        name_en: existRegion.name_en ?? data?.name_en,
-        image: existRegion.image ?? data?.icon,
-        status: existRegion.status ?? data?.status,
+        name_ru: data?.name_ru ?? existRegion.name_ru,
+        name_en: data?.name_en ?? existRegion.name_en,
+        image: fileName ?? existRegion.image,
+        status: data?.status ?? existRegion.status,
       },
     });
 
     return {
       status: HttpStatus.OK,
+      message: 'Регион успешно обновлен!',
     };
   }
 

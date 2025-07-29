@@ -1,10 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
-import { TariffService } from './tariff.service';
-import { CreateTariffDto, GetTarifftDto, UpdateTariffDto } from './dto';
-import { DeviceHeadersDto, ParamId, QueryStatus } from '@enums';
 import { ApiOperation } from '@nestjs/swagger';
 import { HeadersValidation } from '@decorators';
-import { Status } from '@prisma/client';
+import { TariffService } from './tariff.service';
+import { DeviceHeadersDto, ParamId, QueryStatus } from '@enums';
+import { CreateTariffDto, GetTarifftDto, UpdateTariffDto } from './dto';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 
 @Controller('tariff')
 export class TariffController {

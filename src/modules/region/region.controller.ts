@@ -1,9 +1,25 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+  BadRequestException,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import { RegionService } from './region.service';
 import { CreateRegionDto, GetRegionDto, UpdateRegionDto } from './dto';
 import { DeviceHeadersDto, ParamId } from '@enums';
 import { HeadersValidation } from '@decorators';
-import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { v4 as uuidv4 } from 'uuid';
 
 @Controller('region')
 export class RegionController {
@@ -37,16 +53,47 @@ export class RegionController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionDto })
   @Post()
-  async create(@Body() createRegionDto: CreateRegionDto) {
-    return this.regionService.create(createRegionDto);
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/region_icons',
+        filename: (req, file, cb) => {
+          if (!file) {
+            throw new BadRequestException('Требуется изображение!');
+          }
+          const name = file.originalname.replace(/\s+/g, '');
+          const uniqueName = uuidv4() + '-' + name;
+          cb(null, uniqueName);
+        },
+      }),
+    }),
+  )
+  async create(@Body() data: CreateRegionDto, @UploadedFile() file: Express.Multer.File) {
+    return this.regionService.create(data, file?.filename);
   }
 
   @ApiOperation({ summary: 'Update region', description: 'Update region' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdateRegionDto })
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateRegionDto: UpdateRegionDto) {
-    return this.regionService.update(+id, updateRegionDto);
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/region_icons',
+        filename: (req, file, cb) => {
+          const name = file.originalname.replace(/\s+/g, '');
+          const uniqueName = uuidv4() + '-' + name;
+          cb(null, uniqueName);
+        },
+      }),
+    }),
+  )
+  async update(
+    @Param('id') id: string,
+    @Body() updateRegionDto: UpdateRegionDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.regionService.update(+id, updateRegionDto, file?.filename);
   }
 
   @ApiOperation({ summary: 'Delete region', description: 'Delete region' })

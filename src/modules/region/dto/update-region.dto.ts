@@ -20,9 +20,9 @@ export class UpdateRegionDto {
     type: String,
     format: 'binary',
   })
-  icon: string;
+  image: string;
 
-  @ApiProperty({ type: String, required: false })
+  @ApiProperty({ type: String, required: false, enum: Status })
   @IsOptional()
   @IsString()
   status: Status;

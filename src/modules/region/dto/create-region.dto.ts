@@ -3,12 +3,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateRegionDto {
-  @ApiProperty({ type: String, required: true })
+  constructor() {
+    console.log(this);
+  }
+  @ApiProperty({ type: String, required: true, example: 'Ташкент' })
   @IsNotEmpty()
   @IsString()
   name_ru: string;
 
-  @ApiProperty({ type: String, required: true })
+  @ApiProperty({ type: String, required: true, example: 'Tashkent' })
   @IsNotEmpty()
   @IsString()
   name_en: string;
@@ -20,7 +23,7 @@ export class CreateRegionDto {
     type: String,
     format: 'binary',
   })
-  icon: string;
+  image: string;
 
   @ApiProperty({ type: String, required: false, enum: Status })
   @IsOptional()
