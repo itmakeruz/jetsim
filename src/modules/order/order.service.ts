@@ -1,11 +1,10 @@
 import { BadRequestException, ConflictException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
+import { CreateOrderDto, UpdateOrderDto, GetOrderDto } from './dto';
 import { PrismaService } from '@prisma';
-import { identity } from 'rxjs';
 import { OrderStatus, Status } from '@prisma/client';
 import { BillionConnect, JoyTel } from '@http';
 import { PartnerIds } from '@enums';
+import { paginate } from '@helpers';
 
 @Injectable()
 export class OrderService {
@@ -14,26 +13,131 @@ export class OrderService {
     private readonly joyTel: JoyTel,
     private readonly billionConnect: BillionConnect,
   ) {}
-  async findAll() {
-    return `This action returns all order`;
-  }
-
-  async staticOrders(userId: number) {
-    const orders = await this.prisma.order.findMany({
-      where: {
-        user_id: userId,
+  async findAll(query: GetOrderDto) {
+    const { data, ...meta } = await paginate('order', {
+      page: query?.page,
+      size: query?.size,
+      filter: query?.filters,
+      sort: query?.sort,
+      select: {
+        id: true,
+        created_at: true,
+        package: {
+          select: {
+            id: true,
+            sms_count: true,
+            minutes_count: true,
+            mb_count: true,
+            tariff: {
+              select: {
+                id: true,
+                name_ru: true,
+                name_en: true,
+              },
+            },
+          },
+        },
       },
     });
 
     return {
       status: HttpStatus.OK,
       message: 'success',
-      data: orders,
+      data: data,
+      ...meta,
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} order`;
+  async staticOrders(query: GetOrderDto, userId: number, lang: string) {
+    const orders = await paginate('order', {
+      page: query?.page,
+      size: query?.size,
+      filter: query?.filters,
+      sort: query?.sort,
+      where: {
+        user_id: userId,
+      },
+      select: {
+        id: true,
+        created_at: true,
+        package: {
+          select: {
+            id: true,
+            sms_count: true,
+            minutes_count: true,
+            mb_count: true,
+            tariff: {
+              select: {
+                id: true,
+                [`name_${lang}`]: true,
+                [`description_${lang}`]: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      status: HttpStatus.OK,
+      message: 'success',
+      data: orders?.data?.map((order: any) => {
+        return {
+          id: order?.id,
+          tariff: order.package?.tariff?.[`name_${lang}`],
+          sms_count: order?.package?.sms_count,
+          minutes_count: order?.package?.minutes_count,
+          mb_count: order?.package?.mb_count,
+          created_at: order?.created_at,
+        };
+      }),
+      ...orders,
+    };
+  }
+
+  async findOne(id: number) {
+    const order = await this.prisma.order.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        created_at: true,
+        package: {
+          select: {
+            id: true,
+            sms_count: true,
+            minutes_count: true,
+            mb_count: true,
+            tariff: {
+              select: {
+                id: true,
+                name_ru: true,
+                name_en: true,
+                description_ru: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new BadRequestException();
+    }
+
+    return {
+      status: HttpStatus.OK,
+      message: 'ok',
+      data: {
+        id: order?.id,
+        tariff: order?.package.tariff.name_ru,
+        sms_count: order?.package.sms_count,
+        minutes_count: order?.package.minutes_count,
+        mb_count: order?.package.mb_count,
+        created_at: order?.created_at,
+      },
+    };
   }
 
   async create(data: CreateOrderDto, user_id: number) {
