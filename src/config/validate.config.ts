@@ -61,7 +61,11 @@ class EnvironmentVariables {
 
   @IsNotEmpty()
   @IsString()
-  BILLION_CONNECT_SECRET_ID: string;
+  BILLION_CONNECT_CHANNEL_ID: string;
+
+  @IsNotEmpty()
+  @IsString()
+  BILLION_CONNECT_SIGN_METHOD: string;
 
   @IsNotEmpty()
   @IsString()

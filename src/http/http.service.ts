@@ -31,7 +31,7 @@ export class HttpService {
     return this;
   }
 
-  setHeaders(headers: Record<string, string>): this {
+  setHeaders(headers: any): this {
     this.headers = headers;
     return this;
   }
