@@ -192,8 +192,12 @@ export class OrderService {
       },
     });
 
-    if (partner_id === 1) {
+    if (partner_id === PartnerIds.JOYTEL) {
       return this.joyTel.submitEsimOrder(user.name, user.email, user.email, pck.sku_id, 1, newOrder.id);
+    }
+
+    if (partner_id === PartnerIds.BILLION_CONNECT) {
+      return this.billionConnect.orderSimcard({});
     }
 
     return {
