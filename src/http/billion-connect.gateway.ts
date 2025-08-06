@@ -40,7 +40,7 @@ export class BillionConnect extends HttpService {
   }
 
   async orderSimcard(body: any) {
-    const planId = body.planId || Math.floor(1000000 + Math.random() * 9000000);
+    const planId = body.plan_id;
     const data = {
       tradeType: 'F040',
       tradeTime: this.generateDate(),
@@ -50,10 +50,11 @@ export class BillionConnect extends HttpService {
         orderCreateTime: this.generateDate(),
         totalAmount: '128',
         userId: '123',
+        language: 2,
         subOrderList: [
           {
             channelSubOrderId: planId,
-            deviceSkuId: body.skuId,
+            deviceSkuId: body.sku_id,
             planSkuCopies: body.day || 1,
             number: '1',
           },
@@ -61,7 +62,7 @@ export class BillionConnect extends HttpService {
       },
     };
 
-    return data;
+    return this.prepareRequest(data);
   }
 
   async getInfoOrder(orderId: string) {

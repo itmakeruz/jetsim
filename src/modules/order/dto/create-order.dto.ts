@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber } from 'class-validator';
 
 export class CreateOrderDto {
   @ApiProperty({ type: Number, required: true, example: 1 })
   @IsNotEmpty()
-  @IsString()
+  @IsNumber()
   package_id: number;
 }

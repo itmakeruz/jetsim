@@ -68,6 +68,8 @@ export class HttpService {
 
       return res.data;
     } catch (error: any) {
+      console.log(error);
+
       throw new HttpException(error.response?.data || error.message, error.response?.status || 500);
     }
   }

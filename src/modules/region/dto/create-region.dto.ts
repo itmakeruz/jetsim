@@ -3,9 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateRegionDto {
-  constructor() {
-    console.log(this);
-  }
   @ApiProperty({ type: String, required: true, example: 'Ташкент' })
   @IsNotEmpty()
   @IsString()

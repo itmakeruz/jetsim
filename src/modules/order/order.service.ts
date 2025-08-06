@@ -192,17 +192,25 @@ export class OrderService {
       },
     });
 
+    let response: any;
+
     if (partner_id === PartnerIds.JOYTEL) {
-      return this.joyTel.submitEsimOrder(user.name, user.email, user.email, pck.sku_id, 1, newOrder.id);
+      response = await this.joyTel.submitEsimOrder(user.name, user.email, user.email, pck.sku_id, 1, newOrder.id);
     }
 
     if (partner_id === PartnerIds.BILLION_CONNECT) {
-      return this.billionConnect.orderSimcard({});
+      const body = {
+        plan_id: newOrder.id,
+        email: user.email,
+        sku_id: pck.sku_id,
+        day: 1,
+      };
+      response = await this.billionConnect.orderSimcard(body);
     }
-
     return {
       status: HttpStatus.CREATED,
       message: 'order created successfully!',
+      data: response,
     };
   }
 

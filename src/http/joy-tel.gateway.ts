@@ -8,6 +8,8 @@ import {
   JOY_TEL_ORDER_URL,
 } from '@config';
 import * as crypto from 'crypto';
+import { JOYTEL_RESPONSE_ERRORS } from '@constants';
+import { InternalServerErrorException } from '@nestjs/common';
 
 export class JoyTel extends HttpService {
   private baseUrl = JOYTEL_URL;
@@ -38,6 +40,7 @@ export class JoyTel extends HttpService {
     quantity: number,
     orderId: number,
   ) {
+    // try {
     const url = this.orderUrl;
     const timestamp = Date.now();
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
@@ -78,7 +81,13 @@ export class JoyTel extends HttpService {
       'Accept': 'application/json',
     };
 
-    return await this.setUrl(url).setHeaders(headers).setBody(body).send();
+    const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
+    return response.data;
+    // } catch (error) {
+    //   console.log(error);
+
+    //   throw new InternalServerErrorException();
+    // }
   }
 
   // HELPERS
