@@ -140,7 +140,7 @@ export class OrderService {
     };
   }
 
-  async create(data: CreateOrderDto, user_id: number) {
+  async create(data: CreateOrderDto, user_id: number = 1) {
     const pck = await this.prisma.package.findUnique({
       where: {
         id: data.package_id,

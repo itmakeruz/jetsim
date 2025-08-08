@@ -238,6 +238,9 @@ export class TariffService {
         description_en: data.description_en,
         status: data.status as Status,
         partner_id: data.partner_id,
+        is_popular: data?.is_popular,
+        is_4g: data?.is_4g,
+        is_5g: data?.is_5g,
         regions: {
           connect:
             data.region_ids.map((region) => ({

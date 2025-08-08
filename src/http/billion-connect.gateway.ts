@@ -23,6 +23,7 @@ export class BillionConnect extends HttpService {
     headers['x-sign-value'] = this.generateSign(data);
 
     try {
+      console.log(headers);
       const response = await this.setUrl(this.baseURL).setHeaders(headers).setBody(data).send();
       return response.data;
     } catch (error) {
