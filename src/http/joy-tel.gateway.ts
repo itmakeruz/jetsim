@@ -29,6 +29,7 @@ export class JoyTel extends HttpService {
     const ciphertext: string = this.generateCiphertext(transaction_id);
     const headers = this.generateHeaders(transaction_id, ciphertext);
     const body = { coupon };
+    console.log(url, ciphertext, headers, body);
 
     return await this.setUrl(url).setHeaders(headers).setBody(body).send();
   }

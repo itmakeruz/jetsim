@@ -94,7 +94,7 @@ export class CityService {
   }
 
   async create(data: CreateCityDto) {
-    const region = await this.prisma.city.findUnique({
+    const region = await this.prisma.region.findUnique({
       where: {
         id: data.region_id,
       },
