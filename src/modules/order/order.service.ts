@@ -1,11 +1,11 @@
 import { BadRequestException, ConflictException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateOrderDto, UpdateOrderDto, GetOrderDto } from './dto';
+import { CreateOrderDto, UpdateOrderDto, GetOrderDto, AddToBascet } from './dto';
 import { PrismaService } from '@prisma';
 import { OrderStatus, Status } from '@prisma/client';
 import { BillionConnect, JoyTel } from '@http';
 import { PartnerIds } from '@enums';
 import { paginate } from '@helpers';
-
+import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class OrderService {
   constructor(
@@ -212,6 +212,166 @@ export class OrderService {
       message: 'order created successfully!',
       data: response,
     };
+  }
+
+  async addToBascet(data: AddToBascet, sessionId: string, userId: number, lang: string) {
+    let basket;
+    if (userId) {
+      basket = await this.prisma.basket.findFirst({
+        where: {
+          user_id: userId,
+          status: 'ACTIVE',
+        },
+      });
+      if (!basket) {
+        basket = await this.prisma.basket.create({
+          data: {
+            user_id: userId,
+          },
+        });
+      }
+    } else {
+      if (!sessionId) {
+        sessionId = uuidv4();
+      }
+      basket = await this.prisma.basket.findFirst({
+        where: {
+          session_id: sessionId,
+          status: 'ACTIVE',
+        },
+      });
+      if (!basket) {
+        basket = await this.prisma.basket.create({
+          data: {
+            session_id: sessionId,
+          },
+        });
+      }
+    }
+
+    const pkg = await this.prisma.package.findUnique({
+      where: {
+        id: data.package_id,
+      },
+    });
+    if (!pkg) {
+      throw new NotFoundException('Пакет не найден!');
+    }
+
+    const existingItem = await this.prisma.basketItem.findFirst({
+      where: {
+        basket_id: basket.id,
+        package_id: data.package_id,
+      },
+    });
+
+    if (existingItem) {
+      await this.prisma.basketItem.update({
+        where: { id: existingItem.id },
+        data: {
+          quantity: existingItem.quantity + data.quantity,
+        },
+      });
+    } else {
+      await this.prisma.basketItem.create({
+        data: {
+          basket_id: basket.id,
+          package_id: data.package_id,
+          quantity: data.quantity,
+          price: '1',
+        },
+      });
+    }
+
+    const fullBasket = await this.prisma.basket.findUnique({
+      where: {
+        id: basket.id,
+      },
+      select: {
+        items: {
+          select: {
+            id: true,
+            package_id: true,
+            price: true,
+            quantity: true,
+            package: {
+              select: {
+                tariff: {
+                  select: {
+                    [`name_${lang}`]: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const total = fullBasket.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+
+    return {
+      basket_id: basket.id,
+      session_id: sessionId,
+      items: fullBasket.items.map((item) => ({
+        id: item.id,
+        package_id: item.package_id,
+        name: item?.package?.tariff?.[`name_${lang}`],
+        price: item.price,
+        quantity: item.quantity,
+        total: Number(item.price) * item.quantity,
+      })),
+      total,
+    };
+  }
+
+  async removeFromBasket(itemId: number, sessionId?: string, userId?: number) {
+    const basket = await this.prisma.basket.findFirst({
+      where: {
+        status: 'ACTIVE',
+        ...(userId ? { user_id: userId } : { session_id: sessionId }),
+      },
+    });
+
+    if (!basket) {
+      throw new Error('Basket not found');
+    }
+
+    await this.prisma.basketItem.delete({
+      where: {
+        id: itemId,
+        basket_id: basket.id,
+      },
+    });
+
+    return { success: true };
+  }
+
+  async decreaseQuantity(itemId: number, sessionId?: string, userId?: number) {
+    const basket = await this.prisma.basket.findFirst({
+      where: {
+        status: 'ACTIVE',
+        ...(userId ? { user_id: userId } : { session_id: sessionId }),
+      },
+    });
+
+    if (!basket) throw new Error('Basket not found');
+
+    const item = await this.prisma.basketItem.findFirst({
+      where: { id: itemId, basket_id: basket.id },
+    });
+
+    if (!item) throw new Error('Item not found');
+
+    if (item.quantity > 1) {
+      return this.prisma.basketItem.update({
+        where: { id: itemId },
+        data: { quantity: item.quantity - 1 },
+      });
+    } else {
+      return this.prisma.basketItem.delete({
+        where: { id: itemId },
+      });
+    }
   }
 
   update(id: number, updateOrderDto: UpdateOrderDto) {
