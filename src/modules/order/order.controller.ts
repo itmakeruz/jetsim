@@ -43,7 +43,7 @@ export class OrderController {
   @Post('esim')
   async create(@Body() createOrderDto: CreateOrderDto) {
     let user_id = 1;
-    return this.orderService.create(createOrderDto, user_id);
+    return this.orderService.create(user_id);
   }
 
   @ApiOperation({ summary: 'Add tariff to bascet public', description: 'Add tariff to bascet public' })

@@ -140,45 +140,38 @@ export class OrderService {
     };
   }
 
-  async create(data: CreateOrderDto, user_id: number = 1) {
-    const pck = await this.prisma.package.findUnique({
+  async create(user_id: number = 1) {
+    const basket = await this.prisma.basket.findFirst({
       where: {
-        id: data.package_id,
+        user_id: user_id,
       },
       select: {
         id: true,
-        status: true,
-        sku_id: true,
-        tariff: {
+        items: {
           select: {
             id: true,
-            partner_id: true,
+            package_id: true,
+            package: {
+              select: {
+                id: true,
+                status: true,
+                sku_id: true,
+                tariff: {
+                  select: {
+                    id: true,
+                    partner_id: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
     });
 
-    const partner_id = pck.tariff.partner_id;
-
-    if (!pck) {
-      throw new NotFoundException('Тариф не найден!');
+    if (!basket || basket?.items?.length === 0) {
+      throw new BadRequestException('Корзина пуста!');
     }
-
-    if (pck.status !== Status.ACTIVE) {
-      throw new ConflictException('Этот пакет неактивен!');
-    }
-
-    const newOrder = await this.prisma.order.create({
-      data: {
-        user_id: user_id,
-        package_id: data.package_id,
-        status: OrderStatus.CREATED,
-        partner_id: partner_id,
-      },
-      select: {
-        id: true,
-      },
-    });
 
     const user = await this.prisma.user.findUnique({
       where: {
@@ -192,25 +185,63 @@ export class OrderService {
       },
     });
 
-    let response: any;
-
-    if (partner_id === PartnerIds.JOYTEL) {
-      response = await this.joyTel.submitEsimOrder(user.name, user.email, user.email, pck.sku_id, 1, newOrder.id);
+    if (!user) {
+      throw new BadRequestException('Пользователь не найден или не верифицирован!');
     }
 
-    if (partner_id === PartnerIds.BILLION_CONNECT) {
-      const body = {
-        plan_id: newOrder.id,
-        email: user.email,
-        sku_id: pck.sku_id,
-        day: 1,
-      };
-      response = await this.billionConnect.orderSimcard(body);
+    const orders = [];
+    const responses = [];
+
+    for (const item of basket.items) {
+      if (item.package.status !== Status.ACTIVE) {
+        throw new ConflictException(`Пакет ${item.package.id} неактивен!`);
+      }
+
+      const partner_id = item.package.tariff.partner_id;
+
+      const newOrder = await this.prisma.order.create({
+        data: {
+          user_id,
+          package_id: item.package_id,
+          status: OrderStatus.CREATED,
+          partner_id,
+        },
+        select: { id: true },
+      });
+
+      let response: any;
+
+      if (partner_id === PartnerIds.JOYTEL) {
+        response = await this.joyTel.submitEsimOrder(
+          user.name,
+          user.email,
+          user.email,
+          item.package.sku_id,
+          1,
+          newOrder.id,
+        );
+      } else if (partner_id === PartnerIds.BILLION_CONNECT) {
+        const body = {
+          plan_id: newOrder.id,
+          email: user.email,
+          sku_id: item.package.sku_id,
+          day: 1,
+        };
+        response = await this.billionConnect.orderSimcard(body);
+      }
+
+      orders.push(newOrder);
+      responses.push({ order: newOrder, partnerResponse: response });
     }
+
+    await this.prisma.basketItem.deleteMany({
+      where: { basket_id: basket.id },
+    });
+
     return {
       status: HttpStatus.CREATED,
-      message: 'order created successfully!',
-      data: response,
+      message: 'Заказ оформлен успешно!',
+      data: responses,
     };
   }
 
