@@ -121,10 +121,13 @@ model Package {
   mb_count      Int?
   sku_id        String
   status        Status
+  cost          Int?
+  comission     Int?
 
-  tariff_id Int
-  tariff    Tariff  @relation(fields: [tariff_id], references: [id])
-  orders    Order[]
+  tariff_id   Int
+  tariff      Tariff       @relation(fields: [tariff_id], references: [id])
+  orders      Order[]
+  bascet_item BasketItem[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -205,34 +208,32 @@ model OrderJob {
 }
 
 model Basket {
-  id          Int    @id @default(autoincrement())
-  amount      String
-  status      Status
-  total_price String
-  user_id     Int
-  user        User   @relation(fields: [user_id], references: [id])
+  id         Int          @id @default(autoincrement()) // UUID foydalidir session uchun
+  user_id    Int? // optional, ro‘yxatdan o‘tmaganlar uchun null bo‘lishi mumkin
+  session_id String? // cookie orqali saqlanadigan identifikator
+  status     BasketStatus @default(ACTIVE) // ACTIVE, CHECKED_OUT, EXPIRED
 
-  basket_item BasketItem[]
+  items BasketItem[]
 
-  created_at DateTime  @default(now()) @db.Timestamptz(5)
-  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  created_at DateTime @default(now()) @db.Timestamptz(5)
+  updated_at DateTime @updatedAt @db.Timestamptz(5)
+  user       User?    @relation(fields: [user_id], references: [id])
 
   @@map("basket")
 }
 
 model BasketItem {
-  id         Int          @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   basket_id  Int
-  tariff_id  Int
-  sim_number String?
-  price      Float
-  status     BasketStatus
-  meta       Json?
+  package_id Int
+  quantity   Int    @default(1)
+  price      String
 
-  basket Basket @relation(fields: [basket_id], references: [id])
+  basket  Basket  @relation(fields: [basket_id], references: [id])
+  package Package @relation(fields: [package_id], references: [id])
 
-  created_at DateTime  @default(now()) @db.Timestamptz(5)
-  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  created_at DateTime @default(now()) @db.Timestamptz(5)
+  updated_at DateTime @updatedAt @db.Timestamptz(5)
 
   @@map("basket_item")
 }
@@ -258,6 +259,7 @@ enum BasketStatus {
   ORDERED
   ACTIVATED
   FAILED
+  ACTIVE
 }
 
 enum OrderStatus {

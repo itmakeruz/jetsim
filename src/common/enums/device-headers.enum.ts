@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ParameterObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
-import { IsEnum, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 enum Lang {
   ru = 'ru',
@@ -10,6 +10,11 @@ enum Lang {
 export class DeviceHeadersDto {
   @IsEnum(Lang)
   'lang': Lang;
+
+  // @ApiProperty({ type: String, required: false })
+  // @IsOptional()
+  // @IsString()
+  // 'x-session-id': string;
 }
 
 export const globalHeaderParametrs: ParameterObject[] = [
@@ -23,4 +28,12 @@ export const globalHeaderParametrs: ParameterObject[] = [
       default: 'ru',
     },
   },
+  // {
+  //   in: 'header',
+  //   name: 'x-session-id',
+  //   required: false,
+  //   schema: {
+  //     type: 'string',
+  //   },
+  // },
 ];

@@ -1,7 +1,14 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { CreateOrderDto, UpdateOrderDto, GetOrderDto } from './dto';
-import { ApiOperation } from '@nestjs/swagger';
+import {
+  CreateOrderDto,
+  UpdateOrderDto,
+  GetOrderDto,
+  AddToBasket,
+  RemoveFromBasketDto,
+  DecreaseQuantityDto,
+} from './dto';
+import { ApiHeader, ApiOperation } from '@nestjs/swagger';
 import { IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { DeviceHeadersDto } from '@enums';
@@ -36,7 +43,40 @@ export class OrderController {
   @Post('esim')
   async create(@Body() createOrderDto: CreateOrderDto) {
     let user_id = 1;
-    return this.orderService.create(createOrderDto, user_id);
+    return this.orderService.create(user_id);
+  }
+
+  @ApiOperation({ summary: 'Add tariff to basket public', description: 'Add tariff to basket public' })
+  @ApiHeader({ name: 'x-session-id' })
+  @Post('add-to-basket')
+  async addTobascet(
+    @Body() data: AddToBasket,
+    @HeadersValidation() headers: DeviceHeadersDto,
+    @Req() request: IRequest,
+  ) {
+    return this.orderService.addToBascet(data, headers?.['x-session-id'], request?.user?.id, headers.lang);
+  }
+
+  @ApiOperation({ summary: 'remove item from basket public', description: 'remove item from basket public' })
+  @ApiHeader({ name: 'x-session-id' })
+  @Post('remove-item-from-basket')
+  async removeFromBascet(
+    @Body() data: RemoveFromBasketDto,
+    @HeadersValidation() headers: DeviceHeadersDto,
+    @Req() request: IRequest,
+  ) {
+    return this.orderService.removeFromBasket(data.packeage_id, headers?.['x-session-id'], request?.user?.id);
+  }
+
+  @ApiOperation({ summary: 'decrease item from basket public', description: 'decrease item from basket public' })
+  @ApiHeader({ name: 'x-session-id' })
+  @Post('decrease-item-from-basket')
+  async decreaseQuantity(
+    @Body() data: DecreaseQuantityDto,
+    @HeadersValidation() headers: DeviceHeadersDto,
+    @Req() request: IRequest,
+  ) {
+    return this.orderService.decreaseQuantity(data.packeage_id, headers?.['x-session-id'], request?.user?.id);
   }
 
   @Patch(':id')
