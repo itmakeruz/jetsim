@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsNumber, isNumber } from 'class-validator';
 
-export class RemoveFromBascetDto {
+export class RemoveFromBasketDto {
   @ApiProperty({ type: Number, required: true, example: 1 })
   @IsNumber()
   @IsNotEmpty()

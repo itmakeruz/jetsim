@@ -11,10 +11,10 @@ export class DeviceHeadersDto {
   @IsEnum(Lang)
   'lang': Lang;
 
-  @ApiProperty({ type: String, required: false })
-  @IsOptional()
-  @IsString()
-  'x-session-id': string;
+  // @ApiProperty({ type: String, required: false })
+  // @IsOptional()
+  // @IsString()
+  // 'x-session-id': string;
 }
 
 export const globalHeaderParametrs: ParameterObject[] = [
@@ -28,12 +28,12 @@ export const globalHeaderParametrs: ParameterObject[] = [
       default: 'ru',
     },
   },
-  {
-    in: 'header',
-    name: 'x-session-id',
-    required: false,
-    schema: {
-      type: 'string',
-    },
-  },
+  // {
+  //   in: 'header',
+  //   name: 'x-session-id',
+  //   required: false,
+  //   schema: {
+  //     type: 'string',
+  //   },
+  // },
 ];

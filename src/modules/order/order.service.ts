@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateOrderDto, UpdateOrderDto, GetOrderDto, AddToBascet } from './dto';
+import { CreateOrderDto, UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
 import { PrismaService } from '@prisma';
 import { OrderStatus, Status } from '@prisma/client';
 import { BillionConnect, JoyTel } from '@http';
@@ -245,7 +245,7 @@ export class OrderService {
     };
   }
 
-  async addToBascet(data: AddToBascet, sessionId: string, userId: number, lang: string) {
+  async addToBascet(data: AddToBasket, sessionId: string, userId: number, lang: string) {
     let basket;
     if (userId) {
       basket = await this.prisma.basket.findFirst({

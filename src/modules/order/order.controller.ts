@@ -4,11 +4,11 @@ import {
   CreateOrderDto,
   UpdateOrderDto,
   GetOrderDto,
-  AddToBascet,
-  RemoveFromBascetDto,
+  AddToBasket,
+  RemoveFromBasketDto,
   DecreaseQuantityDto,
 } from './dto';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiHeader, ApiOperation } from '@nestjs/swagger';
 import { IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { DeviceHeadersDto } from '@enums';
@@ -46,28 +46,31 @@ export class OrderController {
     return this.orderService.create(user_id);
   }
 
-  @ApiOperation({ summary: 'Add tariff to bascet public', description: 'Add tariff to bascet public' })
-  @Post('add-to-bascet')
+  @ApiOperation({ summary: 'Add tariff to basket public', description: 'Add tariff to basket public' })
+  @ApiHeader({ name: 'x-session-id' })
+  @Post('add-to-basket')
   async addTobascet(
-    @Body() data: AddToBascet,
+    @Body() data: AddToBasket,
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
     return this.orderService.addToBascet(data, headers?.['x-session-id'], request?.user?.id, headers.lang);
   }
 
-  @ApiOperation({ summary: 'remove item from bascet public', description: 'remove item from bascet public' })
-  @Post('remove-item-from-bascet')
+  @ApiOperation({ summary: 'remove item from basket public', description: 'remove item from basket public' })
+  @ApiHeader({ name: 'x-session-id' })
+  @Post('remove-item-from-basket')
   async removeFromBascet(
-    @Body() data: RemoveFromBascetDto,
+    @Body() data: RemoveFromBasketDto,
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
     return this.orderService.removeFromBasket(data.packeage_id, headers?.['x-session-id'], request?.user?.id);
   }
 
-  @ApiOperation({ summary: 'decrease item from bascet public', description: 'decrease item from bascet public' })
-  @Post('decrease-item-from-bascet')
+  @ApiOperation({ summary: 'decrease item from basket public', description: 'decrease item from basket public' })
+  @ApiHeader({ name: 'x-session-id' })
+  @Post('decrease-item-from-basket')
   async decreaseQuantity(
     @Body() data: DecreaseQuantityDto,
     @HeadersValidation() headers: DeviceHeadersDto,
