@@ -7,12 +7,15 @@ import { PartnerIds } from '@enums';
 import { paginate } from '@helpers';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateOrderResponseJoyTel, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
+import { GatewayGateway } from '../gateway';
+
 @Injectable()
 export class OrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly joyTel: JoyTel,
     private readonly billionConnect: BillionConnect,
+    private readonly socketGateway: GatewayGateway,
   ) {}
   async findAll(query: GetOrderDto) {
     const { data, ...meta } = await paginate('order', {
@@ -481,6 +484,8 @@ export class OrderService {
         puk_2: data.data.puk2,
       },
     });
+
+    await this.socketGateway.sendOrderMessage(order.user_id, order.id);
 
     return {
       code: '000',

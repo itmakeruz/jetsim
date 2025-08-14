@@ -3,6 +3,7 @@ import { OrderService } from './order.service';
 import { OrderController } from './order.controller';
 import { PrismaModule } from '@prisma';
 import { HttpModule, JoyTel, BillionConnect } from '@http';
+import { GatewayGateway, GatewayModule } from '@modules';
 
 @Module({
   imports: [PrismaModule, HttpModule],

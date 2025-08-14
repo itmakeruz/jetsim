@@ -8,6 +8,6 @@ import { JwtStrategy } from '@strategy';
   imports: [],
   controllers: [],
   providers: [GatewayGateway, GatewayService, JwtStrategy],
-  exports: [GatewayService],
+  exports: [GatewayService, GatewayGateway],
 })
 export class GatewayModule {}
