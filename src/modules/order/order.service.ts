@@ -6,6 +6,7 @@ import { BillionConnect, JoyTel } from '@http';
 import { PartnerIds } from '@enums';
 import { paginate } from '@helpers';
 import { v4 as uuidv4 } from 'uuid';
+import { CreateOrderResponseJoyTel, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
 @Injectable()
 export class OrderService {
   constructor(
@@ -209,17 +210,25 @@ export class OrderService {
         select: { id: true },
       });
 
-      let response: any;
+      let response: CreateOrderResponseJoyTel;
 
       if (partner_id === PartnerIds.JOYTEL) {
         response = await this.joyTel.submitEsimOrder(
+          newOrder.id,
           user.name,
           user.email,
           user.email,
           item.package.sku_id,
           1,
-          newOrder.id,
         );
+
+        // await this.prisma.orderJob.create({
+        //   data: {
+        //     order_id: newOrder.id,
+        //     order_tid: response.data.orderTid,
+        //     order_code: response.data.orderCode,
+        //   },
+        // });
       } else if (partner_id === PartnerIds.BILLION_CONNECT) {
         const body = {
           plan_id: newOrder.id,
@@ -403,6 +412,83 @@ export class OrderService {
         where: { id: itemId },
       });
     }
+  }
+
+  async redeemCoupon(data: JoyTelCallbackResponse) {
+    const productCode = data?.itemList?.find((el) => el.productCode)?.productCode || '';
+
+    const order = await this.prisma.order.findFirst({
+      where: {
+        order_code: productCode,
+      },
+    });
+
+    if (!order) {
+      throw new BadRequestException('Order not found');
+    }
+
+    const snList = data.itemList?.map((el) => el.snList?.[0]).filter((sn) => sn !== undefined) || [];
+
+    if (snList.length === 0) {
+      throw new BadRequestException('No valid SN data found');
+    }
+
+    const firstSn = snList[0];
+
+    await this.prisma.order.update({
+      where: {
+        id: order.id,
+      },
+      data: {
+        sn_code: firstSn.snCode,
+        sn_pin: firstSn.snPin,
+      },
+    });
+
+    return {
+      code: '000',
+      mesg: 'Success',
+    };
+  }
+
+  async notifyCoupon(data: NotifyResponseJoyTel) {
+    const order = await this.prisma.order.findFirst({
+      where: {
+        sn_pin: data.data.coupon,
+      },
+    });
+
+    if (!order) {
+      throw new BadRequestException('order not found!');
+    }
+
+    await this.prisma.order.update({
+      where: {
+        id: order.id,
+      },
+      data: {
+        coupon: data.data.coupon,
+        qrcodeType: data.data.qrcodeType,
+        cid: data.data.cid,
+        sale_plan_name: data.data.salePlanName,
+        sale_plan_days: data.data.salePlanDays,
+        pin_1: data.data.pin1,
+        pin_2: data.data.pin2,
+        puk_1: data.data.puk1,
+        puk_2: data.data.puk2,
+      },
+    });
+
+    await this.prisma.orderJob.create({
+      data: {
+        order_id: order.id,
+      },
+    });
+
+    return {
+      code: '000',
+      mesg: 'Success',
+    };
   }
 
   update(id: number, updateOrderDto: UpdateOrderDto) {

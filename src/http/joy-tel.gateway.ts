@@ -34,12 +34,12 @@ export class JoyTel extends HttpService {
   }
 
   async submitEsimOrder(
+    orderId: number,
     receiverName: string,
     phoneNumber: string,
     email: string,
     productCode: string,
-    quantity: number,
-    orderId: number,
+    quantity?: number,
   ) {
     // try {
     const url = this.orderUrl;
@@ -47,32 +47,24 @@ export class JoyTel extends HttpService {
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
 
     const plainStr =
-      this.customerCode +
-      this.customerAuth +
-      '3' +
-      orderTid +
-      receiverName +
-      phoneNumber +
-      timestamp +
-      productCode +
-      quantity;
+      this.customerCode + this.customerAuth + '3' + orderTid + receiverName + phoneNumber + timestamp + productCode + 1;
 
     const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
 
     const body = {
       customerCode: this.customerCode,
-      orderTid: orderTid,
+      type: 3,
       receiveName: receiverName,
       phone: phoneNumber,
-      email: email,
-      autoGraph: autoGraph,
-      type: 3,
-      replyType: 1,
       timestamp: this.generateTimeStamp(),
+      orderTid: orderTid,
+      autoGraph: autoGraph,
+      email: email,
+      replyType: 1,
       itemList: [
         {
           productCode: productCode,
-          quantity: quantity,
+          quantity: 1,
         },
       ],
     };
@@ -90,6 +82,8 @@ export class JoyTel extends HttpService {
     //   throw new InternalServerErrorException();
     // }
   }
+
+  async getTransactionStatus() {}
 
   // HELPERS
   generateCiphertext(transaction_id: string): string {

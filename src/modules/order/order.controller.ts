@@ -8,8 +8,8 @@ import {
   RemoveFromBasketDto,
   DecreaseQuantityDto,
 } from './dto';
-import { ApiHeader, ApiOperation } from '@nestjs/swagger';
-import { IRequest } from '@interfaces';
+import { ApiBody, ApiHeader, ApiOperation } from '@nestjs/swagger';
+import { IRequest, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { DeviceHeadersDto } from '@enums';
 
@@ -41,7 +41,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'create order', description: 'create order' })
   @Post('esim')
-  async create(@Body() createOrderDto: CreateOrderDto) {
+  async create() {
     let user_id = 1;
     return this.orderService.create(user_id);
   }
@@ -77,6 +77,16 @@ export class OrderController {
     @Req() request: IRequest,
   ) {
     return this.orderService.decreaseQuantity(data.packeage_id, headers?.['x-session-id'], request?.user?.id);
+  }
+
+  @Post('esim/coupon/redeem')
+  async redeemCoupon(@Body() data: JoyTelCallbackResponse) {
+    return this.orderService.redeemCoupon(data);
+  }
+
+  @Post('notify/coupon/redeem')
+  async notifyCoupon(@Body() data: NotifyResponseJoyTel) {
+    return this.orderService.notifyCoupon(data);
   }
 
   @Patch(':id')

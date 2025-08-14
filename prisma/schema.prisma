@@ -176,17 +176,32 @@ model Partner {
 }
 
 model Order {
-  id         Int         @id @default(autoincrement())
-  status     OrderStatus
-  partner_id Int
-  user_id    Int
-  package_id Int
-  order_tid  String?
-  order_code String?
+  id                  Int         @id @default(autoincrement())
+  status              OrderStatus
+  partner_id          Int
+  user_id             Int
+  package_id          Int
+  order_tid           String?
+  order_code          String?
+  sn_code             String?
+  sn_pin              String?
+  product_expire_date String?
+  coupon              String?
+  qrcodeType          Int?
+  cid                 String?
+  sale_plan_name      String?
+  sale_plan_days      String?
+  pin_1               String?
+  pin_2               String?
+  puk_1               String?
+  puk_2               String?
 
   user    User    @relation(fields: [user_id], references: [id])
   partner Partner @relation(fields: [partner_id], references: [id])
   package Package @relation(fields: [package_id], references: [id])
+
+  request  Json?
+  response Json?
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -196,10 +211,8 @@ model Order {
 }
 
 model OrderJob {
-  id         Int     @id @default(autoincrement())
-  order_id   Int
-  order_tid  String?
-  order_code String?
+  id       Int @id @default(autoincrement())
+  order_id Int
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
