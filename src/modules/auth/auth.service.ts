@@ -1,15 +1,19 @@
 import { BadRequestException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '@prisma';
 import * as bcrypt from 'bcrypt';
-import { RegisterDto, DeviceFcmTokenUpdateDto } from './dto';
+import { RegisterDto, DeviceFcmTokenUpdateDto, LoginDto } from './dto';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
-  async validate(login: string) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
+  async validate(email: string) {
     const user = await this.prisma.user.findFirst({
       where: {
-        email: login,
+        email: email,
       },
       select: {
         id: true,
@@ -25,14 +29,14 @@ export class AuthService {
 
     return {
       id: user?.id,
-      login: user?.email,
+      email: user?.email,
       name: user?.name,
       password: user?.password,
     };
   }
 
-  async login(data: any) {
-    const user = await this.validate(data.login);
+  async login(data: LoginDto) {
+    const user = await this.validate(data.email);
 
     if (!user) {
       throw new NotFoundException('Логин неверный!');
@@ -43,6 +47,15 @@ export class AuthService {
     if (!isMatch) {
       throw new UnauthorizedException('Недействительные учетные данные!');
     }
+
+    const accessToken = this.jwtService.sign({
+      id: user?.id,
+      email: user?.email,
+    });
+
+    return {
+      access_token: accessToken,
+    };
   }
 
   async register(data: RegisterDto) {

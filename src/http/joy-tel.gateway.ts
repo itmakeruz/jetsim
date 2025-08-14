@@ -10,7 +10,6 @@ import {
 import * as crypto from 'crypto';
 import { JOYTEL_RESPONSE_ERRORS } from '@constants';
 import { InternalServerErrorException } from '@nestjs/common';
-import { JoyTelEsimOrderResponse } from '@interfaces';
 
 export class JoyTel extends HttpService {
   private baseUrl = JOYTEL_URL;
@@ -35,12 +34,12 @@ export class JoyTel extends HttpService {
   }
 
   async submitEsimOrder(
+    orderId: number,
     receiverName: string,
     phoneNumber: string,
     email: string,
     productCode: string,
-    quantity: number,
-    orderId: number,
+    quantity?: number,
   ) {
     // try {
     const url = this.orderUrl;
@@ -48,32 +47,24 @@ export class JoyTel extends HttpService {
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
 
     const plainStr =
-      this.customerCode +
-      this.customerAuth +
-      '3' +
-      orderTid +
-      receiverName +
-      phoneNumber +
-      timestamp +
-      productCode +
-      quantity;
+      this.customerCode + this.customerAuth + '3' + orderTid + receiverName + phoneNumber + timestamp + productCode + 1;
 
     const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
 
     const body = {
       customerCode: this.customerCode,
-      orderTid: orderTid,
+      type: 3,
       receiveName: receiverName,
       phone: phoneNumber,
-      email: email,
-      autoGraph: autoGraph,
-      type: 3,
-      replyType: 1,
       timestamp: this.generateTimeStamp(),
+      orderTid: orderTid,
+      autoGraph: autoGraph,
+      email: email,
+      replyType: 1,
       itemList: [
         {
           productCode: productCode,
-          quantity: quantity,
+          quantity: 1,
         },
       ],
     };
@@ -84,7 +75,7 @@ export class JoyTel extends HttpService {
     };
 
     const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
-    return response.data as JoyTelEsimOrderResponse;
+    return response.data;
     // } catch (error) {
     //   console.log(error);
 
@@ -92,24 +83,15 @@ export class JoyTel extends HttpService {
     // }
   }
 
-  async checkStatus(orderTid: string) {
-    const url = 'https://api.joytelshop.com/customerApi/customerOrder/query';
-    const ciphertext: string = this.generateCiphertext(orderTid);
-    const headers = this.generateHeaders(orderTid, ciphertext);
-    const timestamp = this.generateTimeStamp();
-    const plainStr = this.customerCode + this.customerAuth + '3' + orderTid + timestamp;
+  async getTransactionStatus() {}
 
-    const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
-
+  async orderQrCode(coupon: string) {
     const body = {
-      customerCode: this.customerCode,
-      timestamp: this.generateTimeStamp(),
-      autoGraph: autoGraph,
-      orderCode: orderTid,
+      coupon: coupon,
+      qrcodeType: 0,
     };
 
-    const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
-    return response.data as JoyTelEsimOrderResponse;
+    return await this.setUrl('https://api.joytel.vip/openapi/coupon/redeem').setBody(body).send();
   }
 
   // HELPERS
@@ -120,9 +102,12 @@ export class JoyTel extends HttpService {
       .digest('hex');
   }
 
-  generateAutoGraph(autoGraph: string) {
-    return crypto.createHash('sha1').update(autoGraph).digest('hex');
-  }
+  // getError(): any {
+  //   if (this.response?.error?.data) {
+  //     return this.response?.error?.data || this?.errorUnknown;
+  //   }
+  //   return this.response?.error?.message || this?.errorUnknown;
+  // }
 
   generateHeaders(transaction_id: string, ciphertext: string) {
     return {

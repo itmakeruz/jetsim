@@ -49,12 +49,10 @@ export class BillionConnect extends HttpService {
         channelOrderId: planId,
         email: body.email,
         orderCreateTime: this.generateDate(),
-        totalAmount: '128',
-        userId: '123',
         language: 2,
         subOrderList: [
           {
-            channelSubOrderId: planId,
+            channelSubOrderId: planId, //anigini so'rash kerak bo'ladi
             deviceSkuId: body.sku_id,
             planSkuCopies: body.day || 1,
             number: '1',

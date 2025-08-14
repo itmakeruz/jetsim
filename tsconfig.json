@@ -30,6 +30,7 @@
       "@exceptions": ["./src/common/exceptions"],
       "@middlewares": ["./src/common/middleweares"],
       "@interceptors": ["./src/common/interceptors"],
+      "@strategy": ["./src/common/strategy"],
       "@pipes": ["./src/common/pipes"],
       "@http": ["./src/http"],
       "@modules": ["./src/modules"]

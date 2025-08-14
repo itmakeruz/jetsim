@@ -13,4 +13,3 @@ export class ConfirmEmailDto {
   @IsNumber()
   confirm_code: number;
 }
-1;

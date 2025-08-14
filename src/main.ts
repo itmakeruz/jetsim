@@ -37,7 +37,7 @@ async function bootstrap() {
       }),
     );
 
-  app.useGlobalFilters(new AllExceptionFilter());
+  // app.useGlobalFilters(new AllExceptionFilter());
 
   app.use(
     '/docs',
@@ -51,8 +51,8 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Happy Tel API')
-    .setDescription('The Happy Tel API description')
+    .setTitle('Jetsim API')
+    .setDescription('The Jetsim API description')
     .setVersion('1.0')
     .addBearerAuth({
       type: 'http',

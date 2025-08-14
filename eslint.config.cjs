@@ -1,7 +1,7 @@
 // eslint.config.js
-const prettierPlugin = require('eslint-plugin-prettier')
-const typescriptPlugin = require('@typescript-eslint/eslint-plugin')
-const typescriptParser = require('@typescript-eslint/parser')
+const prettierPlugin = require('eslint-plugin-prettier');
+const typescriptPlugin = require('@typescript-eslint/eslint-plugin');
+const typescriptParser = require('@typescript-eslint/parser');
 
 module.exports = [
   {
@@ -32,10 +32,10 @@ module.exports = [
       '@typescript-eslint': typescriptPlugin,
     },
     rules: {
-      'semi': 'true',
+      'semi': ['error', 'always'],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
       'prettier/prettier': 'error',
     },
   },
-]
+];
