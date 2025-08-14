@@ -85,6 +85,15 @@ export class JoyTel extends HttpService {
 
   async getTransactionStatus() {}
 
+  async orderQrCode(coupon: string) {
+    const body = {
+      coupon: coupon,
+      qrcodeType: 0,
+    };
+
+    return await this.setUrl('https://api.joytel.vip/openapi/coupon/redeem').setBody(body).send();
+  }
+
   // HELPERS
   generateCiphertext(transaction_id: string): string {
     return crypto
@@ -92,6 +101,13 @@ export class JoyTel extends HttpService {
       .update(this.appId + transaction_id + this.generateTimeStamp() + this.appSecret)
       .digest('hex');
   }
+
+  // getError(): any {
+  //   if (this.response?.error?.data) {
+  //     return this.response?.error?.data || this?.errorUnknown;
+  //   }
+  //   return this.response?.error?.message || this?.errorUnknown;
+  // }
 
   generateHeaders(transaction_id: string, ciphertext: string) {
     return {

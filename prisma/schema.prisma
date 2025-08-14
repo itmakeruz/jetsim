@@ -188,6 +188,7 @@ model Order {
   product_expire_date String?
   coupon              String?
   qrcodeType          Int?
+  qrcode              String?
   cid                 String?
   sale_plan_name      String?
   sale_plan_days      String?

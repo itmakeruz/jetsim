@@ -445,6 +445,8 @@ export class OrderService {
       },
     });
 
+    await this.joyTel.orderQrCode(firstSn.snCode);
+
     return {
       code: '000',
       mesg: 'Success',
@@ -469,6 +471,7 @@ export class OrderService {
       data: {
         coupon: data.data.coupon,
         qrcodeType: data.data.qrcodeType,
+        qrcode: data.data.qrcode,
         cid: data.data.cid,
         sale_plan_name: data.data.salePlanName,
         sale_plan_days: data.data.salePlanDays,
@@ -476,12 +479,6 @@ export class OrderService {
         pin_2: data.data.pin2,
         puk_1: data.data.puk1,
         puk_2: data.data.puk2,
-      },
-    });
-
-    await this.prisma.orderJob.create({
-      data: {
-        order_id: order.id,
       },
     });
 

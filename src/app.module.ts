@@ -13,6 +13,8 @@ import {
   JobsModule,
   OrderModule,
 } from '@modules';
+import { GatewayModule } from './modules/gateway/gateway.module';
+import { PaymentModule } from './modules/payment/payment.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -28,6 +30,8 @@ import {
     PackageModule,
     OrderModule,
     JobsModule,
+    GatewayModule,
+    PaymentModule,
   ],
   controllers: [],
   providers: [WinstonLoggerService, LoggingInterceptor],
