@@ -12,9 +12,9 @@ import {
   PackageModule,
   JobsModule,
   OrderModule,
+  GatewayModule,
 } from '@modules';
-import { GatewayModule } from './modules/gateway/gateway.module';
-import { PaymentModule } from './modules/payment/payment.module';
+// import { PaymentModule } from './modules/payment/payment.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,7 +31,7 @@ import { PaymentModule } from './modules/payment/payment.module';
     OrderModule,
     JobsModule,
     GatewayModule,
-    PaymentModule,
+    // PaymentModule,
   ],
   controllers: [],
   providers: [WinstonLoggerService, LoggingInterceptor],
