@@ -7,3 +7,4 @@ export * from './region';
 export * from './prisma';
 export * from './package';
 export * from './gateway';
+export * from './partner';
