@@ -40,6 +40,8 @@ export class OrderController {
     return this.orderService.findOne(+id);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'create order', description: 'create order' })
   @Post('esim')
   async create(@Req() request: IRequest) {
@@ -56,7 +58,7 @@ export class OrderController {
     @Req() request: IRequest,
   ) {
     console.log(request?.user);
-  
+
     return this.orderService.addToBascet(data, headers?.['x-session-id'], request?.user?.id, headers.lang);
   }
 
