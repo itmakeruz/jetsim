@@ -47,7 +47,7 @@ export class JoyTel extends HttpService {
 
     const itemList = [{ productCode, quantity }];
 
-    const warehouse = ''; // yoki "上海仓库"
+    const warehouse = '上海仓库'; // yoki "上海仓库"
     let plainStr =
       this.customerCode + this.customerAuth + warehouse + 3 + orderTid + receiverName + phoneNumber + timestamp;
 
