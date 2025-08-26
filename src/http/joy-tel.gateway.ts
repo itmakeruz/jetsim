@@ -39,66 +39,57 @@ export class JoyTel extends HttpService {
     phoneNumber: string,
     email: string,
     productCode: string,
-    quantity: number = 1,
+    quantity?: number,
   ) {
+    // try {
     const url = this.orderUrl;
-    const timestamp = Date.now();
+    const timestamp = Number(Date.now());
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
+    const itemList = [
+      {
+        productCode: productCode,
+        quantity: 1,
+      },
+    ];
 
-    const itemList = [{ productCode, quantity }];
-    const warehouse = '上海仓库';
-
-    // 🔑 SHA-1 plain string
-    let plainStr =
+    const plainStr =
       this.customerCode +
       this.customerAuth +
-      warehouse +
+      '上海仓库' +
       3 +
       orderTid +
       receiverName +
       phoneNumber +
       timestamp +
-      email + // sinab ko‘rish mumkin
-      'test';
+      itemList;
 
-    for (const item of itemList) {
-      plainStr += item.productCode + item.quantity;
-    }
+    const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
 
-    const autoGraph = crypto
-      .createHash('sha1')
-      .update(plainStr, 'utf8') // 🔑 qo‘shildi
-      .digest('hex');
-
-    // 🔑 body ichida orderTid + warehouse bo‘lishi shart
     const body = {
       customerCode: this.customerCode,
       type: 3,
-      warehouse,
-      orderTid, // plainStrda bu receiveName'dan oldin edi
       receiveName: receiverName,
       phone: phoneNumber,
-      timestamp,
-      autoGraph,
-      email,
-      remark: 'test',
+      timestamp: timestamp,
+      orderTid: orderTid,
+      autoGraph: autoGraph,
+      email: email,
       replyType: 1,
-      itemList,
+      itemList: itemList,
     };
-
-    console.log('JoyTel order body:', body);
 
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
 
-    console.log('Plain String:', plainStr);
-    console.log('SHA1 AutoGraph:', autoGraph);
-    console.log('Body JSON:', JSON.stringify(body));
-
     const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
     return response.data;
+    // } catch (error) {
+    //   console.log(error);
+
+    //   throw new InternalServerErrorException();
+    // }
   }
 
   async getTransactionStatus() {}
