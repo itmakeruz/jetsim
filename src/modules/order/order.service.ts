@@ -222,8 +222,6 @@ export class OrderService {
       // productCode: string,
       // quantity: number = 1,
       if (partner_id === PartnerIds.JOYTEL) {
-        console.log(user);
-
         response = await this.joyTel.submitEsimOrder(
           newOrder.id,
           'Alibek',
@@ -232,6 +230,7 @@ export class OrderService {
           item.package.sku_id,
           1,
         );
+        console.log(response);
 
         // await this.prisma.orderJob.create({
         //   data: {

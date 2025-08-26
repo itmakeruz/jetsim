@@ -42,18 +42,20 @@ export class JoyTel extends HttpService {
     productCode: string,
     quantity: number = 1,
   ) {
+    console.log('man keldim');
+
     // try {
     const url = this.orderUrl;
     const timestamp = Number(Date.now());
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
+
+    console.log('salam');
     const itemList = [
       {
         productCode: productCode,
         quantity: 1,
       },
     ];
-    console.log('salam');
-
     const plainStr =
       this.customerCode +
       this.customerAuth +
