@@ -66,7 +66,7 @@ export class BillionConnect extends HttpService {
 
   async generateHeaders(data: any) {
     return {
-      // 'Content-Type': 'application/json;charset=UTF-8',
+      'Content-Type': 'application/json;charset=UTF-8',
       'x-channel-id': this.appKey,
       'x-sign-method': 'md5',
       'x-sign-value': this.generateSign(data),
