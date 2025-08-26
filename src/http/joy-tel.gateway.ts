@@ -56,17 +56,20 @@ export class JoyTel extends HttpService {
       plainStr += item.productCode + item.quantity;
     }
 
-    const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
+    const autoGraph = crypto
+      .createHash('sha1')
+      .update(plainStr, 'utf8') // 🔑 qo‘shildi
+      .digest('hex');
 
     // 🔑 body ichida orderTid + warehouse bo‘lishi shart
     const body = {
       customerCode: this.customerCode,
       type: 3,
       warehouse,
+      orderTid, // plainStrda bu receiveName'dan oldin edi
       receiveName: receiverName,
       phone: phoneNumber,
       timestamp,
-      orderTid, // 🔴 qo‘shildi
       autoGraph,
       email,
       remark: 'test',
