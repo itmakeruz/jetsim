@@ -46,8 +46,9 @@ export class JoyTel extends HttpService {
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
 
     const itemList = [{ productCode, quantity }];
+    const warehouse = '上海仓库';
 
-    const warehouse = '上海仓库'; // yoki "上海仓库"
+    // 🔑 SHA-1 plain string
     let plainStr =
       this.customerCode + this.customerAuth + warehouse + 3 + orderTid + receiverName + phoneNumber + timestamp;
 
@@ -57,16 +58,19 @@ export class JoyTel extends HttpService {
 
     const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
 
+    // 🔑 body ichida orderTid + warehouse bo‘lishi shart
     const body = {
       customerCode: this.customerCode,
       type: 3,
+      warehouse,
       receiveName: receiverName,
       phone: phoneNumber,
       timestamp,
+      orderTid, // 🔴 qo‘shildi
       autoGraph,
+      email,
       remark: 'test',
-      // email,
-      replyType: 1, // serverga snPin qaytaradi
+      replyType: 1,
       itemList,
     };
 
