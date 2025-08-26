@@ -57,7 +57,7 @@ export class HttpService {
       };
 
       const res = await axios(config);
-      console.log(res, 'responsman men');
+      console.log(res.data, 'responsman men');
 
       if (this.isLog) {
         Logger.log({
