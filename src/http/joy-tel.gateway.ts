@@ -63,9 +63,9 @@ export class JoyTel extends HttpService {
       receiveName: receiverName,
       phone: phoneNumber,
       timestamp,
-      orderTid,
       autoGraph,
-      email,
+      remark: 'test',
+      // email,
       replyType: 1, // serverga snPin qaytaradi
       itemList,
     };
