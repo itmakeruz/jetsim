@@ -50,7 +50,16 @@ export class JoyTel extends HttpService {
 
     // 🔑 SHA-1 plain string
     let plainStr =
-      this.customerCode + this.customerAuth + warehouse + 3 + orderTid + receiverName + phoneNumber + timestamp;
+      this.customerCode +
+      this.customerAuth +
+      warehouse +
+      3 +
+      orderTid +
+      receiverName +
+      phoneNumber +
+      timestamp +
+      email + // sinab ko‘rish mumkin
+      'test';
 
     for (const item of itemList) {
       plainStr += item.productCode + item.quantity;
@@ -83,6 +92,10 @@ export class JoyTel extends HttpService {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
+
+    console.log('Plain String:', plainStr);
+    console.log('SHA1 AutoGraph:', autoGraph);
+    console.log('Body JSON:', JSON.stringify(body));
 
     const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
     return response.data;
