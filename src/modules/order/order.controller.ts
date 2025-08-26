@@ -79,7 +79,7 @@ export class OrderController {
     return this.orderService.decreaseQuantity(data.packeage_id, headers?.['x-session-id'], request?.user?.id);
   }
 
-  @Post('esim/coupon/redeem')
+  @Post('joytel/callback')
   async redeemCoupon(@Body() data: JoyTelCallbackResponse) {
     return this.orderService.redeemCoupon(data);
   }

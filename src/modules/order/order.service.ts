@@ -172,6 +172,7 @@ export class OrderService {
         },
       },
     });
+    console.log(basket);
 
     if (!basket || basket?.items?.length === 0) {
       throw new BadRequestException('Корзина пуста!');
