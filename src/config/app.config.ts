@@ -16,7 +16,7 @@ const JWT_REFRESH_EXPIRE_TIME = config.get<string>('JWT_REFRESH_EXPIRE_TIME') ??
 const JOYTEL_URL = config.get<string>('JOYTEL_URL') ?? '';
 const JOYTEL_APP_ID = config.get<string>('JOYTEL_APP_ID') ?? '';
 const JOYTEL_APP_SECRET = config.get<string>('JOYTEL_APP_SECRET') ?? '';
-const JOYTEL_CUSTOMER_CODE = config.get<string>('JOYTEL_CUSTOMER_ID') ?? '';
+const JOYTEL_CUSTOMER_CODE = config.get<string>('JOYTEL_CUSTOMER_CODE') ?? '';
 const JOYTEL_CUSTOMER_AUTH = config.get<string>('JOYTEL_CUSTOMER_AUTH') ?? '';
 const JOY_TEL_ORDER_URL = config.get<string>('JOY_TEL_ORDER_URL') ?? '';
 
