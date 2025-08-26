@@ -41,67 +41,71 @@ export class JoyTel extends HttpService {
     productCode: string,
     quantity: number = 1,
   ) {
+    const url = this.orderUrl;
+    const timestamp = Date.now();
+    const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
+
+    const warehouse = ''; // default bo‘lsa bo‘sh string
+    const type = 3;
+
+    const itemList = [
+      {
+        productCode,
+        quantity,
+      },
+    ];
+
+    // plain string to hash
+    const plainStr =
+      this.customerCode +
+      this.customerAuth +
+      warehouse +
+      type +
+      orderTid +
+      receiverName +
+      phoneNumber +
+      timestamp +
+      itemList.map((i) => i.productCode + i.quantity).join('');
+
+    const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
+
+    const body = {
+      customerCode: this.customerCode,
+      type,
+      receiveName: receiverName,
+      phone: phoneNumber,
+      timestamp,
+      orderTid,
+      autoGraph,
+      email,
+      replyType: 1,
+      warehouse,
+      remark: '',
+      itemList,
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    // 🔥 DEBUG LOGS
+    console.log('JoyTel ORDER URL >>>', url);
+    console.log('plainStr >>>', plainStr);
+    console.log('autoGraph >>>', autoGraph);
+    console.log('body >>>', JSON.stringify(body));
+    console.log('headers >>>', headers);
+
     try {
-      const url = this.orderUrl;
-      const timestamp = Date.now();
-      const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
-
-      const warehouse = ''; // default bo‘lsa bo‘sh string
-      const type = 3;
-
-      // Item list
-      const itemList = [
-        {
-          productCode,
-          quantity,
-        },
-      ];
-
-      // Plain string for SHA1
-      const plainStr =
-        this.customerCode +
-        this.customerAuth +
-        warehouse +
-        type +
-        orderTid +
-        receiverName +
-        phoneNumber +
-        timestamp +
-        itemList.map((i) => i.productCode + i.quantity).join('');
-
-      const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
-
-      const body = {
-        customerCode: this.customerCode,
-        type,
-        receiveName: receiverName,
-        phone: phoneNumber,
-        timestamp,
-        orderTid,
-        autoGraph,
-        email,
-        replyType: 1,
-        warehouse, // bo‘sh string yuboriladi
-        remark: '',
-        itemList,
-      };
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
-
-      console.log('plainStr >>>', plainStr);
-      console.log('autoGraph >>>', autoGraph);
-      console.log('body >>>', JSON.stringify(body));
-
       const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
+      console.log('JoyTel RESPONSE >>>', response.data); // 🔥
       return response.data;
     } catch (error) {
-      console.error('JoyTel Order Error >>>', error?.response?.data || error.message);
+      console.error('JoyTel RAW ERROR >>>', error?.response?.data || error.message);
       throw new InternalServerErrorException('JoyTel order failed');
     }
   }
+
   async getTransactionStatus() {}
 
   async orderQrCode(coupon: string) {
