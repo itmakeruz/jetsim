@@ -15,4 +15,9 @@ export class UsersController {
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(+id);
   }
+
+  @Patch(':id')
+  async update(@Param('id') id: string) {
+    return this.usersService.changeStatus(+id);
+  }
 }

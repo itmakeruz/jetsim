@@ -27,4 +27,20 @@ export class UsersService {
     }
     return user;
   }
+
+  async changeStatus(id: number) {
+    const user = await this.prisma.user.update({
+      where: {
+        id: id,
+      },
+      data: {
+        is_verified: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return user;
+  }
 }
