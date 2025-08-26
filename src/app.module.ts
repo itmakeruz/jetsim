@@ -16,6 +16,7 @@ import {
   PartnerModule,
 } from '@modules';
 // import { PaymentModule } from './modules/payment/payment.module';
+import { UsersModule } from './modules/users/users.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -33,6 +34,7 @@ import {
     JobsModule,
     GatewayModule,
     PartnerModule,
+    UsersModule,
     // PaymentModule,
   ],
   controllers: [],

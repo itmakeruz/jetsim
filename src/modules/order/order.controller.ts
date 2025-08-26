@@ -72,7 +72,7 @@ export class OrderController {
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
-    return this.orderService.removeFromBasket(data.packeage_id, headers?.['x-session-id'], request?.user?.id);
+    return this.orderService.removeFromBasket(data.package_id, headers?.['x-session-id'], request?.user?.id);
   }
 
   @ApiOperation({ summary: 'decrease item from basket public', description: 'decrease item from basket public' })
@@ -84,7 +84,7 @@ export class OrderController {
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
-    return this.orderService.decreaseQuantity(data.packeage_id, headers?.['x-session-id'], request?.user?.id);
+    return this.orderService.decreaseQuantity(data.package_id, headers?.['x-session-id'], request?.user?.id);
   }
 
   @Post('joytel/callback')

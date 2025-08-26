@@ -5,12 +5,12 @@ export class RemoveFromBasketDto {
   @ApiProperty({ type: Number, required: true, example: 1 })
   @IsNumber()
   @IsNotEmpty()
-  packeage_id: number;
+  package_id: number;
 }
 
 export class DecreaseQuantityDto {
   @ApiProperty({ type: Number, required: true, example: 1 })
   @IsNumber()
   @IsNotEmpty()
-  packeage_id: number;
+  package_id: number;
 }
