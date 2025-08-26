@@ -57,6 +57,7 @@ export class HttpService {
       };
 
       const res = await axios(config);
+      console.log(res.data);
 
       if (this.isLog) {
         Logger.log({
