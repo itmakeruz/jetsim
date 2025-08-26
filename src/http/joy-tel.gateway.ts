@@ -40,7 +40,7 @@ export class JoyTel extends HttpService {
     phoneNumber: string,
     email: string,
     productCode: string,
-    quantity?: number,
+    quantity: number = 1,
   ) {
     // try {
     const url = this.orderUrl;
@@ -52,6 +52,7 @@ export class JoyTel extends HttpService {
         quantity: 1,
       },
     ];
+    console.log('salam');
 
     const plainStr =
       this.customerCode +
