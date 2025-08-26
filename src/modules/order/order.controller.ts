@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query, UseGuards } from '@nestjs/common';
 import { OrderService } from './order.service';
 import {
   CreateOrderDto,
@@ -8,10 +8,11 @@ import {
   RemoveFromBasketDto,
   DecreaseQuantityDto,
 } from './dto';
-import { ApiBody, ApiHeader, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiHeader, ApiOperation } from '@nestjs/swagger';
 import { IRequest, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { DeviceHeadersDto } from '@enums';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('order')
 export class OrderController {
@@ -40,14 +41,16 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'create order', description: 'create order' })
+  @ApiBearerAuth('access_token')
   @Post('esim')
-  async create() {
+  async create(@Req() request: IRequest) {
     let user_id = 1;
-    return this.orderService.create(user_id);
+    return this.orderService.create(request?.user?.id);
   }
 
   @ApiOperation({ summary: 'Add tariff to basket public', description: 'Add tariff to basket public' })
   @ApiHeader({ name: 'x-session-id' })
+  @ApiBearerAuth('access_token')
   @Post('add-to-basket')
   async addTobascet(
     @Body() data: AddToBasket,
@@ -59,6 +62,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'remove item from basket public', description: 'remove item from basket public' })
   @ApiHeader({ name: 'x-session-id' })
+  @ApiBearerAuth('access_token')
   @Post('remove-item-from-basket')
   async removeFromBascet(
     @Body() data: RemoveFromBasketDto,
@@ -70,6 +74,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'decrease item from basket public', description: 'decrease item from basket public' })
   @ApiHeader({ name: 'x-session-id' })
+  @ApiBearerAuth('access_token')
   @Post('decrease-item-from-basket')
   async decreaseQuantity(
     @Body() data: DecreaseQuantityDto,
