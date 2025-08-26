@@ -13,12 +13,18 @@ export class BillionConnect extends HttpService {
   }
 
   async prepareRequest(data: any) {
-    const headers = await this.generateHeaders(data);
+    const body = JSON.stringify(data); // majburiy
+    const headers = await this.generateHeaders(body); // sign body bo‘yicha
 
     try {
-      const response = await this.setUrl(this.baseURL).setHeaders(headers).setBody(JSON.stringify(data)).send();
+      const response = await this.setUrl(this.baseURL)
+        .setHeaders(headers)
+        .setBody(body) // object emas, string yuboriladi
+        .send();
       return response.data;
     } catch (error) {
+      console.error('Request body:', body);
+      console.error('Headers:', headers);
       throw new InternalServerErrorException(error.message);
     }
   }
