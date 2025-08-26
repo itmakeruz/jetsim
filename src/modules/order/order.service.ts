@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, HttpStatus, Injectable, NotFoun
 import { CreateOrderDto, UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
 import { PrismaService } from '@prisma';
 import { OrderStatus, Status } from '@prisma/client';
-import { BillionConnect, JoyTel } from '@http';
+import { BillionConnectService, JoyTel } from '@http';
 import { PartnerIds } from '@enums';
 import { paginate } from '@helpers';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,7 +14,7 @@ export class OrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly joyTel: JoyTel,
-    private readonly billionConnect: BillionConnect,
+    private readonly billionConnect: BillionConnectService,
     private readonly socketGateway: GatewayGateway,
   ) {}
   async findAll(query: GetOrderDto) {
@@ -235,13 +235,20 @@ export class OrderService {
         // });
       } else if (partner_id === PartnerIds.BILLION_CONNECT) {
         const body = {
-          plan_id: newOrder.id,
-          email: user.email,
-          sku_id: item.package.sku_id,
-          day: 1,
+          channelOrderId: newOrder.id.toString(), // Y - unikal bo'lishi shart
+          email: user.email || undefined, // N - agar email bo'lmasa yubormasa ham bo'ladi
+          subOrderList: [
+            {
+              channelSubOrderId: item.id.toString(), // Y - unikal sub-order id
+              deviceSkuId: item.package.sku_id, // Y - ESIM package/product id
+              planSkuCopies: '1', // Y - STRING qilib yuborish
+              number: '1', // Y - STRING (dok bo'yicha min 1, max 500)
+            },
+          ],
         };
-        response = await this.billionConnect.orderSimcard(body);
-        console.log(response);
+
+        const response = await this.billionConnect.createEsimOrder(body);
+        console.log('BillionConnect F040 response:', response);
       }
 
       orders.push(newOrder);

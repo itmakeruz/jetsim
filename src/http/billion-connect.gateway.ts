@@ -1,75 +1,130 @@
-import { HttpService } from './http.service';
-import { BILLION_CONNECT_URL, BILLION_CONNECT_APP_KEY, BILLION_CONNECT_APP_SECRET } from '@config';
-import { InternalServerErrorException } from '@nestjs/common';
+// src/integrations/billion-connect.service.ts
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
 
-export class BillionConnect extends HttpService {
-  private baseURL = BILLION_CONNECT_URL;
-  private appKey = BILLION_CONNECT_APP_KEY; // x-channel-id
-  private appSecret = BILLION_CONNECT_APP_SECRET; // sign uchun ishlatiladi
+interface SubOrderInput {
+  channelSubOrderId: string; // Y
+  deviceSkuId: string; // Y (ESIM product id)
+  planSkuCopies: string; // Y (STRING bo'lsin, masalan "1")
+  number: string; // Y (STRING: "1".."500")
+  deviceSkuPrice?: string; // N
+  discountAmount?: string; // N
+  rechargeableESIM?: '0' | '1'; // N
+}
+
+interface CreateEsimOrderInput {
+  channelOrderId: string; // Y (katalog bo'yicha unikal)
+  email?: string; // N
+  totalAmount?: string; // N
+  discountAmount?: string; // N
+  estimatedUseTime?: string; // N (YYYY-MM-DD)
+  orderCreateTime?: string; // N (YYYY-MM-DD HH:mm:ss)
+  comment?: string; // N
+  invoiceType?: '0' | '1'; // N
+  invoiceHead?: string; // N
+  invoiceContent?: string; // N
+  invoiceComment?: string; // N
+  userId?: string; // N
+  eid?: string; // N
+  imei?: string; // N
+  subOrderList: SubOrderInput[]; // Y
+}
+
+@Injectable()
+export class BillionConnectService {
+  private readonly baseURL = process.env.BILLION_CONNECT_URL as string;
+  private readonly appKey = process.env.BILLION_CONNECT_APP_KEY as string; // x-channel-id GA KETADI
+  private readonly appSecret = process.env.BILLION_CONNECT_APP_SECRET as string; // SIGN UCHUN
+  private readonly signMethod = (process.env.BILLION_CONNECT_SIGN_METHOD || 'md5').toLowerCase();
+  private readonly http: AxiosInstance;
 
   constructor() {
-    super();
+    this.http = axios.create({
+      baseURL: this.baseURL,
+      timeout: 15000,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
-  async prepareRequest(data: any) {
-    const body = JSON.stringify(data); // majburiy
-    const headers = await this.generateHeaders(body); // sign body bo‘yicha
+  /** F040: Create ESIM order */
+  async createEsimOrder(input: CreateEsimOrderInput) {
+    // Dokda ko‘rsatilgan formatlarga moslash
+    const tradeTime = this.formatDateTime(new Date());
+    const orderCreateTime = input.orderCreateTime || tradeTime;
 
-    try {
-      const response = await this.setUrl(this.baseURL)
-        .setHeaders(headers)
-        .setBody(body) // object emas, string yuboriladi
-        .send();
-      return response.data;
-    } catch (error) {
-      console.error('Request body:', body);
-      console.error('Headers:', headers);
-      throw new InternalServerErrorException(error.message);
-    }
-  }
+    // STRING bo‘lishi shart bo‘lgan maydonlarni kafolatlaymiz
+    const subOrderList = input.subOrderList.map((s) => ({
+      channelSubOrderId: String(s.channelSubOrderId),
+      deviceSkuId: String(s.deviceSkuId),
+      planSkuCopies: String(s.planSkuCopies),
+      number: String(s.number),
+      ...(s.deviceSkuPrice ? { deviceSkuPrice: String(s.deviceSkuPrice) } : {}),
+      ...(s.discountAmount ? { discountAmount: String(s.discountAmount) } : {}),
+      ...(s.rechargeableESIM ? { rechargeableESIM: s.rechargeableESIM } : {}),
+    }));
 
-  async orderSimcard(body: any) {
-    const data = {
+    // F040 body (dokdan ortiqcha field qo‘shmaslik ma’qul)
+    const payload = {
       tradeType: 'F040',
-      tradeTime: this.generateDate(),
+      tradeTime,
       tradeData: {
-        channelOrderId: body.order_id, // sizning asosiy order id
-        // email: body.email,
-        orderCreateTime: this.generateDate(),
-        subOrderList: [
-          {
-            channelSubOrderId: body.plan_id, // sizning sub-order id
-            deviceSkuId: body.sku_id,
-            planSkuCopies: String(body.day || 1),
-            number: String(body.quantity || 1),
-          },
-        ],
+        channelOrderId: String(input.channelOrderId),
+        ...(input.email ? { email: input.email } : {}),
+        ...(input.totalAmount ? { totalAmount: String(input.totalAmount) } : {}),
+        ...(input.discountAmount ? { discountAmount: String(input.discountAmount) } : {}),
+        ...(input.estimatedUseTime ? { estimatedUseTime: input.estimatedUseTime } : {}),
+        orderCreateTime,
+        ...(input.comment ? { comment: input.comment } : {}),
+        ...(input.invoiceType ? { invoiceType: input.invoiceType } : {}),
+        ...(input.invoiceHead ? { invoiceHead: input.invoiceHead } : {}),
+        ...(input.invoiceContent ? { invoiceContent: input.invoiceContent } : {}),
+        ...(input.invoiceComment ? { invoiceComment: input.invoiceComment } : {}),
+        ...(input.userId ? { userId: input.userId } : {}),
+        ...(input.eid ? { eid: input.eid } : {}),
+        ...(input.imei ? { imei: input.imei } : {}),
+        subOrderList,
       },
     };
 
-    return await this.prepareRequest(data);
-  }
+    // Imzo faqat BIR marta stringify qilingan JSON ustidan olinadi va xuddi shu JSON yuboriladi
+    const payloadJson = JSON.stringify(payload);
+    const sign = this.md5(this.appSecret + payloadJson);
 
-  // HELPERS
-
-  generateDate() {
-    return new Date().toISOString().slice(0, 19).replace('T', ' ');
-  }
-
-  generateSign(data: any) {
-    return crypto
-      .createHash('md5')
-      .update(this.appSecret + JSON.stringify(data))
-      .digest('hex');
-  }
-
-  async generateHeaders(data: any) {
-    return {
-      'Content-Type': 'application/json;charset=UTF-8',
+    const headers = {
       'x-channel-id': this.appKey,
-      'x-sign-method': 'md5',
-      'x-sign-value': this.generateSign(data),
+      'x-sign-method': this.signMethod, // 'md5'
+      'x-sign-value': sign,
     };
+
+    try {
+      const { data } = await this.http.post('', payloadJson, { headers });
+      // Kutilgan javob:
+      // { tradeCode: "1000", tradeMsg: "...", tradeData: { orderId, channelOrderId, subOrderList: [...] } }
+      return data;
+    } catch (err: any) {
+      // Tashxisga yordam berish uchun foydali ma’lumotlar
+      const status = err?.response?.status;
+      const resp = err?.response?.data;
+      const msg = `BillionConnect F040 failed${status ? ` [${status}]` : ''}: ${JSON.stringify(resp || err.message)}`;
+      throw new InternalServerErrorException(msg);
+    }
+  }
+
+  // --- helperlar ---
+  private md5(s: string) {
+    return crypto.createHash('md5').update(s, 'utf8').digest('hex');
+  }
+
+  /** YYYY-MM-DD HH:mm:ss (local time) */
+  private formatDateTime(d: Date) {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const MM = pad(d.getMonth() + 1);
+    const dd = pad(d.getDate());
+    const hh = pad(d.getHours());
+    const mm = pad(d.getMinutes());
+    const ss = pad(d.getSeconds());
+    return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
   }
 }
