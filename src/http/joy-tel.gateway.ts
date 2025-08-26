@@ -43,7 +43,7 @@ export class JoyTel extends HttpService {
   ) {
     // try {
     const url = this.orderUrl;
-    const timestamp = Date.now();
+    const timestamp = Number(Date.now());
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
 
     const plainStr =
