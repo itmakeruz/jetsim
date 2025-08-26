@@ -56,7 +56,7 @@ export class JoyTel extends HttpService {
       type: 3,
       receiveName: receiverName,
       phone: phoneNumber,
-      timestamp: this.generateTimeStamp(),
+      timestamp: timestamp,
       orderTid: orderTid,
       autoGraph: autoGraph,
       email: email,
