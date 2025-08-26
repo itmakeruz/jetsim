@@ -102,10 +102,8 @@ export class BillionConnectService {
       const { data } = await this.http.post('', payloadJson, { headers });
       // Kutilgan javob:
       // { tradeCode: "1000", tradeMsg: "...", tradeData: { orderId, channelOrderId, subOrderList: [...] } }
-
-      if (data?.tradeCode !== '1000') {
-        const msg = `BillionConnect F040 failed [${data?.tradeCode}]: ${data?.tradeMsg || 'no message'}`;
-        throw new InternalServerErrorException(msg);
+      if (!this.isSuccess(data)) {
+        throw new InternalServerErrorException(data?.tradeMsg);
       }
       return data;
     } catch (err: any) {
