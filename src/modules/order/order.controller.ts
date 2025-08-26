@@ -41,28 +41,27 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'create order', description: 'create order' })
-  @ApiBearerAuth('access_token')
   @Post('esim')
   async create(@Req() request: IRequest) {
-    let user_id = 1;
+    console.log(request?.user);
     return this.orderService.create(request?.user?.id);
   }
 
   @ApiOperation({ summary: 'Add tariff to basket public', description: 'Add tariff to basket public' })
   @ApiHeader({ name: 'x-session-id' })
-  @ApiBearerAuth('access_token')
   @Post('add-to-basket')
   async addTobascet(
     @Body() data: AddToBasket,
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
+    console.log(request?.user);
+  
     return this.orderService.addToBascet(data, headers?.['x-session-id'], request?.user?.id, headers.lang);
   }
 
   @ApiOperation({ summary: 'remove item from basket public', description: 'remove item from basket public' })
   @ApiHeader({ name: 'x-session-id' })
-  @ApiBearerAuth('access_token')
   @Post('remove-item-from-basket')
   async removeFromBascet(
     @Body() data: RemoveFromBasketDto,
@@ -74,7 +73,6 @@ export class OrderController {
 
   @ApiOperation({ summary: 'decrease item from basket public', description: 'decrease item from basket public' })
   @ApiHeader({ name: 'x-session-id' })
-  @ApiBearerAuth('access_token')
   @Post('decrease-item-from-basket')
   async decreaseQuantity(
     @Body() data: DecreaseQuantityDto,
