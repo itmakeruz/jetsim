@@ -40,63 +40,59 @@ export class JoyTel extends HttpService {
     phoneNumber: string,
     email: string,
     productCode: string,
-    quantity: number = 1,
+    quantity: number = 1, // default 1
   ) {
-    console.log('man keldim');
-
-    // try {
     const url = this.orderUrl;
-    const timestamp = Number(Date.now());
+    const timestamp = Date.now();
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
 
-    console.log('salam');
+    const warehouse = ''; // default bo‘lsa bo‘sh string
+    const type = 3;
+
+    // itemList
     const itemList = [
       {
-        productCode: productCode,
-        quantity: 1,
+        productCode,
+        quantity,
       },
     ];
+
+    // plain string for SHA1
     const plainStr =
       this.customerCode +
       this.customerAuth +
-      '上海仓库' +
-      3 +
+      warehouse +
+      type +
       orderTid +
       receiverName +
       phoneNumber +
       timestamp +
-      itemList;
+      itemList.map((i) => i.productCode + i.quantity).join('');
 
     const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
 
     const body = {
       customerCode: this.customerCode,
-      type: 3,
+      type,
       receiveName: receiverName,
       phone: phoneNumber,
-      timestamp: timestamp,
-      orderTid: orderTid,
-      autoGraph: autoGraph,
-      email: email,
+      timestamp,
+      orderTid,
+      autoGraph,
+      email,
       replyType: 1,
-      itemList: itemList,
+      itemList,
     };
-
-    console.log('Body --> ', body);
-    console.log('AutoGraph --> ', autoGraph);
 
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
 
+    console.log('ORDER BODY >>>', body);
+
     const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
     return response.data;
-    // } catch (error) {
-    //   console.log(error);
-
-    //   throw new InternalServerErrorException();
-    // }
   }
 
   async getTransactionStatus() {}
