@@ -39,15 +39,28 @@ export class JoyTel extends HttpService {
     phoneNumber: string,
     email: string,
     productCode: string,
-    quantity?: number,
+    quantity: number = 1,
   ) {
-    // try {
     const url = this.orderUrl;
-    const timestamp = Number(Date.now());
+    const timestamp = Date.now();
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
 
+    const warehouse = ''; // default bo‘lsa bo‘sh string
+
+    // itemList
+    const itemList = [{ productCode, quantity }];
+
+    // Plain string for autoGraph
     const plainStr =
-      this.customerCode + this.customerAuth + '3' + orderTid + receiverName + phoneNumber + timestamp + productCode + 1;
+      this.customerCode +
+      this.customerAuth +
+      warehouse +
+      3 +
+      orderTid +
+      receiverName +
+      phoneNumber +
+      timestamp +
+      itemList.map((i) => i.productCode + i.quantity).join('');
 
     const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
 
@@ -56,20 +69,15 @@ export class JoyTel extends HttpService {
       type: 3,
       receiveName: receiverName,
       phone: phoneNumber,
-      timestamp: timestamp,
-      orderTid: orderTid,
-      autoGraph: autoGraph,
-      email: email,
-      replyType: 1,
-      itemList: [
-        {
-          productCode: productCode,
-          quantity: 1,
-        },
-      ],
+      timestamp,
+      orderTid,
+      autoGraph,
+      email,
+      replyType: 1, // serverga snPin qaytaradi
+      itemList,
     };
 
-    console.log(body);
+    console.log('JoyTel order body:', body);
 
     const headers = {
       'Content-Type': 'application/json',
@@ -78,11 +86,6 @@ export class JoyTel extends HttpService {
 
     const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
     return response.data;
-    // } catch (error) {
-    //   console.log(error);
-
-    //   throw new InternalServerErrorException();
-    // }
   }
 
   async getTransactionStatus() {}
