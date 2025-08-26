@@ -79,13 +79,13 @@ export class JoyTel extends HttpService {
       itemList: itemList,
     };
 
+    console.log('Body --> ', body);
+    console.log('AutoGraph --> ', autoGraph);
+
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-
-    console.log('Body --> ', body);
-    console.log('AutoGraph --> ', autoGraph);
 
     const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
     return response.data;
