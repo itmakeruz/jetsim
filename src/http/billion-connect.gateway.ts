@@ -1,17 +1,17 @@
 import { HttpService } from './http.service';
 import {
   BILLION_CONNECT_URL,
-  BILLION_CONNECT_CHANNEL_ID,
+  BILLION_CONNECT_APP_KEY,
   BILLION_CONNECT_SIGN_METHOD,
-  BILLION_CONNECT_SECRET_KEY,
+  BILLION_CONNECT_APP_SECRET,
 } from '@config';
 import { InternalServerErrorException } from '@nestjs/common';
 import * as crypto from 'crypto';
 
 export class BillionConnect extends HttpService {
   private baseURL = BILLION_CONNECT_URL;
-  private key = BILLION_CONNECT_SECRET_KEY;
-  private channelId = BILLION_CONNECT_CHANNEL_ID;
+  private key = BILLION_CONNECT_APP_KEY;
+  private channelId = BILLION_CONNECT_APP_SECRET;
   private signMethod = BILLION_CONNECT_SIGN_METHOD;
 
   constructor() {
