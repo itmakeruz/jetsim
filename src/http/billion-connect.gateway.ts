@@ -70,20 +70,21 @@ export class BillionConnectService {
       tradeTime,
       tradeData: {
         channelOrderId: String(input.channelOrderId),
-        ...(input.email ? { email: input.email } : {}),
-        ...(input.totalAmount ? { totalAmount: String(input.totalAmount) } : {}),
-        ...(input.discountAmount ? { discountAmount: String(input.discountAmount) } : {}),
-        ...(input.estimatedUseTime ? { estimatedUseTime: input.estimatedUseTime } : {}),
+        // ...(input.email ? { email: input.email } : {}),
+        // ...(input.totalAmount ? { totalAmount: String(input.totalAmount) } : {}),
+        // ...(input.discountAmount ? { discountAmount: String(input.discountAmount) } : {}),
+        // ...(input.estimatedUseTime ? { estimatedUseTime: input.estimatedUseTime } : {}),
         orderCreateTime,
-        ...(input.comment ? { comment: input.comment } : {}),
-        ...(input.invoiceType ? { invoiceType: input.invoiceType } : {}),
-        ...(input.invoiceHead ? { invoiceHead: input.invoiceHead } : {}),
-        ...(input.invoiceContent ? { invoiceContent: input.invoiceContent } : {}),
-        ...(input.invoiceComment ? { invoiceComment: input.invoiceComment } : {}),
-        ...(input.userId ? { userId: input.userId } : {}),
-        ...(input.eid ? { eid: input.eid } : {}),
-        ...(input.imei ? { imei: input.imei } : {}),
+        // ...(input.comment ? { comment: input.comment } : {}),
+        // ...(input.invoiceType ? { invoiceType: input.invoiceType } : {}),
+        // ...(input.invoiceHead ? { invoiceHead: input.invoiceHead } : {}),
+        // ...(input.invoiceContent ? { invoiceContent: input.invoiceContent } : {}),
+        // ...(input.invoiceComment ? { invoiceComment: input.invoiceComment } : {}),
+        // ...(input.userId ? { userId: input.userId } : {}),
+        // ...(input.eid ? { eid: input.eid } : {}),
+        // ...(input.imei ? { imei: input.imei } : {}),
         subOrderList,
+        language: 2,
       },
     };
 
@@ -101,6 +102,11 @@ export class BillionConnectService {
       const { data } = await this.http.post('', payloadJson, { headers });
       // Kutilgan javob:
       // { tradeCode: "1000", tradeMsg: "...", tradeData: { orderId, channelOrderId, subOrderList: [...] } }
+
+      if (data?.tradeCode !== '1000') {
+        const msg = `BillionConnect F040 failed [${data?.tradeCode}]: ${data?.tradeMsg || 'no message'}`;
+        throw new InternalServerErrorException(msg);
+      }
       return data;
     } catch (err: any) {
       // Tashxisga yordam berish uchun foydali ma’lumotlar
@@ -126,5 +132,12 @@ export class BillionConnectService {
     const mm = pad(d.getMinutes());
     const ss = pad(d.getSeconds());
     return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
+  }
+
+  async isSuccess(data: any): Promise<boolean> {
+    if (data?.tradeCode !== '1000') {
+      return false;
+    }
+    return true;
   }
 }
