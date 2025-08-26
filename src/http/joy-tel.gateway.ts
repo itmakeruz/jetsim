@@ -45,22 +45,15 @@ export class JoyTel extends HttpService {
     const timestamp = Date.now();
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
 
-    const warehouse = ''; // default bo‘lsa bo‘sh string
-
-    // itemList
     const itemList = [{ productCode, quantity }];
 
-    // Plain string for autoGraph
-    const plainStr =
-      this.customerCode +
-      this.customerAuth +
-      warehouse +
-      3 +
-      orderTid +
-      receiverName +
-      phoneNumber +
-      timestamp +
-      itemList.map((i) => i.productCode + i.quantity).join('');
+    const warehouse = ''; // yoki "上海仓库"
+    let plainStr =
+      this.customerCode + this.customerAuth + warehouse + 3 + orderTid + receiverName + phoneNumber + timestamp;
+
+    for (const item of itemList) {
+      plainStr += item.productCode + item.quantity;
+    }
 
     const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
 
