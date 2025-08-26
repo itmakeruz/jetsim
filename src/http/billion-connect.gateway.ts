@@ -1,29 +1,21 @@
 import { HttpService } from './http.service';
-import {
-  BILLION_CONNECT_URL,
-  BILLION_CONNECT_APP_KEY,
-  BILLION_CONNECT_SIGN_METHOD,
-  BILLION_CONNECT_APP_SECRET,
-} from '@config';
+import { BILLION_CONNECT_URL, BILLION_CONNECT_APP_KEY, BILLION_CONNECT_APP_SECRET } from '@config';
 import { InternalServerErrorException } from '@nestjs/common';
 import * as crypto from 'crypto';
 
 export class BillionConnect extends HttpService {
   private baseURL = BILLION_CONNECT_URL;
-  private key = BILLION_CONNECT_APP_KEY;
-  private channelId = BILLION_CONNECT_APP_SECRET;
-  private signMethod = BILLION_CONNECT_SIGN_METHOD;
+  private appKey = BILLION_CONNECT_APP_KEY; // x-channel-id
+  private appSecret = BILLION_CONNECT_APP_SECRET; // sign uchun ishlatiladi
 
   constructor() {
     super();
   }
 
   async prepareRequest(data: any) {
-    const headers = await this.generateHeaders();
-    headers['x-sign-value'] = this.generateSign(data);
+    const headers = await this.generateHeaders(data);
 
     try {
-      console.log(headers);
       const response = await this.setUrl(this.baseURL).setHeaders(headers).setBody(data).send();
       return response.data;
     } catch (error) {
@@ -31,31 +23,20 @@ export class BillionConnect extends HttpService {
     }
   }
 
-  async checkSimcard(iccid: string) {
-    const data = {
-      tradeType: 'F010',
-      tradeTime: this.generateDate(),
-      tradeData: { iccid },
-    };
-    return data;
-  }
-
   async orderSimcard(body: any) {
-    const planId = body.plan_id;
     const data = {
       tradeType: 'F040',
       tradeTime: this.generateDate(),
       tradeData: {
-        channelOrderId: planId,
-        email: body.email,
+        channelOrderId: body.order_id, // sizning asosiy order id
+        // email: body.email,
         orderCreateTime: this.generateDate(),
-        language: 2,
         subOrderList: [
           {
-            channelSubOrderId: planId, //anigini so'rash kerak bo'ladi
+            channelSubOrderId: body.plan_id, // sizning sub-order id
             deviceSkuId: body.sku_id,
-            planSkuCopies: body.day || 1,
-            number: '1',
+            planSkuCopies: String(body.day || 1),
+            number: String(body.quantity || 1),
           },
         ],
       },
@@ -64,47 +45,23 @@ export class BillionConnect extends HttpService {
     return await this.prepareRequest(data);
   }
 
-  async getInfoOrder(orderId: string) {
-    const data = {
-      tradeType: 'F011',
-      tradeTime: new Date().toISOString().slice(0, 19).replace('T', ' '),
-      tradeData: { channelOrderId: orderId },
-    };
-
-    return data;
-  }
-
-  async allThing() {
-    const data = {
-      tradeType: 'F002',
-      tradeTime: new Date().toISOString().slice(0, 19).replace('T', ' '),
-      tradeData: {
-        salesMethod: '5',
-        language: '2',
-      },
-    };
-    return data;
-  }
-
-  //HELPERS
+  // HELPERS
 
   generateDate() {
     return new Date().toISOString().slice(0, 19).replace('T', ' ');
   }
 
   generateSign(data: any) {
-    const sign = crypto
-      .createHash('md5')
-      .update(this.key + JSON.stringify(data))
-      .digest('hex');
-
-    return sign;
+    const raw = this.appSecret + JSON.stringify(data);
+    return crypto.createHash('md5').update(raw).digest('hex');
   }
 
-  async generateHeaders() {
+  async generateHeaders(data: any) {
     return {
-      'x-channel-id': this.channelId,
-      'x-sign-method': this.signMethod,
+      'Content-Type': 'application/json;charset=UTF-8',
+      'x-channel-id': this.appKey,
+      'x-sign-method': 'md5',
+      'x-sign-value': this.generateSign(data),
     };
   }
 }
