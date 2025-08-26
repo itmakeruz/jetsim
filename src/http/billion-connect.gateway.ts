@@ -19,7 +19,7 @@ export class BillionConnect extends HttpService {
   }
 
   async prepareRequest(data: any) {
-    const headers = this.generateHeaders();
+    const headers = await this.generateHeaders();
     headers['x-sign-value'] = this.generateSign(data);
 
     try {
@@ -61,7 +61,7 @@ export class BillionConnect extends HttpService {
       },
     };
 
-    return this.prepareRequest(data);
+    return await this.prepareRequest(data);
   }
 
   async getInfoOrder(orderId: string) {
