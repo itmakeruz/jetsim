@@ -215,11 +215,18 @@ export class OrderService {
       });
 
       let response: CreateOrderResponseJoyTel;
-
+      // orderId: number,
+      // receiverName: string,
+      // phoneNumber: string,
+      // email: string,
+      // productCode: string,
+      // quantity: number = 1,
       if (partner_id === PartnerIds.JOYTEL) {
+        console.log(user);
+
         response = await this.joyTel.submitEsimOrder(
           newOrder.id,
-          user.name,
+          'Alibek',
           user.email,
           user.email,
           item.package.sku_id,
