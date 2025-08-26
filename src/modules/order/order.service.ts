@@ -241,6 +241,7 @@ export class OrderService {
           day: 1,
         };
         response = await this.billionConnect.orderSimcard(body);
+        console.log(response);
       }
 
       orders.push(newOrder);
