@@ -16,7 +16,7 @@ export class BillionConnect extends HttpService {
     const headers = await this.generateHeaders(data);
 
     try {
-      const response = await this.setUrl(this.baseURL).setHeaders(headers).setBody(data).send();
+      const response = await this.setUrl(this.baseURL).setHeaders(headers).setBody(JSON.stringify(data)).send();
       return response.data;
     } catch (error) {
       throw new InternalServerErrorException(error.message);
@@ -52,13 +52,15 @@ export class BillionConnect extends HttpService {
   }
 
   generateSign(data: any) {
-    const raw = this.appSecret + JSON.stringify(data);
-    return crypto.createHash('md5').update(raw).digest('hex');
+    return crypto
+      .createHash('md5')
+      .update(this.appSecret + JSON.stringify(data))
+      .digest('hex');
   }
 
   async generateHeaders(data: any) {
     return {
-      'Content-Type': 'application/json;charset=UTF-8',
+      // 'Content-Type': 'application/json;charset=UTF-8',
       'x-channel-id': this.appKey,
       'x-sign-method': 'md5',
       'x-sign-value': this.generateSign(data),
