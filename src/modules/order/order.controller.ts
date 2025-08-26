@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query, UseGuards } from '@nestjs/common';
 import { OrderService } from './order.service';
 import {
   CreateOrderDto,
@@ -8,10 +8,11 @@ import {
   RemoveFromBasketDto,
   DecreaseQuantityDto,
 } from './dto';
-import { ApiBody, ApiHeader, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiHeader, ApiOperation } from '@nestjs/swagger';
 import { IRequest, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { DeviceHeadersDto } from '@enums';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('order')
 export class OrderController {
@@ -41,9 +42,9 @@ export class OrderController {
 
   @ApiOperation({ summary: 'create order', description: 'create order' })
   @Post('esim')
-  async create() {
-    let user_id = 1;
-    return this.orderService.create(user_id);
+  async create(@Req() request: IRequest) {
+    console.log(request?.user);
+    return this.orderService.create(request?.user?.id);
   }
 
   @ApiOperation({ summary: 'Add tariff to basket public', description: 'Add tariff to basket public' })
@@ -54,6 +55,8 @@ export class OrderController {
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
+    console.log(request?.user);
+  
     return this.orderService.addToBascet(data, headers?.['x-session-id'], request?.user?.id, headers.lang);
   }
 

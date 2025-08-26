@@ -28,6 +28,7 @@ const BILLION_CONNECT_SIGN_METHOD = config.get<string>('BILLION_CONNECT_SIGN_MET
 
 const ROLES_DECORATOR_KEY = config.get<string>('ROLES_DECORATOR_KEY') ?? '';
 
+//export
 export {
   APP_PORT,
   DATABASE_URL,

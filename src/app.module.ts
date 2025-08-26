@@ -13,6 +13,7 @@ import {
   JobsModule,
   OrderModule,
   GatewayModule,
+  PartnerModule,
 } from '@modules';
 // import { PaymentModule } from './modules/payment/payment.module';
 @Module({
@@ -31,6 +32,7 @@ import {
     OrderModule,
     JobsModule,
     GatewayModule,
+    PartnerModule,
     // PaymentModule,
   ],
   controllers: [],
