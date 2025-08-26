@@ -227,7 +227,7 @@ export class OrderService {
         response = await this.joyTel.submitEsimOrder(
           newOrder.id,
           'Alibek',
-          user.email,
+          '8613800000000',
           user.email,
           item.package.sku_id,
           1,
