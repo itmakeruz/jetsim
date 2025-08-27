@@ -51,10 +51,9 @@ export class HttpService {
       const config: AxiosRequestConfig = {
         url: this.url,
         method: 'POST',
-        data: this.params,
+        data: this.body,
         timeout: this.timeout,
         headers: this.headers,
-        params: this.body,
       };
       console.log(config, 'configman');
 
