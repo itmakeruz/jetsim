@@ -196,6 +196,9 @@ model Order {
   pin_2               String?
   puk_1               String?
   puk_2               String?
+  outbound_code       String?
+  customer_code       String?
+  product_code        String?
 
   user    User    @relation(fields: [user_id], references: [id])
   partner Partner @relation(fields: [partner_id], references: [id])

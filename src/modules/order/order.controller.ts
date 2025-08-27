@@ -1,15 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query, UseGuards } from '@nestjs/common';
 import { OrderService } from './order.service';
-import {
-  CreateOrderDto,
-  UpdateOrderDto,
-  GetOrderDto,
-  AddToBasket,
-  RemoveFromBasketDto,
-  DecreaseQuantityDto,
-} from './dto';
-import { ApiBearerAuth, ApiBody, ApiHeader, ApiOperation } from '@nestjs/swagger';
-import { IRequest, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
+import { UpdateOrderDto, GetOrderDto, AddToBasket, RemoveFromBasketDto, DecreaseQuantityDto } from './dto';
+import { ApiBearerAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
+import { IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { DeviceHeadersDto } from '@enums';
 import { AuthGuard } from '@nestjs/passport';
@@ -102,7 +95,6 @@ export class OrderController {
    */
   @Post('notify/coupon/redeem')
   async notifyCoupon(@Body() data: any) {
-    console.log(data, 'data');
     return this.orderService.notifyCoupon(data);
   }
 

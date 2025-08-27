@@ -221,7 +221,7 @@ export class OrderService {
         select: { id: true },
       });
 
-      let response: CreateOrderResponseJoyTel;
+      let response: any;
       // orderId: number,
       // receiverName: string,
       // phoneNumber: string,
@@ -229,30 +229,26 @@ export class OrderService {
       // productCode: string,
       // quantity: number = 1,
       if (partner_id === PartnerIds.JOYTEL) {
-        console.log('mam sheatman');
+        response = await this.joyTel.submitEsimOrder(
+          newOrder.id,
+          'Alibek',
+          '8613800000000',
+          user.email,
+          item.package.sku_id,
+          1,
+        );
 
-        try {
-          response = await this.joyTel.submitEsimOrder(
-            newOrder.id,
-            'Alibek',
-            '8613800000000',
-            user.email,
-            item.package.sku_id,
-            1,
-          );
-        } catch (error) {
-          console.log(error);
-          throw new InternalServerErrorException('JoyTel API errorrrrrrrrrrrrrrrrrrrrrrrr');
-        }
-        console.log(response, "mednirman o'sha");
-
-        // await this.prisma.orderJob.create({
-        //   data: {
-        //     order_id: newOrder.id,
-        //     order_tid: response.data.orderTid,
-        //     order_code: response.data.orderCode,
-        //   },
-        // });
+        await this.prisma.order.update({
+          where: {
+            id: newOrder.id,
+          },
+          data: {
+            order_tid: response?.data?.orderTid,
+            outbound_code: response?.data?.outboundCode,
+            customer_code: response?.data?.customerCode,
+            order_code: response?.data?.orderCode,
+          },
+        });
       } else if (partner_id === PartnerIds.BILLION_CONNECT) {
         const body = {
           channelOrderId: newOrder.id.toString(), // Y - unikal bo'lishi shart
@@ -270,8 +266,6 @@ export class OrderService {
         const response = await this.billionConnect.createEsimOrder(body);
         console.log('BillionConnect F040 response:', response);
       }
-      console.log('salama');
-
       orders.push(newOrder);
       responses.push({ order: newOrder, partnerResponse: response });
     }
@@ -448,11 +442,9 @@ export class OrderService {
   }
 
   async redeemCoupon(data: JoyTelCallbackResponse) {
-    const productCode = data?.itemList?.find((el) => el.productCode)?.productCode || '';
-
     const order = await this.prisma.order.findFirst({
       where: {
-        order_code: productCode,
+        order_code: data.orderCode,
       },
     });
 
