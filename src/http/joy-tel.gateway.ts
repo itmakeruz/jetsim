@@ -111,7 +111,7 @@ export class JoyTel {
 
   async getTransactionStatus() {}
 
-  async orderQrCode(productCode: string, snCode: string, days: number = 30) {
+  async orderQrCode(productCode: string, snCode: string, days: number = 1) {
     const url = 'https://api.joytelshop.com/joyRechargeApi/rechargeOrder';
 
     const timestamp = Date.now().toString();
@@ -125,7 +125,7 @@ export class JoyTel {
       },
     ];
 
-    // Sign string (shu tartibda bo‘lishi kerak!)
+    // Sign string
     const plainStr =
       this.customerCode +
       this.customerAuth +
@@ -136,9 +136,6 @@ export class JoyTel {
     const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
 
     const body = {
-      productCode,
-      snCode,
-      days,
       customerCode: this.customerCode,
       orderTid,
       timestamp,
