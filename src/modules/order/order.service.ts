@@ -477,7 +477,7 @@ export class OrderService {
     });
     console.log(firstSn, 'firstSn');
 
-    await this.joyTel.orderQrCode(firstSn.snCode);
+    await this.joyTel.orderQrCode(order.product_code, firstSn.snCode, 1);
 
     return {
       code: '000',
