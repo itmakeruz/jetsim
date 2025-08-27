@@ -109,6 +109,29 @@ export class JoyTel {
     }
   }
 
+  async redeemCouponForQrCode(snPin: string): Promise<any> {
+    const url = `https://esim.joytelecom.com/openapi/coupon/redeem`;
+    const headers = this.generateRspHeaders();
+
+    const payload = {
+      coupon: snPin,
+      qrcodeType: 1, // 0 - link to image, 1 - QR text
+    };
+
+    console.log('JoyTel Redeem URL >>>', url);
+    console.log('Headers >>>', headers);
+    console.log('Payload >>>', payload);
+
+    return await this.httpService
+      .setUrl(url)
+      .setHeaders({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      })
+      .setBody(payload)
+      .send();
+  }
+
   async getTransactionStatus() {}
 
   async orderQrCode(
@@ -160,6 +183,23 @@ export class JoyTel {
       })
       .setBody(body)
       .send();
+  }
+
+  private generateRspHeaders() {
+    const transId = '12332123131232';
+    const timestamp = Date.now();
+    const ciphertext = crypto
+      .createHash('md5')
+      .update(this.appId + transId + timestamp + this.appSecret)
+      .digest('hex');
+
+    return {
+      'Content-Type': 'application/json',
+      'AppId': this.appId,
+      'TransId': transId,
+      'Timestamp': timestamp.toString(),
+      'Ciphertext': ciphertext,
+    };
   }
 
   // HELPERS

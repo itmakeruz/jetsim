@@ -479,7 +479,7 @@ export class OrderService {
     console.log(productCode, 'productCode');
     console.log(updatedOrder, 'updatedOrder for qr order');
 
-    await this.joyTel.orderQrCode(updatedOrder.product_code, firstSn.snPin, 1, updatedOrder.order_tid);
+    await this.joyTel.redeemCouponForQrCode(firstSn.snPin);
 
     return {
       code: '000',
