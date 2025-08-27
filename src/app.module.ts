@@ -17,6 +17,7 @@ import {
 } from '@modules';
 // import { PaymentModule } from './modules/payment/payment.module';
 import { UsersModule } from './modules/users/users.module';
+import { HttpModule } from '@http';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -35,6 +36,7 @@ import { UsersModule } from './modules/users/users.module';
     GatewayModule,
     PartnerModule,
     UsersModule,
+    HttpModule,
     // PaymentModule,
   ],
   controllers: [],
