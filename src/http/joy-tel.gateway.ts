@@ -116,7 +116,7 @@ export class JoyTel {
 
     const payload = {
       coupon: snPin,
-      qrcodeType: 1, // 0 - link to image, 1 - QR text
+      qrcodeType: 0, // 0 - link to image, 1 - QR text
     };
 
     console.log('JoyTel Redeem URL >>>', url);

@@ -475,9 +475,6 @@ export class OrderService {
         product_code: productCode,
       },
     });
-    console.log(firstSn, 'firstSn');
-    console.log(productCode, 'productCode');
-    console.log(updatedOrder, 'updatedOrder for qr order');
 
     await this.joyTel.redeemCouponForQrCode(firstSn.snPin);
 
@@ -507,7 +504,7 @@ export class OrderService {
         qrcodeType: data.data.qrcodeType,
         qrcode: data.data.qrcode,
         cid: data.data.cid,
-        sale_plan_name: data.data.salePlanName,
+        sale_plan_name: data.data.salePlanName.toString(),
         sale_plan_days: data.data.salePlanDays,
         pin_1: data.data.pin1,
         pin_2: data.data.pin2,

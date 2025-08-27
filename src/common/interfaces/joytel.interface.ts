@@ -41,7 +41,7 @@ export interface NotifyResponseJoyTel {
     qrcodeType: number;
     qrcode: string;
     cid: string;
-    salePlanName: string;
+    salePlanName: number;
     salePlanDays: string;
     pin1: string;
     pin2: string;
