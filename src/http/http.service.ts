@@ -55,6 +55,7 @@ export class HttpService {
         timeout: this.timeout,
         headers: this.headers,
       };
+      console.log(config, 'configman');
 
       const res = await axios(config);
       console.log(res.data, 'responsman men');

@@ -21,7 +21,9 @@ export class JoyTel {
   private customerCode = JOYTEL_CUSTOMER_CODE;
   private customerAuth = JOYTEL_CUSTOMER_AUTH;
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly httpService: HttpService) {
+    console.log('JoyTel initialized with baseUrl:', JoyTel.name);
+  }
 
   async checkBalance(coupon: any, transaction_id: string) {
     const url = `${this.baseUrl}/esim/usage/query`;
