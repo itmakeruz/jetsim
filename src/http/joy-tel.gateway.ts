@@ -44,7 +44,7 @@ export class JoyTel extends HttpService {
     console.log('keldim');
 
     const url = this.orderUrl;
-    const timestamp = Number(this.generateTimeStamp());
+    const timestamp = this.generateTimeStamp();
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
 
     const warehouse = '';
@@ -145,7 +145,7 @@ export class JoyTel extends HttpService {
   }
 
   generateTimeStamp() {
-    return Date.now().toString();
+    return Date.now();
   }
 
   async prepareRequest() {}
