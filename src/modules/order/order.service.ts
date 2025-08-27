@@ -495,7 +495,7 @@ export class OrderService {
       throw new BadRequestException('order not found!');
     }
 
-    await this.prisma.order.update({
+    const updatedOrder = await this.prisma.order.update({
       where: {
         id: order.id,
       },
@@ -513,7 +513,7 @@ export class OrderService {
       },
     });
 
-    await this.socketGateway.sendOrderMessage(order.user_id, order.id);
+    await this.socketGateway.sendOrderMessage(order.user_id, updatedOrder.id, updatedOrder.qrcode);
 
     return {
       code: '000',

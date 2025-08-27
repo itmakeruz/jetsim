@@ -11,7 +11,6 @@ import { GatewayService } from './gateway.service';
 import { Server, Socket } from 'socket.io';
 import { JwtStrategy } from '@strategy';
 import { IUser } from '@interfaces';
-
 @WebSocketGateway()
 export class GatewayGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly jwtStrategy: JwtStrategy) {}
@@ -20,6 +19,7 @@ export class GatewayGateway implements OnGatewayConnection, OnGatewayDisconnect 
   handleConnection(client: Socket, ...args: any[]) {
     try {
       const token = client.handshake.query?.token as string;
+      console.log(token, 'token');
 
       if (!token) {
         client.disconnect();
@@ -48,7 +48,7 @@ export class GatewayGateway implements OnGatewayConnection, OnGatewayDisconnect 
   @SubscribeMessage('action')
   async action(@ConnectedSocket() client: Socket) {}
 
-  async sendOrderMessage(user_id: number, order_id: number) {
-    this.server.to(`user_${user_id}`).emit('order', order_id);
+  async sendOrderMessage(user_id: number, order_id: number, qrcode: string) {
+    this.server.to(`user_${user_id}`).emit('order', { order_id, qrcode });
   }
 }
