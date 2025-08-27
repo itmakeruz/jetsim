@@ -223,6 +223,7 @@ export class OrderService {
       // quantity: number = 1,
       if (partner_id === PartnerIds.JOYTEL) {
         console.log('mam sheatman');
+        console.log(this.joyTel.submitEsimOrder);
 
         response = await this.joyTel.submitEsimOrder(
           newOrder.id,
