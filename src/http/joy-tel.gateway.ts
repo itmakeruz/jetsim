@@ -9,9 +9,10 @@ import {
 } from '@config';
 import * as crypto from 'crypto';
 import { JOYTEL_RESPONSE_ERRORS } from '@constants';
-import { InternalServerErrorException } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { console } from 'inspector';
 
+@Injectable()
 export class JoyTel extends HttpService {
   private baseUrl = JOYTEL_URL;
   private appId = JOYTEL_APP_ID;
