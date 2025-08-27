@@ -245,10 +245,8 @@ export class OrderService {
             id: newOrder.id,
           },
           data: {
-            order_tid: response?.data?.orderTid,
-            outbound_code: response?.data?.outboundCode,
-            customer_code: response?.data?.customerCode,
-            order_code: response?.data?.orderCode,
+            order_tid: response?.orderTid,
+            order_code: response?.orderCode,
           },
         });
         console.log(updatedOrder, 'updatedOrder');
@@ -448,6 +446,7 @@ export class OrderService {
     const order = await this.prisma.order.findFirst({
       where: {
         order_tid: data.orderTid,
+        order_code: data.orderCode,
       },
     });
     console.log(order, 'order');
