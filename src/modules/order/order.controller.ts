@@ -91,7 +91,9 @@ export class OrderController {
    * Joytel callback endpoint
    */
   @Post('joytel/callback')
-  async redeemCoupon(@Body() data: JoyTelCallbackResponse) {
+  async redeemCoupon(@Body() data: any) {
+    console.log(data);
+
     return this.orderService.redeemCoupon(data);
   }
 
@@ -99,7 +101,8 @@ export class OrderController {
    * Joytel Notify callback endpoint
    */
   @Post('notify/coupon/redeem')
-  async notifyCoupon(@Body() data: NotifyResponseJoyTel) {
+  async notifyCoupon(@Body() data: any) {
+    console.log(data, 'data');
     return this.orderService.notifyCoupon(data);
   }
 
