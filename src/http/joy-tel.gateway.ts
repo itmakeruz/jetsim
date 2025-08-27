@@ -98,6 +98,7 @@ export class JoyTel extends HttpService {
     };
 
     try {
+      console.log('salama');
       const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
       console.log('JoyTel RESPONSE >>>', response.data);
       return response.data;

@@ -258,6 +258,7 @@ export class OrderService {
         const response = await this.billionConnect.createEsimOrder(body);
         console.log('BillionConnect F040 response:', response);
       }
+      console.log('salama');
 
       orders.push(newOrder);
       responses.push({ order: newOrder, partnerResponse: response });
