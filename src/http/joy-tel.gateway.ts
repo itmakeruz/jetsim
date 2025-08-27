@@ -117,7 +117,7 @@ export class JoyTel {
       qrcodeType: 0,
     };
 
-    return await this.httpService.setUrl('https://api.joytel.vip/openapi/coupon/redeem').setBody(body).send();
+    return await this.httpService.setUrl('https://api.joytel.vip/openapi').setBody(body).send();
   }
 
   // HELPERS
