@@ -112,13 +112,58 @@ export class JoyTel {
   async getTransactionStatus() {}
 
   async orderQrCode(coupon: string) {
+    const url = 'https://api.joytelshop.com/joyRechargeApi/rechargeOrder';
+
+    const timestamp = this.generateTimeStamp();
+    const orderTid = `${this.customerCode}-${Date.now()}`;
+
+    const warehouse = '';
+    const type = 3;
+
+    const itemList = [
+      {
+        coupon, // bu joyda productCode o‘rniga kupon ishlatilyapti
+        quantity: 1,
+      },
+    ];
+
+    // Sign string yig‘ish
+    const plainStr =
+      this.customerCode +
+      this.customerAuth +
+      warehouse +
+      type +
+      orderTid +
+      '' + // receiveName yo‘q bo‘lsa bo‘sh string
+      '' + // phone yo‘q bo‘lsa bo‘sh string
+      timestamp +
+      itemList.map((i) => i.coupon + i.quantity).join('');
+
+    const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
+
     const body = {
-      coupon: coupon,
-      qrcodeType: 0,
+      customerCode: this.customerCode,
+      type,
+      timestamp,
+      orderTid,
+      autoGraph,
+      replyType: 1,
+      warehouse,
+      remark: '',
+      itemList,
     };
 
+    console.log('JoyTel QR ORDER URL >>>', url);
+    console.log('plainStr >>>', plainStr);
+    console.log('autoGraph >>>', autoGraph);
+    console.log('body >>>', JSON.stringify(body));
+
     return await this.httpService
-      .setUrl('https://api.joytelshop.com/joyRechargeApi/rechargeOrder')
+      .setUrl(url)
+      .setHeaders({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      })
       .setBody(body)
       .send();
   }
