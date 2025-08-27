@@ -111,20 +111,25 @@ export class JoyTel {
 
   async getTransactionStatus() {}
 
-  async orderQrCode(productCode: string, snCode: string, days: number = 1, orderTid: string = '') {
+  async orderQrCode(
+    productCode: string,
+    snCode: string,
+    days: number = 1,
+    orderTid: string = `${this.customerCode}-${Date.now()}`,
+  ) {
     const url = 'https://api.joytelshop.com/joyRechargeApi/rechargeOrder';
 
     const timestamp = this.generateTimeStamp();
 
     const itemList = [
       {
-        productCode, // recharge plan code (JoyTel hujjatlaridan)
+        productCode, // recharge plan code
         snCode, // SIM / eSIM serial code
         days, // validity period
       },
     ];
 
-    // Sign string
+    // Sign string (aniq tartibda!)
     const plainStr =
       this.customerCode +
       this.customerAuth +
@@ -141,7 +146,6 @@ export class JoyTel {
       autoGraph,
       itemList,
     };
-    console.log('body', body);
 
     console.log('JoyTel Recharge URL >>>', url);
     console.log('plainStr >>>', plainStr);
