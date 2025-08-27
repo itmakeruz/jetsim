@@ -264,7 +264,7 @@ export class OrderService {
           ],
         };
 
-        const response = await this.billionConnect.createEsimOrder(body);
+        response = await this.billionConnect.createEsimOrder(body);
         console.log('BillionConnect F040 response:', response);
       }
       orders.push(newOrder);
@@ -465,7 +465,7 @@ export class OrderService {
     const firstSn = snList[0];
     const productCode = data.itemList[0]?.productCode;
 
-    const updatedOrder = await this.prisma.order.update({
+    await this.prisma.order.update({
       where: {
         id: order.id,
       },
