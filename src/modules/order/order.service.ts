@@ -238,7 +238,7 @@ export class OrderService {
           1,
         );
 
-        await this.prisma.order.update({
+        const updatedOrder = await this.prisma.order.update({
           where: {
             id: newOrder.id,
           },
@@ -249,6 +249,7 @@ export class OrderService {
             order_code: response?.data?.orderCode,
           },
         });
+        console.log(updatedOrder, 'updatedOrder');
       } else if (partner_id === PartnerIds.BILLION_CONNECT) {
         const body = {
           channelOrderId: newOrder.id.toString(), // Y - unikal bo'lishi shart
@@ -444,9 +445,11 @@ export class OrderService {
   async redeemCoupon(data: JoyTelCallbackResponse) {
     const order = await this.prisma.order.findFirst({
       where: {
-        order_code: data.orderCode,
+        order_tid: data.orderTid,
       },
     });
+    console.log(order, 'order');
+    console.log(data, 'data');
 
     if (!order) {
       throw new BadRequestException('Order not found');
