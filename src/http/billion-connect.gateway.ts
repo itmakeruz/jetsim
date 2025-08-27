@@ -99,13 +99,16 @@ export class BillionConnectService {
     };
 
     try {
-      const { data } = await this.http.post('', payloadJson, { headers });
+      const response = await this.http.post('', payloadJson, { headers });
       // Kutilgan javob:
       // { tradeCode: "1000", tradeMsg: "...", tradeData: { orderId, channelOrderId, subOrderList: [...] } }
-      if (!this.isSuccess(data)) {
-        throw new InternalServerErrorException(data?.tradeMsg);
+      if (!this.isSuccess(response.data)) {
+        throw new InternalServerErrorException(response.data?.tradeMsg);
       }
-      return data;
+      console.log(response, 'repsonse');
+      console.log(response?.data, 'repsonse');
+
+      return response.data;
     } catch (err: any) {
       // Tashxisga yordam berish uchun foydali ma’lumotlar
       const status = err?.response?.status;
