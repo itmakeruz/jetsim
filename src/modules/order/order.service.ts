@@ -20,7 +20,7 @@ import { GatewayGateway } from '../gateway';
 export class OrderService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly joyTel: JoyTel,
+    private joyTel: JoyTel,
     private readonly billionConnect: BillionConnectService,
     private readonly socketGateway: GatewayGateway,
   ) {}

@@ -8,6 +8,6 @@ import { GatewayGateway, GatewayModule } from '@modules';
 @Module({
   imports: [PrismaModule, HttpModule],
   controllers: [OrderController],
-  providers: [OrderService],
+  providers: [OrderService, JoyTel],
 })
 export class OrderModule {}
