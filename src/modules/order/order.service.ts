@@ -465,9 +465,7 @@ export class OrderService {
     const firstSn = snList[0];
     const productCode = data.itemList[0]?.productCode;
 
-    console.log(firstSn, 'firstSn');
-
-    await this.prisma.order.update({
+    const updatedOrder = await this.prisma.order.update({
       where: {
         id: order.id,
       },
@@ -478,6 +476,8 @@ export class OrderService {
       },
     });
     console.log(firstSn, 'firstSn');
+    console.log(productCode, 'productCode');
+    console.log(updatedOrder, 'updatedOrder for qr order');
 
     await this.joyTel.orderQrCode(order.product_code, firstSn.snCode, 1);
 
