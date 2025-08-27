@@ -125,10 +125,7 @@ export class JoyTel {
 
     return await this.httpService
       .setUrl(url)
-      .setHeaders({
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      })
+      .setHeaders(headers) // ❗️ BU YERDA generateRspHeaders dan qaytgan barcha headerlar yuboriladi
       .setBody(payload)
       .send();
   }
