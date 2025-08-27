@@ -11,6 +11,7 @@ import * as crypto from 'crypto';
 import { JOYTEL_RESPONSE_ERRORS } from '@constants';
 import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { console } from 'inspector';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class JoyTel {
@@ -186,7 +187,7 @@ export class JoyTel {
   }
 
   private generateRspHeaders() {
-    const transId = '12332123131232';
+    const transId = uuidv4();
     const timestamp = Date.now();
     const ciphertext = crypto
       .createHash('md5')
