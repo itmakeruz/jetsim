@@ -6,6 +6,6 @@ import { BillionConnectService } from './billion-connect.gateway';
 @Module({
   controllers: [],
   providers: [HttpService, JoyTel, BillionConnectService],
-  exports: [JoyTel, BillionConnectService],
+  exports: [JoyTel, BillionConnectService, HttpService],
 })
 export class HttpModule {}
