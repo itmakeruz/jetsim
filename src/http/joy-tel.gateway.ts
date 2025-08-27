@@ -13,7 +13,7 @@ import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common
 import { console } from 'inspector';
 
 @Injectable()
-export class JoyTel extends HttpService {
+export class JoyTel {
   private baseUrl = JOYTEL_URL;
   private appId = JOYTEL_APP_ID;
   private appSecret = JOYTEL_APP_SECRET;
@@ -21,9 +21,7 @@ export class JoyTel extends HttpService {
   private customerCode = JOYTEL_CUSTOMER_CODE;
   private customerAuth = JOYTEL_CUSTOMER_AUTH;
 
-  constructor(private readonly httpService: HttpService) {
-    super();
-  }
+  constructor(private readonly httpService: HttpService) {}
 
   async checkBalance(coupon: any, transaction_id: string) {
     const url = `${this.baseUrl}/esim/usage/query`;
@@ -32,7 +30,7 @@ export class JoyTel extends HttpService {
     const body = { coupon };
     console.log(url, ciphertext, headers, body);
 
-    return await this.setUrl(url).setHeaders(headers).setBody(body).send();
+    return await this.httpService.setUrl(url).setHeaders(headers).setBody(body).send();
   }
   async submitEsimOrder(
     orderId: number,
@@ -100,7 +98,7 @@ export class JoyTel extends HttpService {
 
     try {
       console.log('salama');
-      const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
+      const response = await this.httpService.setUrl(url).setHeaders(headers).setBody(body).send();
       console.log('JoyTel RESPONSE >>>', response.data);
       return response.data;
     } catch (error) {
@@ -117,7 +115,7 @@ export class JoyTel extends HttpService {
       qrcodeType: 0,
     };
 
-    return await this.setUrl('https://api.joytel.vip/openapi/coupon/redeem').setBody(body).send();
+    return await this.httpService.setUrl('https://api.joytel.vip/openapi/coupon/redeem').setBody(body).send();
   }
 
   // HELPERS
