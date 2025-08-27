@@ -45,7 +45,7 @@ export class JoyTel extends HttpService {
     const timestamp = Number(this.generateTimeStamp());
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
 
-    const warehouse = ''; // default bo‘lsa bo‘sh string
+    const warehouse = '';
     const type = 3;
 
     const itemList = [
@@ -55,7 +55,6 @@ export class JoyTel extends HttpService {
       },
     ];
 
-    // plain string to hash
     const plainStr =
       this.customerCode +
       this.customerAuth +
@@ -84,16 +83,15 @@ export class JoyTel extends HttpService {
       itemList,
     };
 
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
-
     console.log('JoyTel ORDER URL >>>', url);
     console.log('plainStr >>>', plainStr);
     console.log('autoGraph >>>', autoGraph);
     console.log('body >>>', JSON.stringify(body));
-    console.log('headers >>>', headers);
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
 
     try {
       const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
