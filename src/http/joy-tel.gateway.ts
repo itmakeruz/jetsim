@@ -42,7 +42,7 @@ export class JoyTel extends HttpService {
     quantity: number = 1,
   ) {
     const url = this.orderUrl;
-    const timestamp = Date.now();
+    const timestamp = Number(this.generateTimeStamp());
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
 
     const warehouse = ''; // default bo‘lsa bo‘sh string

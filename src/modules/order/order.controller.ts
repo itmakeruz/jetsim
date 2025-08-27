@@ -87,14 +87,25 @@ export class OrderController {
     return this.orderService.decreaseQuantity(data.package_id, headers?.['x-session-id'], request?.user?.id);
   }
 
+  /**
+   * Joytel callback endpoint
+   */
   @Post('joytel/callback')
   async redeemCoupon(@Body() data: JoyTelCallbackResponse) {
     return this.orderService.redeemCoupon(data);
   }
 
+  /**
+   * Joytel Notify callback endpoint
+   */
   @Post('notify/coupon/redeem')
   async notifyCoupon(@Body() data: NotifyResponseJoyTel) {
     return this.orderService.notifyCoupon(data);
+  }
+
+  @Post('bc/callback')
+  async bcCallback(@Body() data: any) {
+    return this.orderService.bcCallback(data);
   }
 
   @Patch(':id')

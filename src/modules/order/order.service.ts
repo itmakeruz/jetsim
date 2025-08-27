@@ -508,6 +508,10 @@ export class OrderService {
     };
   }
 
+  async bcCallback(data: any) {
+    console.log('BillionConnect F050 callback data:', data);
+  }
+
   update(id: number, updateOrderDto: UpdateOrderDto) {
     return `This action updates a #${id} order`;
   }
