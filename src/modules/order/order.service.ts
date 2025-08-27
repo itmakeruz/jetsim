@@ -238,6 +238,8 @@ export class OrderService {
           1,
         );
 
+        console.log(response, "JoyTel F030 response bo'lib keldim tekshirman");
+
         const updatedOrder = await this.prisma.order.update({
           where: {
             id: newOrder.id,
