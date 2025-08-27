@@ -230,7 +230,7 @@ export class OrderService {
           item.package.sku_id,
           1,
         );
-        console.log(response);
+        console.log(response, "mednirman o'sha");
 
         // await this.prisma.orderJob.create({
         //   data: {

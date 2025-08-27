@@ -89,7 +89,6 @@ export class JoyTel extends HttpService {
       'Accept': 'application/json',
     };
 
-    // 🔥 DEBUG LOGS
     console.log('JoyTel ORDER URL >>>', url);
     console.log('plainStr >>>', plainStr);
     console.log('autoGraph >>>', autoGraph);
@@ -98,7 +97,7 @@ export class JoyTel extends HttpService {
 
     try {
       const response = await this.setUrl(url).setHeaders(headers).setBody(body).send();
-      console.log('JoyTel RESPONSE >>>', response.data); // 🔥
+      console.log('JoyTel RESPONSE >>>', response.data);
       return response.data;
     } catch (error) {
       console.error('JoyTel RAW ERROR >>>', error?.response?.data || error.message);
