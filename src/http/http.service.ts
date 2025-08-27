@@ -54,6 +54,7 @@ export class HttpService {
         data: this.params,
         timeout: this.timeout,
         headers: this.headers,
+        params: this.body,
       };
       console.log(config, 'configman');
 
