@@ -1,4 +1,11 @@
-import { BadRequestException, ConflictException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateOrderDto, UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
 import { PrismaService } from '@prisma';
 import { OrderStatus, Status } from '@prisma/client';
@@ -224,14 +231,19 @@ export class OrderService {
       if (partner_id === PartnerIds.JOYTEL) {
         console.log('mam sheatman');
 
-        response = await this.joyTel.submitEsimOrder(
-          newOrder.id,
-          'Alibek',
-          '8613800000000',
-          user.email,
-          item.package.sku_id,
-          1,
-        );
+        try {
+          response = await this.joyTel.submitEsimOrder(
+            newOrder.id,
+            'Alibek',
+            '8613800000000',
+            user.email,
+            item.package.sku_id,
+            1,
+          );
+        } catch (error) {
+          console.log(error);
+          throw new InternalServerErrorException('JoyTel API errorrrrrrrrrrrrrrrrrrrrrrrr');
+        }
         console.log(response, "mednirman o'sha");
 
         // await this.prisma.orderJob.create({
