@@ -463,6 +463,7 @@ export class OrderService {
     }
 
     const firstSn = snList[0];
+    const productCode = data.itemList[0]?.productCode;
 
     console.log(firstSn, 'firstSn');
 
@@ -473,6 +474,7 @@ export class OrderService {
       data: {
         sn_code: firstSn.snCode,
         sn_pin: firstSn.snPin,
+        product_code: productCode,
       },
     });
     console.log(firstSn, 'firstSn');
