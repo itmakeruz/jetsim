@@ -111,7 +111,7 @@ export class JoyTel {
 
   async getTransactionStatus() {}
 
-  async orderQrCode(productCode: string, snCode: string, days: number = 1) {
+  async orderQrCode(productCode: string, snCode: string, days: number = 30) {
     const url = 'https://api.joytelshop.com/joyRechargeApi/rechargeOrder';
 
     const timestamp = Date.now().toString();
@@ -139,11 +139,11 @@ export class JoyTel {
       productCode,
       snCode,
       days,
-      // customerCode: this.customerCode,
-      // orderTid,
-      // timestamp,
-      // autoGraph,
-      // itemList,
+      customerCode: this.customerCode,
+      orderTid,
+      timestamp,
+      autoGraph,
+      itemList,
     };
 
     console.log('JoyTel Recharge URL >>>', url);
