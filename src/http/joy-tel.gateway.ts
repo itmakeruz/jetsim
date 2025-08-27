@@ -41,6 +41,8 @@ export class JoyTel extends HttpService {
     productCode: string,
     quantity: number = 1,
   ) {
+    console.log('keldim');
+
     const url = this.orderUrl;
     const timestamp = Number(this.generateTimeStamp());
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
@@ -54,6 +56,7 @@ export class JoyTel extends HttpService {
         quantity,
       },
     ];
+    console.log('keldim2');
 
     const plainStr =
       this.customerCode +
@@ -66,8 +69,9 @@ export class JoyTel extends HttpService {
       timestamp +
       itemList.map((i) => i.productCode + i.quantity).join('');
 
+    console.log('keldim3');
     const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
-
+    console.log('keldim4');
     const body = {
       customerCode: this.customerCode,
       type,
