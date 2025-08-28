@@ -544,7 +544,7 @@ export class OrderService {
     console.log('BillionConnect callback data:', data);
     const order = await this.prisma.order.findUnique({
       where: {
-        id: Number(data.tradeData.orderId),
+        id: Number(data.tradeData.channelOrderId),
       },
     });
 
