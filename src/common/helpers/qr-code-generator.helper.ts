@@ -13,7 +13,7 @@ export class QrService {
     });
 
     const qr = await Jimp.read(qrImage);
-    const logo = await Jimp.read('uploads/logo.png');
+    const logo = await Jimp.read('logo_image/logo.png');
 
     logo.resize(qr.bitmap.width / 4, qr.bitmap.width / 4);
 

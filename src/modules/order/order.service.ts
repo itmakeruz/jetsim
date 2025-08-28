@@ -517,6 +517,11 @@ export class OrderService {
       },
       include: {
         user: true,
+        package: {
+          include: {
+            tariff: true,
+          },
+        },
       },
     });
 
@@ -524,7 +529,15 @@ export class OrderService {
 
     const qrBuffer = await this.qrService.generateQrWithLogo(updatedOrder.qrcode);
     const fasturl = generateFastEsimInstallmentString(updatedOrder.qrcode);
-    const html = newOrderMessage('Клиент', updatedOrder.id, fasturl);
+    const html = newOrderMessage(
+      'Клиент',
+      updatedOrder.id,
+      fasturl,
+      updatedOrder.package.tariff.name_ru,
+      updatedOrder.package.mb_count,
+      updatedOrder.package.minutes_count,
+      updatedOrder.package.sms_count,
+    );
     await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
 
     return {
@@ -567,6 +580,11 @@ export class OrderService {
       },
       include: {
         user: true,
+        package: {
+          include: {
+            tariff: true,
+          },
+        },
       },
     });
 
@@ -574,7 +592,15 @@ export class OrderService {
 
     const qrBuffer = await this.qrService.generateQrWithLogo(updatedOrder.qrcode);
     const fasturl = generateFastEsimInstallmentString(updatedOrder.qrcode);
-    const html = newOrderMessage('Клиент', updatedOrder.id, fasturl);
+    const html = newOrderMessage(
+      'Клиент',
+      updatedOrder.id,
+      fasturl,
+      updatedOrder.package.tariff.name_ru,
+      updatedOrder.package.mb_count,
+      updatedOrder.package.minutes_count,
+      updatedOrder.package.sms_count,
+    );
     await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
     return 'success';
   }
