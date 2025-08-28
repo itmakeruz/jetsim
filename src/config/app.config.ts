@@ -26,6 +26,10 @@ const BILLION_CONNECT_APP_KEY = config.get<string>('BILLION_CONNECT_APP_KEY') ??
 const BILLION_CONNECT_APP_SECRET = config.get<string>('BILLION_CONNECT_APP_SECRET') ?? '';
 const BILLION_CONNECT_SIGN_METHOD = config.get<string>('BILLION_CONNECT_SIGN_METHOD') ?? '';
 
+// gmail smtp
+const MAIL_USER = config.get<string>('MAIL_USER') ?? '';
+const MAIL_PASS = config.get<string>('MAIL_PASS') ?? '';
+
 const ROLES_DECORATOR_KEY = config.get<string>('ROLES_DECORATOR_KEY') ?? '';
 
 //export
@@ -47,4 +51,6 @@ export {
   BILLION_CONNECT_SIGN_METHOD,
   BILLION_CONNECT_APP_KEY,
   ROLES_DECORATOR_KEY,
+  MAIL_USER,
+  MAIL_PASS,
 };

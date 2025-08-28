@@ -55,10 +55,8 @@ export class HttpService {
         timeout: this.timeout,
         headers: this.headers,
       };
-      console.log(config, 'configman');
 
       const res = await axios(config);
-      console.log(res.data, 'responsman men');
 
       if (this.isLog) {
         Logger.log({
@@ -71,7 +69,6 @@ export class HttpService {
       return res.data;
     } catch (error: any) {
       console.log('error.response.data', error.response?.data || error.message);
-
       throw new HttpException(error.response?.data || error.message, error.response?.status || 500);
     }
   }

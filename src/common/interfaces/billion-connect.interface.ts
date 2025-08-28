@@ -27,3 +27,27 @@ interface BillionConnectCraeteOrderResponse {
     };
   };
 }
+
+export interface BillionConnectCallbackResponse {
+  tradeType: string;
+  tradeTime: string;
+  tradeData: {
+    channelOrderId: string;
+    orderId: string;
+    subOrderList: {
+      [key: string]: {
+        uid: string;
+        iccid: string;
+        subOrderId: string;
+        pin: string;
+        puk: string;
+        validTime: string;
+        rechargeableESIM: number;
+        channelSubOrderId: string;
+        msisdn: string;
+        qrCodeContent: string;
+        apn: string;
+      };
+    };
+  };
+}

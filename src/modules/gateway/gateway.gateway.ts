@@ -19,7 +19,6 @@ export class GatewayGateway implements OnGatewayConnection, OnGatewayDisconnect 
   handleConnection(client: Socket, ...args: any[]) {
     try {
       const token = client.handshake.query?.token as string;
-      console.log(token, 'token');
 
       if (!token) {
         client.disconnect();
@@ -27,8 +26,6 @@ export class GatewayGateway implements OnGatewayConnection, OnGatewayDisconnect 
       }
 
       const payload = this.jwtStrategy.verify(token);
-      console.log(payload);
-
       if (!payload?.id) {
         client.disconnect();
         return;

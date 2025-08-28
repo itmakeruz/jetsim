@@ -1,27 +1,47 @@
+// mail.helper.ts
 import * as nodemailer from 'nodemailer';
 
-export class EmailSenderHelper {
-  private static transporter = nodemailer.createTransport({
+export async function sendMailHelper(to: string, subject: string, text: string, html?: string) {
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
     secure: false,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASS,
     },
   });
 
-  static async sendMail(to: string, subject: string, html: string) {
-    try {
-      const info = await this.transporter.sendMail({
-        from: `"${process.env.SMTP_FROM_NAME}" <${process.env.SMTP_FROM_EMAIL}>`,
-        to,
-        subject,
-        html,
-      });
+  const info = await transporter.sendMail({
+    from: `"Jetsim" <${process.env.MAIL_USER}>`,
+    to,
+    subject,
+    text,
+    html,
+  });
 
-      return info;
-    } catch (error) {
-      console.error('Email yuborishda xatolik:', error);
-      throw new Error('Email yuborilmadi');
-    }
-  }
+  console.log('✅ Mail sent:', info.messageId);
+  return info;
+}
+
+export function newOrderMessage(customerName: string, orderId: number, qrBase64: string, fasturl: string) {
+  return `
+  <!doctype html>
+    <html>
+      <body style="font-family:Arial,sans-serif;line-height:1.5;color:#222">
+        <p>Здравствуйте, ${customerName}!</p>
+        <p>Ваш заказ <b>№${orderId}</b> готов ✅</p>
+
+        <p style="margin:16px 0">QR-код для активации:</p>
+        <p style="text-align:center">
+          <img src="data:image/png;base64,${qrBase64}" alt="QR-код" width="280" style="display:block;margin:0 auto;border:0;"/>
+        </p>
+
+        <p style="margin:16px 0">
+          Быстрая установка eSIM для Apple:  
+          <a href="${fasturl}" target="_blank">${fasturl}</a>
+        </p>
+      </body>
+  </html>
+`;
 }

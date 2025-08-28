@@ -22,16 +22,13 @@ export class JoyTel {
   private customerCode = JOYTEL_CUSTOMER_CODE;
   private customerAuth = JOYTEL_CUSTOMER_AUTH;
 
-  constructor(private readonly httpService: HttpService) {
-    console.log('JoyTel initialized with baseUrl:', JoyTel.name);
-  }
+  constructor(private readonly httpService: HttpService) {}
 
   async checkBalance(coupon: any, transaction_id: string) {
     const url = `${this.baseUrl}/esim/usage/query`;
     const ciphertext: string = this.generateCiphertext(transaction_id);
     const headers = this.generateHeaders(transaction_id, ciphertext);
     const body = { coupon };
-    console.log(url, ciphertext, headers, body);
 
     return await this.httpService.setUrl(url).setHeaders(headers).setBody(body).send();
   }
@@ -43,8 +40,6 @@ export class JoyTel {
     productCode: string,
     quantity: number = 1,
   ) {
-    console.log('keldim');
-
     const url = this.orderUrl;
     const timestamp = this.generateTimeStamp();
     const orderTid = `${this.customerCode}-${orderId}-${timestamp}`;
@@ -58,7 +53,6 @@ export class JoyTel {
         quantity,
       },
     ];
-    console.log('keldim2');
 
     const plainStr =
       this.customerCode +
@@ -71,9 +65,7 @@ export class JoyTel {
       timestamp +
       itemList.map((i) => i.productCode + i.quantity).join('');
 
-    console.log('keldim3');
     const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
-    console.log('keldim4');
     const body = {
       customerCode: this.customerCode,
       type,
@@ -89,20 +81,13 @@ export class JoyTel {
       itemList,
     };
 
-    console.log('JoyTel ORDER URL >>>', url);
-    console.log('plainStr >>>', plainStr);
-    console.log('autoGraph >>>', autoGraph);
-    console.log('body >>>', JSON.stringify(body));
-
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
 
     try {
-      console.log('salama');
       const response = await this.httpService.setUrl(url).setHeaders(headers).setBody(body).send();
-      console.log('JoyTel RESPONSE >>>', response.data);
       return response.data;
     } catch (error) {
       console.error('JoyTel RAW ERROR >>>', error?.response?.data || error.message);
@@ -118,10 +103,6 @@ export class JoyTel {
       coupon: snPin,
       qrcodeType: 0, // 0 - link to image, 1 - QR text
     };
-
-    console.log('JoyTel Redeem URL >>>', url);
-    console.log('Headers >>>', headers);
-    console.log('Payload >>>', payload);
 
     return await this.httpService
       .setUrl(url)
@@ -167,11 +148,6 @@ export class JoyTel {
       autoGraph,
       itemList,
     };
-
-    console.log('JoyTel Recharge URL >>>', url);
-    console.log('plainStr >>>', plainStr);
-    console.log('autoGraph >>>', autoGraph);
-    console.log('body >>>', JSON.stringify(body));
 
     return await this.httpService
       .setUrl(url)

@@ -74,6 +74,14 @@ class EnvironmentVariables {
   @IsNotEmpty()
   @IsString()
   ROLES_DECORATOR_KEY: string;
+
+  @IsNotEmpty()
+  @IsString()
+  MAIL_USER: string;
+
+  @IsNotEmpty()
+  @IsString()
+  MAIL_PASS: string;
 }
 
 export function validate(config: Record<string, unknown>) {

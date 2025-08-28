@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query, UseGuard
 import { OrderService } from './order.service';
 import { UpdateOrderDto, GetOrderDto, AddToBasket, RemoveFromBasketDto, DecreaseQuantityDto } from './dto';
 import { ApiBearerAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
-import { IRequest } from '@interfaces';
+import { BillionConnectCallbackResponse, IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { DeviceHeadersDto } from '@enums';
 import { AuthGuard } from '@nestjs/passport';
@@ -85,8 +85,6 @@ export class OrderController {
    */
   @Post('joytel/callback')
   async redeemCoupon(@Body() data: any) {
-    console.log(data);
-
     return this.orderService.redeemCoupon(data);
   }
 
@@ -99,7 +97,7 @@ export class OrderController {
   }
 
   @Post('bc/callback')
-  async bcCallback(@Body() data: any) {
+  async bcCallback(@Body() data: BillionConnectCallbackResponse) {
     return this.orderService.bcCallback(data);
   }
 

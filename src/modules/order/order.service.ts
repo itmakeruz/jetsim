@@ -11,9 +11,14 @@ import { PrismaService } from '@prisma';
 import { OrderStatus, Status } from '@prisma/client';
 import { BillionConnectService, JoyTel } from '@http';
 import { PartnerIds } from '@enums';
-import { paginate } from '@helpers';
+import { paginate, QrService, sendMailHelper, generateFastEsimInstallmentString, newOrderMessage } from '@helpers';
 import { v4 as uuidv4 } from 'uuid';
-import { CreateOrderResponseJoyTel, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
+import {
+  BillionConnectCallbackResponse,
+  CreateOrderResponseJoyTel,
+  JoyTelCallbackResponse,
+  NotifyResponseJoyTel,
+} from '@interfaces';
 import { GatewayGateway } from '../gateway';
 
 @Injectable()
@@ -23,6 +28,7 @@ export class OrderService {
     private joyTel: JoyTel,
     private readonly billionConnect: BillionConnectService,
     private readonly socketGateway: GatewayGateway,
+    private readonly qrService: QrService,
   ) {}
   async findAll(query: GetOrderDto) {
     const { data, ...meta } = await paginate('order', {
@@ -179,7 +185,6 @@ export class OrderService {
         },
       },
     });
-    console.log(basket);
 
     if (!basket || basket?.items?.length === 0) {
       throw new BadRequestException('Корзина пуста!');
@@ -231,41 +236,46 @@ export class OrderService {
       if (partner_id === PartnerIds.JOYTEL) {
         response = await this.joyTel.submitEsimOrder(
           newOrder.id,
-          'Alibek',
-          '8613800000000',
-          user.email,
+          'Jetsim User',
+          'string',
+          'jetsim@gmail.com',
           item.package.sku_id,
           1,
         );
 
-        console.log(response, "JoyTel F030 response bo'lib keldim tekshirman");
-
-        const updatedOrder = await this.prisma.order.update({
+        await this.prisma.order.update({
           where: {
             id: newOrder.id,
           },
           data: {
             order_tid: response?.orderTid,
             order_code: response?.orderCode,
+            status: OrderStatus.REDEEM_COUPON,
           },
         });
-        console.log(updatedOrder, 'updatedOrder');
       } else if (partner_id === PartnerIds.BILLION_CONNECT) {
         const body = {
-          channelOrderId: newOrder.id.toString(), // Y - unikal bo'lishi shart
-          email: user.email || undefined, // N - agar email bo'lmasa yubormasa ham bo'ladi
+          channelOrderId: newOrder.id.toString(),
+          email: user.email || undefined,
           subOrderList: [
             {
-              channelSubOrderId: item.id.toString(), // Y - unikal sub-order id
-              deviceSkuId: item.package.sku_id, // Y - ESIM package/product id
-              planSkuCopies: '1', // Y - STRING qilib yuborish
-              number: '1', // Y - STRING (dok bo'yicha min 1, max 500)
+              channelSubOrderId: item.id.toString(),
+              deviceSkuId: item.package.sku_id,
+              planSkuCopies: '1',
+              number: '1',
             },
           ],
         };
 
         response = await this.billionConnect.createEsimOrder(body);
-        console.log('BillionConnect F040 response:', response);
+        await this.prisma.order.update({
+          where: {
+            id: newOrder.id,
+          },
+          data: {
+            status: OrderStatus.NOTIFY_COUPON,
+          },
+        });
       }
       orders.push(newOrder);
       responses.push({ order: newOrder, partnerResponse: response });
@@ -449,8 +459,6 @@ export class OrderService {
         order_code: data.orderCode,
       },
     });
-    console.log(order, 'order');
-    console.log(data, 'data');
 
     if (!order) {
       throw new BadRequestException('Order not found');
@@ -473,6 +481,7 @@ export class OrderService {
         sn_code: firstSn.snCode,
         sn_pin: firstSn.snPin,
         product_code: productCode,
+        status: OrderStatus.NOTIFY_COUPON,
       },
     });
 
@@ -510,10 +519,20 @@ export class OrderService {
         pin_2: data.data.pin2,
         puk_1: data.data.puk1,
         puk_2: data.data.puk2,
+        status: OrderStatus.COMPLETED,
+      },
+      include: {
+        user: true,
       },
     });
 
     await this.socketGateway.sendOrderMessage(order.user_id, updatedOrder.id, updatedOrder.qrcode);
+
+    const qrBuffer = await this.qrService.generateQrWithLogo(updatedOrder.qrcode);
+    const qrBase64 = qrBuffer.toString('base64');
+    const fasturl = generateFastEsimInstallmentString(updatedOrder.qrcode);
+    const html = newOrderMessage('Клиент', updatedOrder.id, qrBase64, fasturl);
+    await sendMailHelper('ravshanovtohir1@gmail.com', 'Ваш eSIM заказ готов!', '', html);
 
     return {
       code: '000',
@@ -521,8 +540,39 @@ export class OrderService {
     };
   }
 
-  async bcCallback(data: any) {
-    console.log('BillionConnect F050 callback data:', data);
+  async bcCallback(data: BillionConnectCallbackResponse) {
+    console.log('BillionConnect callback data:', data);
+    const order = await this.prisma.order.findUnique({
+      where: {
+        id: Number(data.tradeData.orderId),
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    await this.prisma.order.update({
+      where: {
+        id: order.id,
+      },
+      data: {
+        uid: data?.tradeData?.subOrderList?.[0]?.uid,
+        iccid: data?.tradeData?.subOrderList?.[0]?.iccid,
+        sub_order_id: data?.tradeData?.subOrderList?.[0]?.subOrderId,
+        pin_1: data?.tradeData?.subOrderList?.[0]?.pin,
+        puk_1: data?.tradeData?.subOrderList?.[0]?.puk,
+        product_expire_date: data?.tradeData?.subOrderList?.[0]?.validTime,
+        channel_sub_order_id: data?.tradeData?.subOrderList?.[0]?.channelSubOrderId,
+        msisdn: data?.tradeData?.subOrderList?.[0]?.msisdn,
+        apn: data?.tradeData?.subOrderList?.[0]?.apn,
+        status: OrderStatus.COMPLETED,
+        channel_order_id: data?.tradeData?.channelOrderId,
+        order_code: data?.tradeData?.orderId,
+        qrcode: data?.tradeData?.subOrderList?.[0]?.qrCodeContent,
+        qrcodeType: 0,
+      },
+    });
   }
 
   update(id: number, updateOrderDto: UpdateOrderDto) {

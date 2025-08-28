@@ -176,29 +176,37 @@ model Partner {
 }
 
 model Order {
-  id                  Int         @id @default(autoincrement())
-  status              OrderStatus
-  partner_id          Int
-  user_id             Int
-  package_id          Int
-  order_tid           String?
-  order_code          String?
-  sn_code             String?
-  sn_pin              String?
-  product_expire_date String?
-  coupon              String?
-  qrcodeType          Int?
-  qrcode              String?
-  cid                 String?
-  sale_plan_name      String?
-  sale_plan_days      String?
-  pin_1               String?
-  pin_2               String?
-  puk_1               String?
-  puk_2               String?
-  outbound_code       String?
-  customer_code       String?
-  product_code        String?
+  id                   Int         @id @default(autoincrement())
+  status               OrderStatus
+  partner_id           Int
+  user_id              Int
+  package_id           Int
+  order_tid            String?
+  order_code           String?
+  sn_code              String?
+  sn_pin               String?
+  product_expire_date  String?
+  coupon               String?
+  qrcodeType           Int?
+  qrcode               String?
+  cid                  String?
+  sale_plan_name       String?
+  sale_plan_days       String?
+  pin_1                String?
+  pin_2                String?
+  puk_1                String?
+  puk_2                String?
+  outbound_code        String?
+  customer_code        String?
+  product_code         String?
+  channel_order_id     String?
+  order_id             String?
+  uid                  String?
+  iccid                String?
+  sub_order_id         String?
+  channel_sub_order_id String?
+  msisdn               String?
+  apn                  String?
 
   user    User    @relation(fields: [user_id], references: [id])
   partner Partner @relation(fields: [partner_id], references: [id])
@@ -281,8 +289,10 @@ enum BasketStatus {
 
 enum OrderStatus {
   CREATED
+  REDEEM_COUPON
+  NOTIFY_COUPON
+  COMPLETED
   PENDING
-  ACTIVATED
   FAILED
 }
 
