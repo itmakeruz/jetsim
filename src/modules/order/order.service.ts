@@ -621,8 +621,8 @@ export class OrderService {
       updatedOrder.package.minutes_count,
       updatedOrder.package.sms_count,
     );
-    await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
     console.log('man shettgaxcha keldim');
+    await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
 
     return {
       code: '000',
