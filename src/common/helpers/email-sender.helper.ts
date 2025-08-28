@@ -6,8 +6,8 @@ console.log(MAIL_USER, MAIL_PASS);
 export async function sendMailHelper(to: string, subject: string, text: string, html?: string, qrBuffer?: Buffer) {
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     auth: {
       user: MAIL_USER,
       pass: MAIL_PASS,
