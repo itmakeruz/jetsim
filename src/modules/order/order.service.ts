@@ -571,6 +571,8 @@ export class OrderService {
       },
     });
 
+    console.log(order);
+
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -604,6 +606,7 @@ export class OrderService {
         },
       },
     });
+    console.log(updatedOrder, 'updatedOrder');
 
     await this.socketGateway.sendOrderMessage(order.user_id, updatedOrder.id, updatedOrder.qrcode);
 
@@ -619,6 +622,8 @@ export class OrderService {
       updatedOrder.package.sms_count,
     );
     await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+    console.log('man shettgaxcha keldim');
+
     return {
       code: '000',
       mesg: 'Success',
