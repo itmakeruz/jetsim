@@ -555,7 +555,7 @@ export class OrderService {
       updatedOrder.package.minutes_count,
       updatedOrder.package.sms_count,
     );
-    await sendMailHelper('ravshanovtohir11@gmail.com', 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+    await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
 
     return {
       code: '000',
@@ -618,7 +618,7 @@ export class OrderService {
       updatedOrder.package.minutes_count,
       updatedOrder.package.sms_count,
     );
-    await sendMailHelper('ravshanovtohir11@gmail.com', 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+    await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
     return {
       code: '000',
       mesg: 'Success',
