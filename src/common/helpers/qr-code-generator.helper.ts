@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as QRCode from 'qrcode';
-import { Jimp } from 'jimp';
+import Jimp from 'jimp';
 
 @Injectable()
 export class QrService {
@@ -15,17 +15,15 @@ export class QrService {
     const qr = await Jimp.read(qrImage);
     const logo = await Jimp.read('uploads/logo.png');
 
-    logo.resize({ w: qr.bitmap.width / 4 });
+    logo.resize(qr.bitmap.width / 4, qr.bitmap.width / 4);
 
     const x = qr.bitmap.width / 2 - logo.bitmap.width / 2;
     const y = qr.bitmap.height / 2 - logo.bitmap.height / 2;
+
+    // ✅ Logo ni joylash
     qr.composite(logo, x, y);
 
-    return await new Promise<Buffer>((resolve, reject) => {
-      qr.getBuffer('image/png', (err, buffer) => {
-        if (err) reject(err);
-        else resolve(buffer);
-      });
-    });
+    // ✅ Async usuli bilan olish (callback kerak emas)
+    return qr.getBufferAsync('image/png');
   }
 }
