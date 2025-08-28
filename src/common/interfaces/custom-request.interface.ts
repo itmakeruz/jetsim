@@ -2,8 +2,7 @@ import { Request } from 'express';
 
 export interface IUser {
   id: number;
-  username: string;
-  role: string;
+  email: string;
 }
 
 export class IRequest extends Request {

@@ -157,7 +157,9 @@ export class OrderService {
     };
   }
 
-  async create(user_id: number = 1) {
+  async create(user_id: number) {
+    console.log(user_id);
+
     const basket = await this.prisma.basket.findFirst({
       where: {
         user_id: user_id,
@@ -236,6 +238,21 @@ export class OrderService {
           item.package.sku_id,
           1,
         );
+
+        // response = {
+        //   tradeCode: '1000',
+        //   tradeMsg: '成功',
+        //   tradeData: {
+        //     channelOrderId: '137',
+        //     orderId: '2756382091550128',
+        //     subOrderList: [
+        //       {
+        //         subOrderId: '1756382091554129',
+        //         channelSubOrderId: '93',
+        //       },
+        //     ],
+        //   },
+        // };
 
         await this.prisma.order.update({
           where: {

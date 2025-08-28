@@ -91,10 +91,6 @@ export function newOrderMessage(
         <!-- Fast URL -->
         <div style="margin-top:28px;text-align:center">
           <p style="margin-bottom:12px;font-size:15px;color:#444">Быстрая установка eSIM для Apple:</p>
-          <a href="${fasturl}" target="_blank" 
-             style="background:#0066cc;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:bold;font-size:15px">
-             Установить eSIM
-          </a>
           <p style="margin-top:12px;font-size:14px;color:#666">${fasturl}</p>
         </div>
 
