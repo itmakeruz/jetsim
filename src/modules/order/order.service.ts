@@ -227,36 +227,15 @@ export class OrderService {
       });
 
       let response: any;
-      // orderId: number,
-      // receiverName: string,
-      // phoneNumber: string,
-      // email: string,
-      // productCode: string,
-      // quantity: number = 1,
       if (partner_id === PartnerIds.JOYTEL) {
-        // response = await this.joyTel.submitEsimOrder(
-        //   newOrder.id,
-        //   'Jetsim User',
-        //   'string',
-        //   'jetsim@gmail.com',
-        //   item.package.sku_id,
-        //   1,
-        // );
-
-        response = {
-          tradeCode: '1000',
-          tradeMsg: '成功',
-          tradeData: {
-            channelOrderId: '131',
-            orderId: '2756377937489390',
-            subOrderList: [
-              {
-                subOrderId: '1756377937494391',
-                channelSubOrderId: '87',
-              },
-            ],
-          },
-        };
+        response = await this.joyTel.submitEsimOrder(
+          newOrder.id,
+          'Jetsim User',
+          'string',
+          'jetsim@gmail.com',
+          item.package.sku_id,
+          1,
+        );
 
         await this.prisma.order.update({
           where: {
@@ -544,10 +523,9 @@ export class OrderService {
     await this.socketGateway.sendOrderMessage(order.user_id, updatedOrder.id, updatedOrder.qrcode);
 
     const qrBuffer = await this.qrService.generateQrWithLogo(updatedOrder.qrcode);
-    const qrBase64 = qrBuffer.toString('base64');
     const fasturl = generateFastEsimInstallmentString(updatedOrder.qrcode);
     const html = newOrderMessage('Клиент', updatedOrder.id, fasturl);
-    await sendMailHelper('ravshanovtohir11@gmail.com', 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+    await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
 
     return {
       code: '000',
@@ -587,18 +565,17 @@ export class OrderService {
         qrcode: data?.tradeData?.subOrderList?.[0]?.qrCodeContent,
         qrcodeType: 0,
       },
+      include: {
+        user: true,
+      },
     });
 
     await this.socketGateway.sendOrderMessage(order.user_id, updatedOrder.id, updatedOrder.qrcode);
 
     const qrBuffer = await this.qrService.generateQrWithLogo(updatedOrder.qrcode);
-    console.log('salam');
-
-    const qrBase64 = qrBuffer.toString('base64');
-    console.log(qrBase64.substring(0, 100));
     const fasturl = generateFastEsimInstallmentString(updatedOrder.qrcode);
     const html = newOrderMessage('Клиент', updatedOrder.id, fasturl);
-    await sendMailHelper('ravshanovtohir11@gmail.com', 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+    await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
     return 'success';
   }
 
