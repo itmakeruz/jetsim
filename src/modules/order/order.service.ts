@@ -552,7 +552,7 @@ export class OrderService {
       throw new NotFoundException('Order not found');
     }
 
-    await this.prisma.order.update({
+    const updatedOrder = await this.prisma.order.update({
       where: {
         id: order.id,
       },
@@ -573,6 +573,14 @@ export class OrderService {
         qrcodeType: 0,
       },
     });
+
+    await this.socketGateway.sendOrderMessage(order.user_id, updatedOrder.id, updatedOrder.qrcode);
+
+    const qrBuffer = await this.qrService.generateQrWithLogo(updatedOrder.qrcode);
+    const qrBase64 = qrBuffer.toString('base64');
+    const fasturl = generateFastEsimInstallmentString(updatedOrder.qrcode);
+    const html = newOrderMessage('Клиент', updatedOrder.id, qrBase64, fasturl);
+    await sendMailHelper('ravshanovtohir1@gmail.com', 'Ваш eSIM заказ готов!', '', html);
   }
 
   update(id: number, updateOrderDto: UpdateOrderDto) {
