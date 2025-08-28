@@ -101,7 +101,7 @@ export class JoyTel {
 
     const payload = {
       coupon: snPin,
-      qrcodeType: 0, // 0 - link to image, 1 - QR text
+      qrcodeType: 1, // 0 - link to image, 1 - QR text
     };
 
     return await this.httpService
