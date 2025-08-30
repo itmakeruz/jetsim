@@ -230,29 +230,29 @@ export class OrderService {
 
       let response: any;
       if (partner_id === PartnerIds.JOYTEL) {
-        response = await this.joyTel.submitEsimOrder(
-          newOrder.id,
-          'Jetsim User',
-          'string',
-          'jetsim@gmail.com',
-          item.package.sku_id,
-          1,
-        );
+        // response = await this.joyTel.submitEsimOrder(
+        //   newOrder.id,
+        //   'Jetsim User',
+        //   'string',
+        //   'jetsim@gmail.com',
+        //   item.package.sku_id,
+        //   1,
+        // );
 
-        // response = {
-        //   tradeCode: '1000',
-        //   tradeMsg: '成功',
-        //   tradeData: {
-        //     channelOrderId: '137',
-        //     orderId: '2756382091550128',
-        //     subOrderList: [
-        //       {
-        //         subOrderId: '1756382091554129',
-        //         channelSubOrderId: '93',
-        //       },
-        //     ],
-        //   },
-        // };
+        response = {
+          tradeCode: '1000',
+          tradeMsg: '成功',
+          tradeData: {
+            channelOrderId: '137',
+            orderId: '2756382091550128',
+            subOrderList: [
+              {
+                subOrderId: '1756382091554129',
+                channelSubOrderId: '93',
+              },
+            ],
+          },
+        };
 
         await this.prisma.order.update({
           where: {
@@ -278,7 +278,21 @@ export class OrderService {
           ],
         };
 
-        response = await this.billionConnect.createEsimOrder(body);
+        // response = await this.billionConnect.createEsimOrder(body);
+        response = {
+          tradeCode: '1000',
+          tradeMsg: '成功',
+          tradeData: {
+            channelOrderId: '137',
+            orderId: '2756382091550128',
+            subOrderList: [
+              {
+                subOrderId: '1756382091554129',
+                channelSubOrderId: '93',
+              },
+            ],
+          },
+        };
         await this.prisma.order.update({
           where: {
             id: newOrder.id,

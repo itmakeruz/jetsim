@@ -5,17 +5,18 @@ console.log(MAIL_USER, MAIL_PASS);
 
 export async function sendMailHelper(to: string, subject: string, text: string, html?: string, qrBuffer?: Buffer) {
   const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    host: 'mail.jetsim.ru',
+    port: 465,
+    secure: true,
     auth: {
       user: MAIL_USER,
       pass: MAIL_PASS,
     },
+    tls: { rejectUnauthorized: false },
   });
 
   const mailOptions: any = {
-    from: `"Jetsim" <${process.env.EMAIL_USER}>`,
+    from: `"Jetsim" <${MAIL_USER}>`,
     to,
     subject,
     text,
@@ -57,7 +58,7 @@ export function newOrderMessage(
         <div style="text-align:center;border-bottom:2px solid #f0f0f0;padding-bottom:20px;margin-bottom:20px">
           <h2 style="margin:0;color:#222">Здравствуйте, ${customerName} 👋</h2>
           <p style="margin:8px 0 0;font-size:15px;color:#666">
-            Ваш заказ <b>№${orderId}</b> готов ✅
+            Ваш заказ <b>№${orderId}</b> готов
           </p>
         </div>
 
