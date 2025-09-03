@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { IsPort, IsString, IsNotEmpty, validateSync } from 'class-validator';
+import { IsPort, IsString, IsNotEmpty, validateSync, IsNumber } from 'class-validator';
 import 'dotenv/config';
 
 import { ConfigService } from '@nestjs/config';
@@ -82,6 +82,22 @@ class EnvironmentVariables {
   @IsNotEmpty()
   @IsString()
   MAIL_PASS: string;
+
+  @IsNotEmpty()
+  @IsString()
+  REDIS_HOST: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  REDIS_PORT: number;
+
+  @IsNotEmpty()
+  @IsString()
+  REDIS_PASSWORD: string;
+
+  @IsNotEmpty()
+  @IsString()
+  REDIS_OTP_PREFIX: string;
 }
 
 export function validate(config: Record<string, unknown>) {

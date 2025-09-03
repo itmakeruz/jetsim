@@ -8,8 +8,8 @@ export class ConfirmEmailDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ type: Number, required: true, description: 'Confirm Code', example: 123456 })
+  @ApiProperty({ type: String, required: true, description: 'Confirm Code', example: '123456' })
   @IsNotEmpty()
-  @IsNumber()
-  confirm_code: number;
+  @IsString()
+  confirm_code: string;
 }

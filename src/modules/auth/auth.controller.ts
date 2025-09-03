@@ -1,6 +1,6 @@
 import { AuthService } from './auth.service';
 import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
-import { LoginDto, RegisterDto, ConfirmEmailDto, DeviceFcmTokenUpdateDto } from './dto';
+import { LoginDto, RegisterDto, ConfirmEmailDto, DeviceFcmTokenUpdateDto, VerifyOtpDto } from './dto';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiProperty } from '@nestjs/swagger';
 import { IRequest } from '@interfaces';
 
@@ -25,6 +25,12 @@ export class AuthController {
   @Get('me')
   async getMeUser(@Req() request: IRequest) {
     return await this.authService.getMeUser(request.user.id);
+  }
+
+  @ApiOperation({ summary: 'Confirm email public', description: 'Confirm email public' })
+  @Post('confirm-email')
+  async confirmEmail(@Body() data: ConfirmEmailDto) {
+    return await this.authService.verifyOtp(data.email, data.confirm_code);
   }
 
   @ApiOperation({ summary: 'Update Fcm Token public', description: 'Update Fcm Token public' })

@@ -1,4 +1,3 @@
-// mail.helper.ts
 import * as nodemailer from 'nodemailer';
 import { MAIL_PASS, MAIL_USER } from '@config';
 console.log(MAIL_USER, MAIL_PASS);
@@ -93,6 +92,52 @@ export function newOrderMessage(
         <div style="margin-top:28px;text-align:center">
           <p style="margin-bottom:12px;font-size:15px;color:#444">Быстрая установка eSIM для Apple:</p>
           <p style="margin-top:12px;font-size:14px;color:#666">${fasturl}</p>
+        </div>
+
+      </div>
+    </body>
+  </html>
+  `;
+}
+
+export function otpEmailTemplate(userEmail: string, otp: string, ttlMinutes: number): string {
+  return `
+  <!doctype html>
+  <html>
+    <body style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#333;margin:0;padding:0;background:#f5f7fb">
+      <div style="max-width:650px;margin:40px auto;background:#fff;padding:30px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08)">
+
+        <!-- Header -->
+        <div style="text-align:center;border-bottom:2px solid #f0f0f0;padding-bottom:20px;margin-bottom:20px">
+          <h2 style="margin:0;color:#222">Здравствуйте, ${userEmail} 👋</h2>
+          <p style="margin:8px 0 0;font-size:15px;color:#666">
+            Ваш одноразовый пароль (OTP) готов!
+          </p>
+        </div>
+
+        <!-- OTP Details -->
+        <h3 style="margin:0 0 16px;color:#444;font-size:18px">🔑 Ваш OTP код</h3>
+        <div style="text-align:center;margin:24px 0">
+          <p style="font-size:24px;font-weight:bold;color:#222;letter-spacing:2px;padding:12px;background:#f9fafc;border-radius:8px">
+            ${otp}
+          </p>
+          <p style="font-size:15px;color:#666;margin-top:12px">
+            Этот код действителен в течение <b>${ttlMinutes} минут</b>.
+          </p>
+        </div>
+
+        <!-- Instructions -->
+        <div style="margin-top:28px;">
+          <p style="font-size:15px;color:#444;margin-bottom:12px">
+            Пожалуйста, не делитесь этим OTP кодом ни с кем. Используйте его только для подтверждения.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align:center;margin-top:28px;padding-top:20px;border-top:2px solid #f0f0f0">
+          <p style="font-size:14px;color:#666;margin:0">
+            &copy; ${new Date().getFullYear()} Jetsim. Все права защищены.
+          </p>
         </div>
 
       </div>
