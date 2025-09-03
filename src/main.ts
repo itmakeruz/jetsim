@@ -5,7 +5,6 @@ import { NestFactory } from '@nestjs/core';
 import { globalHeaderParametrs } from '@enums';
 import { WinstonLoggerService } from '@logger';
 import * as basicAuth from 'express-basic-auth';
-import { AllExceptionFilter } from '@exceptions';
 import { LoggingInterceptor } from '@interceptors';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';

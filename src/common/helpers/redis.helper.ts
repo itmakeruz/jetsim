@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
 import { REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, REDIS_OTP_PREFIX } from '@config';
 
@@ -16,13 +16,12 @@ export class RedisService {
       },
     });
 
-    // Ulanish holatini kuzatish uchun event listener'lar
     this.client.on('connect', () => {
-      console.log('Redis ulanishi muvaffaqiyatli!');
+      console.log('Redis client successfully connected!');
     });
 
     this.client.on('error', (err) => {
-      console.error('Redis ulanish xatosi:', err.message);
+      console.error('Redis connection error:', err.message);
     });
   }
 
@@ -36,29 +35,24 @@ export class RedisService {
   //   }
   // }
 
-  // Modul yopilganda ulanishni uzish
   async onModuleDestroy() {
     await this.client.quit();
-    console.log('Redis ulanishi uzildi.');
+    console.log('Redis disconnected!');
   }
 
-  // OTP saqlash funksiyasi (TTL bilan)
   async setOtp(key: string, value: string, ttl: number = 300): Promise<void> {
     // 300 soniya = 5 daqiqa
-    await this.client.set(`${REDIS_OTP_PREFIX}${key}`, value, 'EX', ttl); // Prefix qo'shildi
+    await this.client.set(`${REDIS_OTP_PREFIX}${key}`, value, 'EX', ttl);
   }
 
-  // OTP o'qish funksiyasi
   async getOtp(key: string): Promise<string | null> {
     return await this.client.get(`${REDIS_OTP_PREFIX}${key}`);
   }
 
-  // OTP o'chirish funksiyasi
   async deleteOtp(key: string): Promise<void> {
     await this.client.del(`${REDIS_OTP_PREFIX}${key}`);
   }
 
-  // Redis holatini tekshirish uchun qo‘shimcha metod
   getClientStatus(): string {
     return this.client.status;
   }

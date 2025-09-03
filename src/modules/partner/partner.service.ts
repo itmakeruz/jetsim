@@ -7,7 +7,7 @@ import { paginate } from '@helpers';
 export class PartnerService {
   constructor(private readonly prisma: PrismaService) {}
   async findAll(query: GetAllPartnerDto) {
-    const parners = await paginate('partner', {
+    const partners = await paginate('partner', {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
@@ -21,6 +21,10 @@ export class PartnerService {
         status: true,
       },
     });
+    return {
+      status: HttpStatus.OK,
+      ...partners,
+    };
   }
 
   async findOne(id: number) {

@@ -1,6 +1,3 @@
-import { PrismaClient } from '@prisma/client';
-import { Models } from '@enums';
-
 export class FilterService {
   static applyFilters(
     filters?: Array<{ column: any; operator: string; value: any }>,

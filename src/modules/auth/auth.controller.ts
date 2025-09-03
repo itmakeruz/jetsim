@@ -1,7 +1,7 @@
 import { AuthService } from './auth.service';
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
-import { LoginDto, RegisterDto, ConfirmEmailDto, DeviceFcmTokenUpdateDto, VerifyOtpDto } from './dto';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiProperty } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Req } from '@nestjs/common';
+import { LoginDto, RegisterDto, ConfirmEmailDto, DeviceFcmTokenUpdateDto } from './dto';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { IRequest } from '@interfaces';
 
 @Controller('auth')

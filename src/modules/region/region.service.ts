@@ -58,7 +58,7 @@ export class RegionService {
     };
   }
 
-  async findAllAdmin(query: GetRegionDto, lan: string) {
+  async findAllAdmin(query: GetRegionDto) {
     const regions = await paginate('region', {
       page: query?.page,
       size: query?.size,

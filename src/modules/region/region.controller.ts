@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Query,
-  UseGuards,
   BadRequestException,
   UseInterceptors,
   UploadedFile,
@@ -33,8 +32,8 @@ export class RegionController {
 
   @ApiOperation({ summary: 'Get all regions admin', description: 'Get all regions admin' })
   @Get('admin')
-  async findAllAdmin(@Query() query: GetRegionDto, @HeadersValidation() headers: DeviceHeadersDto) {
-    return await this.regionService.findAllAdmin(query, headers.lang);
+  async findAllAdmin(@Query() query: GetRegionDto) {
+    return await this.regionService.findAllAdmin(query);
   }
 
   @ApiOperation({ summary: 'Get region by id public', description: 'Get region by id public' })
