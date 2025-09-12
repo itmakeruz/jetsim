@@ -162,6 +162,13 @@ export class OrderService {
       },
       select: {
         id: true,
+        user: {
+          select: {
+            id: true,
+            is_verified: true,
+            email: true,
+          },
+        },
         items: {
           select: {
             id: true,
@@ -188,19 +195,19 @@ export class OrderService {
       throw new BadRequestException('Корзина пуста!');
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: user_id,
-        is_verified: true,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
+    // const user = await this.prisma.user.findUnique({
+    //   where: {
+    //     id: user_id,
+    //     is_verified: true,
+    //   },
+    //   select: {
+    //     id: true,
+    //     name: true,
+    //     email: true,
+    //   },
+    // });
 
-    if (!user) {
+    if (!basket.user.is_verified) {
       throw new BadRequestException('Пользователь не найден или не верифицирован!');
     }
 
@@ -228,7 +235,7 @@ export class OrderService {
       if (partner_id === PartnerIds.JOYTEL) {
         const newSim = await this.prisma.sims.create({
           data: {
-            user_id: user.id,
+            user_id: basket.user.id,
             order_id: newOrder.id,
             status: OrderStatus.CREATED,
             partner_id: PartnerIds.JOYTEL,
@@ -272,7 +279,7 @@ export class OrderService {
       } else if (partner_id === PartnerIds.BILLION_CONNECT) {
         const newSim = await this.prisma.sims.create({
           data: {
-            user_id: user.id,
+            user_id: basket.user.id,
             order_id: newOrder.id,
             status: OrderStatus.CREATED,
             partner_id: PartnerIds.BILLION_CONNECT,
@@ -282,7 +289,7 @@ export class OrderService {
 
         const body = {
           channelOrderId: newSim.id.toString(),
-          email: user.email || undefined,
+          email: basket.user.email || undefined,
           subOrderList: [
             {
               channelSubOrderId: item.id.toString(),
