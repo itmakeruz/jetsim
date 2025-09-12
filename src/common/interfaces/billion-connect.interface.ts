@@ -15,7 +15,7 @@ interface CreateOrderSubOrderList {
   channelSubOrderId: string;
 }
 
-interface BillionConnectCraeteOrderResponse {
+export interface BillionConnectCraeteOrderResponse {
   tradeCode: string;
   tradeMsg: string;
   tradeData: {

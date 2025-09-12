@@ -8,8 +8,7 @@ import {
   JOY_TEL_ORDER_URL,
 } from '@config';
 import * as crypto from 'crypto';
-import { JOYTEL_RESPONSE_ERRORS } from '@constants';
-import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { console } from 'inspector';
 import { v4 as uuidv4 } from 'uuid';
 

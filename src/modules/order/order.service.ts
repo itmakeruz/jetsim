@@ -1,24 +1,12 @@
-import {
-  BadRequestException,
-  ConflictException,
-  HttpStatus,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
-import { CreateOrderDto, UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
+import { BadRequestException, ConflictException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
 import { PrismaService } from '@prisma';
 import { OrderStatus, Status } from '@prisma/client';
 import { BillionConnectService, JoyTel } from '@http';
 import { PartnerIds } from '@enums';
 import { paginate, QrService, sendMailHelper, generateFastEsimInstallmentString, newOrderMessage } from '@helpers';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  BillionConnectCallbackResponse,
-  CreateOrderResponseJoyTel,
-  JoyTelCallbackResponse,
-  NotifyResponseJoyTel,
-} from '@interfaces';
+import { BillionConnectCallbackResponse, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
 import { GatewayGateway } from '../gateway';
 
 @Injectable()

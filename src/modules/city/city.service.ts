@@ -2,7 +2,6 @@ import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCityDto, GetCityDto, UpdateCityDto } from './dto';
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
-import { Status } from '@prisma/client';
 
 @Injectable()
 export class CityService {

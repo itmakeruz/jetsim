@@ -26,10 +26,17 @@ const BILLION_CONNECT_APP_KEY = config.get<string>('BILLION_CONNECT_APP_KEY') ??
 const BILLION_CONNECT_APP_SECRET = config.get<string>('BILLION_CONNECT_APP_SECRET') ?? '';
 const BILLION_CONNECT_SIGN_METHOD = config.get<string>('BILLION_CONNECT_SIGN_METHOD') ?? '';
 
-// gmail smtp
+// smtp
 const MAIL_USER = config.get<string>('MAIL_USER') ?? '';
 const MAIL_PASS = config.get<string>('MAIL_PASS') ?? '';
 
+// redis
+const REDIS_HOST = config.get<string>('REDIS_HOST') ?? '';
+const REDIS_PORT = config.get<number>('REDIS_PORT') ?? 6379;
+const REDIS_PASSWORD = config.get<string>('REDIS_PASSWORD') ?? '';
+const REDIS_OTP_PREFIX = config.get<string>('REDIS_OTP_PREFIX') ?? '';
+
+// decorator
 const ROLES_DECORATOR_KEY = config.get<string>('ROLES_DECORATOR_KEY') ?? '';
 
 //export
@@ -53,4 +60,8 @@ export {
   ROLES_DECORATOR_KEY,
   MAIL_USER,
   MAIL_PASS,
+  REDIS_HOST,
+  REDIS_PORT,
+  REDIS_PASSWORD,
+  REDIS_OTP_PREFIX,
 };

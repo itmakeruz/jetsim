@@ -1,16 +1,13 @@
 import {
   ConnectedSocket,
-  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { GatewayService } from './gateway.service';
 import { Server, Socket } from 'socket.io';
 import { JwtStrategy } from '@strategy';
-import { IUser } from '@interfaces';
 @WebSocketGateway()
 export class GatewayGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly jwtStrategy: JwtStrategy) {}
