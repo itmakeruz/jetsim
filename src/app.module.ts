@@ -18,6 +18,7 @@ import {
 // import { PaymentModule } from './modules/payment/payment.module';
 import { UsersModule } from './modules/users/users.module';
 import { HttpModule } from '@http';
+import { SimsModule } from './modules/sims/sims.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -37,6 +38,7 @@ import { HttpModule } from '@http';
     PartnerModule,
     UsersModule,
     HttpModule,
+    SimsModule,
     // PaymentModule,
   ],
   controllers: [],
