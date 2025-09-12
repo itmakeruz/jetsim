@@ -15,16 +15,18 @@ import { paginate, QrService, sendMailHelper, generateFastEsimInstallmentString,
 import { v4 as uuidv4 } from 'uuid';
 import { BillionConnectCallbackResponse, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
 import { GatewayGateway } from '../gateway';
+import { WinstonLoggerService } from '@logger';
 
 @Injectable()
 export class OrderService {
-  private readonly logger = new Logger(OrderService.name);
+  // private readonly logger = new Logger(OrderService.name);
   constructor(
     private readonly prisma: PrismaService,
     private joyTel: JoyTel,
     private readonly billionConnect: BillionConnectService,
     private readonly socketGateway: GatewayGateway,
     private readonly qrService: QrService,
+    private readonly logger: WinstonLoggerService,
   ) {}
   async findAll(query: GetOrderDto) {
     const { data, ...meta } = await paginate('order', {

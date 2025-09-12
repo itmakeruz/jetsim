@@ -4,10 +4,11 @@ import { OrderController } from './order.controller';
 import { PrismaModule } from '@prisma';
 import { HttpModule, JoyTel } from '@http';
 import { QrService } from '@helpers';
+import { WinstonLoggerService } from '@logger';
 
 @Module({
   imports: [PrismaModule, HttpModule],
   controllers: [OrderController],
-  providers: [OrderService, JoyTel, QrService],
+  providers: [OrderService, JoyTel, QrService, WinstonLoggerService],
 })
 export class OrderModule {}
