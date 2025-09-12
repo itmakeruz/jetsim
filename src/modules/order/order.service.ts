@@ -621,8 +621,6 @@ export class OrderService {
       },
     });
 
-    console.log(sim);
-
     if (!sim) {
       throw new NotFoundException('Order not found');
     }
@@ -656,8 +654,6 @@ export class OrderService {
         },
       },
     });
-    console.log(updatedSim, 'updatedOrder');
-
     await this.socketGateway.sendOrderMessage(sim.user_id, updatedSim.id, updatedSim.qrcode);
 
     const qrBuffer = await this.qrService.generateQrWithLogo(updatedSim.qrcode);
@@ -671,7 +667,6 @@ export class OrderService {
       updatedSim.package.minutes_count,
       updatedSim.package.sms_count,
     );
-    console.log('man shettgaxcha keldim');
     await sendMailHelper(updatedSim.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
 
     return {

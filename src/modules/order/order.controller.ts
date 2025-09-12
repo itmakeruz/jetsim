@@ -38,7 +38,6 @@ export class OrderController {
   @ApiOperation({ summary: 'create order', description: 'create order' })
   @Post('esim')
   async create(@Req() request: IRequest) {
-    console.log(request?.user);
     return this.orderService.create(request?.user?.id);
   }
 
@@ -51,8 +50,6 @@ export class OrderController {
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
-    console.log(request?.user);
-
     return this.orderService.addToBascet(data, headers?.['x-session-id'], request?.user?.id, headers.lang);
   }
 

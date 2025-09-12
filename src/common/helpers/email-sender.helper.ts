@@ -1,6 +1,5 @@
 import * as nodemailer from 'nodemailer';
 import { MAIL_PASS, MAIL_USER } from '@config';
-console.log(MAIL_USER, MAIL_PASS);
 
 export async function sendMailHelper(to: string, subject: string, text: string, html?: string, qrBuffer?: Buffer) {
   const transporter = nodemailer.createTransport({

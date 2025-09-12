@@ -197,7 +197,6 @@ export class AuthService {
       const key = `otp:${email}`;
 
       await this.redisService.setOtp(key, otp, ttl);
-      console.log(`OTP generatsiya qilindi: ${otp} (email: ${email})`);
 
       const ttlMinutes = Math.floor(ttl / 60);
       const html = otpEmailTemplate(email, otp, ttlMinutes);
