@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Status } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class CreatePartnerDto {
   @ApiProperty({ type: String, required: true, example: 'Partner Name (RU)' })
@@ -27,4 +27,9 @@ export class CreatePartnerDto {
   @IsNotEmpty()
   @IsEnum(Status)
   status: Status;
+
+  @ApiProperty({ type: Number, required: true, example: 1 })
+  @IsNotEmpty()
+  @IsNumber()
+  identified_number: number;
 }

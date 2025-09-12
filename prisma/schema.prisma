@@ -186,13 +186,14 @@ model Sims {
 }
 
 model Partner {
-  id             Int     @id @default(autoincrement())
-  name_ru        String
-  name_en        String
-  description_ru String?
-  description_en String?
-  image          String?
-  status         Status
+  id                Int     @id @default(autoincrement())
+  name_ru           String
+  name_en           String
+  description_ru    String?
+  description_en    String?
+  image             String?
+  status            Status
+  identified_number Int?
 
   sims   Sims[]
   tariff Tariff[]

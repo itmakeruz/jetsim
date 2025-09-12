@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePartnerDto, UpdatePartnerDto, GetAllPartnerDto } from './dto';
 import { PrismaService } from '@prisma';
 import { paginate } from '@helpers';
@@ -50,14 +50,18 @@ export class PartnerService {
     };
   }
 
-  async create(createPartnerDto: CreatePartnerDto) {
+  async create(data: CreatePartnerDto) {
+    if (!data.identified_number || data.identified_number < 1 || data.identified_number > 2) {
+      throw new BadRequestException(`Идентификационный номер обязателен и должен быть 1 или 2`);
+    }
     const partner = await this.prisma.partner.create({
       data: {
-        name_ru: createPartnerDto.name_ru,
-        name_en: createPartnerDto.name_en,
-        description_ru: createPartnerDto.description_ru,
-        description_en: createPartnerDto.description_en,
-        status: createPartnerDto.status,
+        name_ru: data.name_ru,
+        name_en: data.name_en,
+        description_ru: data.description_ru,
+        description_en: data.description_en,
+        status: data.status,
+        identified_number: data.identified_number,
       },
     });
 
@@ -67,7 +71,7 @@ export class PartnerService {
     };
   }
 
-  async update(id: number, updatePartnerDto: UpdatePartnerDto) {
+  async update(id: number, data: UpdatePartnerDto) {
     const partner = await this.prisma.partner.findUnique({
       where: { id },
       select: {
@@ -83,14 +87,22 @@ export class PartnerService {
     if (!partner) {
       throw new NotFoundException(`Партнер не найден`);
     }
+
+    if (
+      data.identified_number &&
+      (!data.identified_number || data.identified_number < 1 || data.identified_number > 2)
+    ) {
+      throw new BadRequestException(`Идентификационный номер обязателен и должен быть 1 или 2`);
+    }
+
     await this.prisma.partner.update({
       where: { id },
       data: {
-        name_ru: updatePartnerDto.name_ru,
-        name_en: updatePartnerDto.name_en,
-        description_ru: updatePartnerDto.description_ru,
-        description_en: updatePartnerDto.description_en,
-        status: updatePartnerDto.status,
+        name_ru: data.name_ru,
+        name_en: data.name_en,
+        description_ru: data.description_ru,
+        description_en: data.description_en,
+        status: data.status,
       },
     });
 
