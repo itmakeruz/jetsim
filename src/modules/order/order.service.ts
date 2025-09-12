@@ -242,29 +242,33 @@ export class OrderService {
             package_id: item.package_id,
           },
         });
-        // response = await this.joyTel.submitEsimOrder(
-        //   newSim.id,
-        //   'Jetsim User',
-        //   'string',
-        //   'jetsim@gmail.com',
-        //   item.package.sku_id,
-        //   1,
-        // );
+        response = await this.joyTel.submitEsimOrder(
+          newSim.id,
+          'Jetsim User',
+          'string',
+          'jetsim@gmail.com',
+          item.package.sku_id,
+          1,
+        );
 
-        response = {
-          tradeCode: '1000',
-          tradeMsg: '成功',
-          tradeData: {
-            channelOrderId: '137',
-            orderId: '2756382091550128',
-            subOrderList: [
-              {
-                subOrderId: '1756382091554129',
-                channelSubOrderId: '93',
-              },
-            ],
-          },
-        };
+        // response = {
+        //   tradeCode: '1000',
+        //   tradeMsg: '成功',
+        //   tradeData: {
+        //     channelOrderId: '137',
+        //     orderId: '2756382091550128',
+        //     subOrderList: [
+        //       {
+        //         subOrderId: '1756382091554129',
+        //         channelSubOrderId: '93',
+        //       },
+        //     ],
+        //   },
+        // };
+        let status = true;
+        if (response.tradeCode !== 1000) {
+          status = false;
+        }
 
         await this.prisma.sims.update({
           where: {
@@ -273,7 +277,7 @@ export class OrderService {
           data: {
             order_tid: response?.orderTid,
             order_code: response?.orderCode,
-            status: OrderStatus.REDEEM_COUPON,
+            status: status ? OrderStatus.REDEEM_COUPON : OrderStatus.FAILED,
           },
         });
       } else if (partner_id === PartnerIds.BILLION_CONNECT) {

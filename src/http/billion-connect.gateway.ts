@@ -1,5 +1,5 @@
 // src/integrations/billion-connect.service.ts
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { HttpException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
 
@@ -83,10 +83,9 @@ export class BillionConnectService {
 
     try {
       const response = await this.http.post('', payloadJson, { headers });
-      if (!this.isSuccess(response.data)) {
-        throw new InternalServerErrorException(response.data?.tradeMsg);
-      }
-
+      // if (!this.isSuccess(response.data)) {
+      //   throw new InternalServerErrorException(response.data?.tradeMsg);
+      // }
       return response.data;
     } catch (err: any) {
       const status = err?.response?.status;
