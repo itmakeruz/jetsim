@@ -1,4 +1,11 @@
-import { BadRequestException, ConflictException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
 import { PrismaService } from '@prisma';
 import { OrderStatus, Status } from '@prisma/client';
@@ -11,6 +18,7 @@ import { GatewayGateway } from '../gateway';
 
 @Injectable()
 export class OrderService {
+  private readonly logger = new Logger(OrderService.name);
   constructor(
     private readonly prisma: PrismaService,
     private joyTel: JoyTel,
@@ -146,7 +154,7 @@ export class OrderService {
   }
 
   async create(user_id: number) {
-    console.log(user_id);
+    this.logger.log('Creating order for user:', user_id);
 
     const basket = await this.prisma.basket.findFirst({
       where: {
@@ -199,27 +207,36 @@ export class OrderService {
     const orders = [];
     const responses = [];
 
+    const newOrder = await this.prisma.order.create({
+      data: {
+        user_id,
+        status: OrderStatus.CREATED,
+      },
+      select: {
+        id: true,
+      },
+    });
+
     for (const item of basket.items) {
       if (item.package.status !== Status.ACTIVE) {
         throw new ConflictException(`Пакет ${item.package.id} неактивен!`);
       }
 
+      let response: any;
       const partner_id = item.package.tariff.partner_id;
 
-      const newOrder = await this.prisma.order.create({
-        data: {
-          user_id,
-          package_id: item.package_id,
-          status: OrderStatus.CREATED,
-          partner_id,
-        },
-        select: { id: true },
-      });
-
-      let response: any;
       if (partner_id === PartnerIds.JOYTEL) {
+        const newSim = await this.prisma.sims.create({
+          data: {
+            user_id: user.id,
+            order_id: newOrder.id,
+            status: OrderStatus.CREATED,
+            partner_id: PartnerIds.JOYTEL,
+            package_id: item.package_id,
+          },
+        });
         // response = await this.joyTel.submitEsimOrder(
-        //   newOrder.id,
+        //   newSim.id,
         //   'Jetsim User',
         //   'string',
         //   'jetsim@gmail.com',
@@ -242,9 +259,9 @@ export class OrderService {
           },
         };
 
-        await this.prisma.order.update({
+        await this.prisma.sims.update({
           where: {
-            id: newOrder.id,
+            id: newSim.id,
           },
           data: {
             order_tid: response?.orderTid,
@@ -253,8 +270,18 @@ export class OrderService {
           },
         });
       } else if (partner_id === PartnerIds.BILLION_CONNECT) {
+        const newSim = await this.prisma.sims.create({
+          data: {
+            user_id: user.id,
+            order_id: newOrder.id,
+            status: OrderStatus.CREATED,
+            partner_id: PartnerIds.BILLION_CONNECT,
+            package_id: item.package_id,
+          },
+        });
+
         const body = {
-          channelOrderId: newOrder.id.toString(),
+          channelOrderId: newSim.id.toString(),
           email: user.email || undefined,
           subOrderList: [
             {
@@ -281,9 +308,9 @@ export class OrderService {
         //     ],
         //   },
         // };
-        await this.prisma.order.update({
+        await this.prisma.sims.update({
           where: {
-            id: newOrder.id,
+            id: newSim.id,
           },
           data: {
             status: OrderStatus.NOTIFY_COUPON,
@@ -466,14 +493,15 @@ export class OrderService {
   }
 
   async redeemCoupon(data: JoyTelCallbackResponse) {
-    const order = await this.prisma.order.findFirst({
+    this.logger.log('JoyTel Redeem Coupon:', data);
+    const sim = await this.prisma.sims.findFirst({
       where: {
         order_tid: data.orderTid,
         order_code: data.orderCode,
       },
     });
 
-    if (!order) {
+    if (!sim) {
       throw new BadRequestException('Order not found');
     }
 
@@ -486,9 +514,9 @@ export class OrderService {
     const firstSn = snList[0];
     const productCode = data.itemList[0]?.productCode;
 
-    await this.prisma.order.update({
+    await this.prisma.sims.update({
       where: {
-        id: order.id,
+        id: sim.id,
       },
       data: {
         sn_code: firstSn.snCode,
@@ -507,19 +535,20 @@ export class OrderService {
   }
 
   async notifyCoupon(data: NotifyResponseJoyTel) {
-    const order = await this.prisma.order.findFirst({
+    this.logger.log('JoyTel Notify Coupon:', data);
+    const sim = await this.prisma.sims.findFirst({
       where: {
         sn_pin: data.data.coupon,
       },
     });
 
-    if (!order) {
+    if (!sim) {
       throw new BadRequestException('order not found!');
     }
 
-    const updatedOrder = await this.prisma.order.update({
+    const updatedOrder = await this.prisma.sims.update({
       where: {
-        id: order.id,
+        id: sim.id,
       },
       data: {
         coupon: data.data.coupon,
@@ -544,7 +573,7 @@ export class OrderService {
       },
     });
 
-    await this.socketGateway.sendOrderMessage(order.user_id, updatedOrder.id, updatedOrder.qrcode);
+    await this.socketGateway.sendOrderMessage(sim.user_id, updatedOrder.id, updatedOrder.qrcode);
 
     const qrBuffer = await this.qrService.generateQrWithLogo(updatedOrder.qrcode);
     const fasturl = generateFastEsimInstallmentString(updatedOrder.qrcode);
@@ -566,22 +595,22 @@ export class OrderService {
   }
 
   async bcCallback(data: BillionConnectCallbackResponse) {
-    console.log('BillionConnect callback data:', data);
-    const order = await this.prisma.order.findUnique({
+    this.logger.log('BillionConnect callback data:', data);
+    const sim = await this.prisma.sims.findUnique({
       where: {
         id: Number(data.tradeData.channelOrderId),
       },
     });
 
-    console.log(order);
+    console.log(sim);
 
-    if (!order) {
+    if (!sim) {
       throw new NotFoundException('Order not found');
     }
 
-    const updatedOrder = await this.prisma.order.update({
+    const updatedSim = await this.prisma.sims.update({
       where: {
-        id: order.id,
+        id: sim.id,
       },
       data: {
         uid: data?.tradeData?.subOrderList?.[0]?.uid,
@@ -608,23 +637,23 @@ export class OrderService {
         },
       },
     });
-    console.log(updatedOrder, 'updatedOrder');
+    console.log(updatedSim, 'updatedOrder');
 
-    await this.socketGateway.sendOrderMessage(order.user_id, updatedOrder.id, updatedOrder.qrcode);
+    await this.socketGateway.sendOrderMessage(sim.user_id, updatedSim.id, updatedSim.qrcode);
 
-    const qrBuffer = await this.qrService.generateQrWithLogo(updatedOrder.qrcode);
-    const fasturl = generateFastEsimInstallmentString(updatedOrder.qrcode);
+    const qrBuffer = await this.qrService.generateQrWithLogo(updatedSim.qrcode);
+    const fasturl = generateFastEsimInstallmentString(updatedSim.qrcode);
     const html = newOrderMessage(
       'Клиент',
-      updatedOrder.id,
+      updatedSim.id,
       fasturl,
-      updatedOrder.package.tariff.name_ru,
-      updatedOrder.package.mb_count,
-      updatedOrder.package.minutes_count,
-      updatedOrder.package.sms_count,
+      updatedSim.package.tariff.name_ru,
+      updatedSim.package.mb_count,
+      updatedSim.package.minutes_count,
+      updatedSim.package.sms_count,
     );
     console.log('man shettgaxcha keldim');
-    await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+    await sendMailHelper(updatedSim.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
 
     return {
       code: '000',

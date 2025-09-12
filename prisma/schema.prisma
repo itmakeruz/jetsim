@@ -174,14 +174,13 @@ model Sims {
   user    User    @relation(fields: [user_id], references: [id])
   partner Partner @relation(fields: [partner_id], references: [id])
   package Package @relation(fields: [package_id], references: [id])
+  Order   Order?  @relation(fields: [order_id], references: [id])
 
   request  Json?
   response Json?
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  Order      Order?    @relation(fields: [orderId], references: [id])
-  orderId    Int?
 
   @@map("sims")
 }
