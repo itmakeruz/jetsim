@@ -266,7 +266,7 @@ export class OrderService {
         //   },
         // };
         let status = true;
-        if (response.tradeCode !== 1000) {
+        if (response.tradeCode !== '1000') {
           status = false;
         }
 
@@ -319,12 +319,18 @@ export class OrderService {
         //     ],
         //   },
         // };
+
+        let status = true;
+        if (response.code !== 0) {
+          status = false;
+        }
+
         await this.prisma.sims.update({
           where: {
             id: newSim.id,
           },
           data: {
-            status: OrderStatus.NOTIFY_COUPON,
+            status: status ? OrderStatus.NOTIFY_COUPON : OrderStatus.FAILED,
           },
         });
       }
