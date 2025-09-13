@@ -19,6 +19,7 @@ import {
 import { UsersModule } from './modules/users/users.module';
 import { HttpModule } from '@http';
 import { SimsModule } from './modules/sims/sims.module';
+import { SupportModule } from './modules/support/support.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -39,6 +40,7 @@ import { SimsModule } from './modules/sims/sims.module';
     UsersModule,
     HttpModule,
     SimsModule,
+    SupportModule,
     // PaymentModule,
   ],
   controllers: [],

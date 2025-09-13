@@ -33,16 +33,29 @@ model User {
 }
 
 model Staff {
-  id       Int    @id @default(autoincrement())
+  id       Int        @id @default(autoincrement())
   name     String
   login    String
   password String
+  role     UserRoles?
   status   Status
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
 
   @@map("staff")
+}
+
+model SupportOperators {
+  id         Int       @id @default(autoincrement())
+  name       String?
+  login      String?
+  password   String?
+  status     Status?   @default(ACTIVE)
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+
+  @@map("support_operator")
 }
 
 model Region {
@@ -302,4 +315,11 @@ enum OrderJobStatus {
   PENDING
   SUCCESS
   ERROR
+}
+
+enum UserRoles {
+  SUPER_ADMIN
+  ADMIN
+  ACCOUNTANT
+  PRE_ACCOUNTANT
 }
