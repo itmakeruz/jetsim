@@ -8,3 +8,6 @@ export * from './prisma';
 export * from './package';
 export * from './gateway';
 export * from './partner';
+export * from './support';
+export * from './users';
+export * from './sims';

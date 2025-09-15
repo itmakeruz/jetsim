@@ -14,12 +14,13 @@ import {
   OrderModule,
   GatewayModule,
   PartnerModule,
+  UsersModule,
+  SimsModule,
+  SupportModule,
 } from '@modules';
 // import { PaymentModule } from './modules/payment/payment.module';
-import { UsersModule } from './modules/users/users.module';
 import { HttpModule } from '@http';
-import { SimsModule } from './modules/sims/sims.module';
-import { SupportModule } from './modules/support/support.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
