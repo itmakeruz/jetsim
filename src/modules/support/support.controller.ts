@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { SupportService } from './support.service';
-import { CreateSupportOperatorsDto, UpdateSupportOperatorsDto } from './dto';
+import { CreateSupportOperatorsDto, UpdateSupportOperatorsDto, GetUserInfosDto } from './dto';
 import { ParamId } from '@enums';
 
 @Controller('support')
@@ -10,6 +10,11 @@ export class SupportController {
   @Get()
   async findAll(@Query() query: any) {
     return this.supportService.findAll(query);
+  }
+
+  @Get()
+  async getUserOrders(@Body() data: GetUserInfosDto) {
+    return this.supportService.ordersByUserId(data);
   }
 
   @Get(':id')

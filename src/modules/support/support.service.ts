@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateSupportOperatorsDto, UpdateSupportOperatorsDto } from './dto';
+import { CreateSupportOperatorsDto, GetUserInfosDto, UpdateSupportOperatorsDto } from './dto';
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
 import * as bcrypt from 'bcrypt';
@@ -135,6 +135,39 @@ export class SupportService {
 
     return {
       status: HttpStatus.NO_CONTENT,
+    };
+  }
+
+  async ordersByUserId(data: GetUserInfosDto) {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        user_id: data.user_id,
+      },
+      select: {
+        id: true,
+        status: true,
+        sims: {
+          select: {
+            id: true,
+            package: {
+              select: {
+                id: true,
+                sku_id: true,
+              },
+            },
+            cid: true,
+            qrcode: true,
+            status: true,
+            created_at: true,
+          },
+        },
+        created_at: true,
+      },
+    });
+
+    return {
+      status: HttpStatus.OK,
+      data: orders,
     };
   }
 }
