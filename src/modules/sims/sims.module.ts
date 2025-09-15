@@ -2,10 +2,11 @@ import { Module } from '@nestjs/common';
 import { SimsService } from './sims.service';
 import { SimsController } from './sims.controller';
 import { PrismaModule } from '@prisma';
+import { JoyTel } from '@http';
 
 @Module({
   controllers: [SimsController],
-  providers: [SimsService],
+  providers: [SimsService, JoyTel],
   imports: [PrismaModule],
 })
 export class SimsModule {}

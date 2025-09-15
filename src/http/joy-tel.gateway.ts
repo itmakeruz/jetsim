@@ -9,8 +9,8 @@ import {
 } from '@config';
 import * as crypto from 'crypto';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { console } from 'inspector';
 import { v4 as uuidv4 } from 'uuid';
+import { CouponRequest, CidRequest } from '@interfaces';
 
 @Injectable()
 export class JoyTel {
@@ -158,6 +158,39 @@ export class JoyTel {
       .send();
   }
 
+  async getUsage(coupon: CouponRequest) {
+    const headers = this.generateRspHeaders();
+    const response = await this.httpService
+      .setUrl(JOYTEL_URL + '/esim/usage/query')
+      .setHeaders(headers)
+      .setBody(coupon)
+      .send();
+
+    return response.data;
+  }
+  async getStatus(coupon: CouponRequest) {
+    const headers = this.generateRspHeaders();
+    const response = await this.httpService
+      .setUrl(JOYTEL_URL + '/esim/usage/query')
+      .setHeaders(headers)
+      .setBody(coupon)
+      .send();
+
+    return response.data;
+  }
+  async getProfileInfo(coupon: CidRequest) {
+    const headers = this.generateRspHeaders();
+    const response = await this.httpService
+      .setUrl(JOYTEL_URL + '/esim/usage/query')
+      .setHeaders(headers)
+      .setBody(coupon)
+      .send();
+
+    return response.data;
+  }
+
+  //HELPERS
+
   private generateRspHeaders() {
     const transId = uuidv4();
     const timestamp = Date.now();
@@ -175,7 +208,6 @@ export class JoyTel {
     };
   }
 
-  // HELPERS
   generateCiphertext(transaction_id: string): string {
     return crypto
       .createHash('md5')

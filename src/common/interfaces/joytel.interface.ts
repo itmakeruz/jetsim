@@ -49,3 +49,11 @@ export interface NotifyResponseJoyTel {
     puk2: string;
   };
 }
+
+export interface CouponRequest {
+  coupon: string;
+}
+
+export interface CidRequest {
+  cid: string;
+}
