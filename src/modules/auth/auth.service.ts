@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { RegisterDto, DeviceFcmTokenUpdateDto, LoginDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService, generateOtp, sendMailHelper, otpEmailTemplate } from '@helpers';
+import { register_error } from '@constants';
 
 @Injectable()
 export class AuthService {
@@ -67,7 +68,7 @@ export class AuthService {
     };
   }
 
-  async register(data: RegisterDto) {
+  async register(data: RegisterDto, lang: string) {
     const isExist = await this.prisma.user.findFirst({
       where: {
         email: data.email,
@@ -75,7 +76,7 @@ export class AuthService {
     });
 
     if (isExist) {
-      throw new BadRequestException('Этот электронный адрес уже занят!');
+      throw new BadRequestException(register_error[lang]);
     }
 
     await this.prisma.user.create({

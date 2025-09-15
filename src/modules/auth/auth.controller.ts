@@ -3,6 +3,8 @@ import { Controller, Get, Post, Body, Patch, Req } from '@nestjs/common';
 import { LoginDto, RegisterDto, ConfirmEmailDto, DeviceFcmTokenUpdateDto } from './dto';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { IRequest } from '@interfaces';
+import { HeadersValidation } from '@decorators';
+import { DeviceHeadersDto } from '@enums';
 
 @Controller('auth')
 export class AuthController {
@@ -10,8 +12,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Register public', description: 'Register public' })
   @Post('register')
-  async register(@Body() data: RegisterDto) {
-    return await this.authService.register(data);
+  async register(@Body() data: RegisterDto, @HeadersValidation() headers: DeviceHeadersDto) {
+    return await this.authService.register(data, headers.lang);
   }
 
   @ApiOperation({ summary: 'Login public', description: 'Login public' })
