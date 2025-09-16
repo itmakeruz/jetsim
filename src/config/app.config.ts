@@ -11,6 +11,8 @@ const JWT_ACCESS_SECRET = config.get<string>('JWT_ACCESS_SECRET') ?? '';
 const JWT_REFRESH_SECRET = config.get<string>('JWT_REFRESH_SECRET') ?? '';
 const JWT_ACCESS_EXPIRE_TIME = config.get<string>('JWT_ACCESS_EXPIRE_TIME') ?? '15m';
 const JWT_REFRESH_EXPIRE_TIME = config.get<string>('JWT_REFRESH_EXPIRE_TIME') ?? '7d';
+const JWT_RESET_TOKEN = config.get<string>('JWT_RESET_TOKEN') ?? '';
+const JWT_RESET_EXPIRE_TIME = config.get<string>('JWT_RESET_EXPIRE_TIME') ?? '5m';
 
 //joytel
 const JOYTEL_URL = config.get<string>('JOYTEL_URL') ?? '';
@@ -47,6 +49,8 @@ export {
   JWT_REFRESH_SECRET,
   JWT_ACCESS_EXPIRE_TIME,
   JWT_REFRESH_EXPIRE_TIME,
+  JWT_RESET_TOKEN,
+  JWT_RESET_EXPIRE_TIME,
   JOYTEL_URL,
   JOY_TEL_ORDER_URL,
   JOYTEL_APP_ID,

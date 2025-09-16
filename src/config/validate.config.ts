@@ -33,6 +33,14 @@ class EnvironmentVariables {
 
   @IsNotEmpty()
   @IsString()
+  JWT_RESET_TOKEN: string;
+
+  @IsNotEmpty()
+  @IsString()
+  JWT_RESET_EXPIRE_TIME: string;
+
+  @IsNotEmpty()
+  @IsString()
   JOYTEL_URL: string;
 
   @IsNotEmpty()

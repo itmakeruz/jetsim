@@ -1,6 +1,15 @@
 import { AuthService } from './auth.service';
 import { Controller, Get, Post, Body, Patch, Req } from '@nestjs/common';
-import { LoginDto, RegisterDto, ConfirmEmailDto, DeviceFcmTokenUpdateDto } from './dto';
+import {
+  LoginDto,
+  RegisterDto,
+  ConfirmEmailDto,
+  DeviceFcmTokenUpdateDto,
+  ChangePassword,
+  ConfirmChangePasswordOtp,
+  PrepareChangePasswordDto,
+  VerifyOtpDto,
+} from './dto';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
@@ -33,6 +42,33 @@ export class AuthController {
   @Post('confirm-email')
   async confirmEmail(@Body() data: ConfirmEmailDto) {
     return await this.authService.verifyOtp(data.email, data.confirm_code);
+  }
+
+  @ApiOperation({
+    summary: 'Change Password get OTP confirm code for public',
+    description: 'Change Password get OTP confirm code for public',
+  })
+  @Post('forgot-password/prepare')
+  async changePassword(@Body() data: PrepareChangePasswordDto) {
+    return await this.authService.forgotPasswordPrepare(data);
+  }
+
+  @ApiOperation({
+    summary: 'Confirm Otp code',
+    description: 'Confirm Otp code',
+  })
+  @Post('forgot-password/confirm-otp')
+  async forgotPasswordConfirmOtp(@Body() data: ConfirmChangePasswordOtp) {
+    return this.authService.forgotPasswordConfirmOtp(data);
+  }
+
+  @ApiOperation({
+    summary: 'Confirm Otp code',
+    description: 'Confirm Otp code',
+  })
+  @Post('forgot-password/change-password')
+  async changeForgottenPassword(@Body() data: ChangePassword) {
+    return this.authService.changeForgottenpassword(data);
   }
 
   @ApiOperation({ summary: 'Update Fcm Token public', description: 'Update Fcm Token public' })

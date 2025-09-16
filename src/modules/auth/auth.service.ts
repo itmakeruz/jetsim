@@ -8,10 +8,18 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@prisma';
 import * as bcrypt from 'bcrypt';
-import { RegisterDto, DeviceFcmTokenUpdateDto, LoginDto } from './dto';
+import {
+  RegisterDto,
+  DeviceFcmTokenUpdateDto,
+  LoginDto,
+  PrepareChangePasswordDto,
+  ConfirmChangePasswordOtp,
+  ChangePassword,
+} from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService, generateOtp, sendMailHelper, otpEmailTemplate } from '@helpers';
 import { register_error } from '@constants';
+import { JWT_RESET_TOKEN, JWT_RESET_EXPIRE_TIME } from '@config';
 
 @Injectable()
 export class AuthService {
@@ -190,6 +198,99 @@ export class AuthService {
     };
   }
 
+  async forgotPasswordPrepare(data: PrepareChangePasswordDto) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email: data.email,
+      },
+      select: {
+        id: true,
+        email: true,
+        is_verified: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Этот адрес электронной почты не зарегистрирован!');
+    }
+
+    await this.generateAndStoreOtpForgotPassword(user.email);
+
+    return {
+      error: false,
+      status: HttpStatus.CREATED,
+      message: 'OTP отправлен на ваш email!',
+    };
+  }
+
+  async forgotPasswordConfirmOtp(data: ConfirmChangePasswordOtp) {
+    const key = `otp:forgot:${data.email}`;
+    const storedOtp = await this.redisService.getOtp(key);
+
+    if (!storedOtp) {
+      return { valid: false, message: 'OTP не найден или истек срок действия!' };
+    }
+
+    const isValid = storedOtp === data.confirmation_code;
+
+    if (!isValid) {
+      throw new UnauthorizedException('Неверный OTP код');
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email: data.email,
+      },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+
+    const resetToken = await this.jwtService.signAsync(
+      { id: user.id, email: user.email },
+      { secret: JWT_RESET_TOKEN, expiresIn: JWT_RESET_EXPIRE_TIME },
+    );
+
+    await this.redisService.deleteOtp(key);
+    return {
+      valid: true,
+      message: 'OTP успешно подтвержден!',
+      data: {
+        reset_token: resetToken,
+      },
+    };
+  }
+
+  async changeForgottenpassword(data: ChangePassword) {
+    if (data.new_password !== data.confirm_password) {
+      throw new BadRequestException('Пароли не совпадают!');
+    }
+
+    let payload;
+    try {
+      payload = await this.jwtService.verifyAsync(data.reset_token, {
+        secret: JWT_RESET_TOKEN,
+      });
+    } catch (error) {
+      throw new UnauthorizedException('Недействительный или просроченный токен сброса!');
+    }
+
+    await this.prisma.user.update({
+      where: {
+        id: payload.id,
+      },
+      data: {
+        password: await bcrypt.hash(data.new_password, 10),
+      },
+    });
+
+    return {
+      error: false,
+      status: HttpStatus.OK,
+    };
+  }
+
   async generateAndStoreOtp(
     email: string,
     ttl: number = 120, // 120 секунд = 2 минуты
@@ -206,6 +307,36 @@ export class AuthService {
       await sendMailHelper(email, 'Ваш OTP код', `Ваш OTP код: ${otp}. Действителен ${ttlMinutes} минут.`, html);
 
       return {
+        message: `OTP для ${email} успешно сгенерирован и отправлен на email!`,
+      };
+    } catch (error) {
+      console.error('OTP generatsiya xatosi:', error);
+      throw new InternalServerErrorException('Ошибка при генерации или отправке OTP');
+    }
+  }
+
+  async generateAndStoreOtpForgotPassword(
+    email: string,
+    ttl: number = 120, // 120 секунд = 2 минуты
+  ): Promise<{ message: string; error: boolean }> {
+    try {
+      const otp = generateOtp(6);
+      const key = `otp:forgot:${email}`;
+
+      await this.redisService.setOtp(key, otp, ttl);
+
+      const ttlMinutes = Math.floor(ttl / 60);
+      const html = otpEmailTemplate(email, otp, ttlMinutes);
+
+      await sendMailHelper(
+        email,
+        'Ваш OTP код для изменить пароля',
+        `Ваш OTP код: ${otp}. Действителен ${ttlMinutes} минут.`,
+        html,
+      );
+
+      return {
+        error: false,
         message: `OTP для ${email} успешно сгенерирован и отправлен на email!`,
       };
     } catch (error) {
