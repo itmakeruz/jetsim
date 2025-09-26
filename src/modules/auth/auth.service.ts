@@ -15,10 +15,11 @@ import {
   PrepareChangePasswordDto,
   ConfirmChangePasswordOtp,
   ChangePassword,
+  ChangePasswordDto,
 } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService, generateOtp, sendMailHelper, otpEmailTemplate } from '@helpers';
-import { register_error } from '@constants';
+import { register_error, change_password_not_equal, change_password_not_equal_new_password } from '@constants';
 import { JWT_RESET_TOKEN, JWT_RESET_EXPIRE_TIME } from '@config';
 
 @Injectable()
@@ -279,6 +280,40 @@ export class AuthService {
     await this.prisma.user.update({
       where: {
         id: payload.id,
+      },
+      data: {
+        password: await bcrypt.hash(data.new_password, 10),
+      },
+    });
+
+    return {
+      error: false,
+      status: HttpStatus.OK,
+    };
+  }
+
+  async changePassword(userId: number, data: ChangePasswordDto, lang: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException();
+    }
+
+    if (user.password !== (await bcrypt.hash(data.current_password, 10))) {
+      throw new BadRequestException(change_password_not_equal[lang]);
+    }
+
+    if (data.new_password !== data.confirm_password) {
+      throw new BadRequestException(change_password_not_equal_new_password[lang]);
+    }
+
+    await this.prisma.user.update({
+      where: {
+        id: userId,
       },
       data: {
         password: await bcrypt.hash(data.new_password, 10),

@@ -9,6 +9,7 @@ import {
   ConfirmChangePasswordOtp,
   PrepareChangePasswordDto,
   VerifyOtpDto,
+  ChangePasswordDto,
 } from './dto';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { IRequest } from '@interfaces';
@@ -83,5 +84,16 @@ export class AuthController {
   @Get('me-staff')
   async getMeStaff(@Req() request: IRequest) {
     return await this.authService.getMeStaff(request.user.id);
+  }
+
+  @ApiOperation({ summary: 'Change password public', description: 'Change password public' })
+  @ApiBearerAuth('access_token')
+  @Get('change-password')
+  async changePasswordUser(
+    @Req() request: IRequest,
+    @Body() data: ChangePasswordDto,
+    @HeadersValidation() headers: DeviceHeadersDto,
+  ) {
+    return await this.authService.changePassword(request.user.id, data, headers.lang);
   }
 }

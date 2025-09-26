@@ -36,3 +36,20 @@ export class ChangePassword {
   @IsString()
   reset_token: string;
 }
+
+export class ChangePasswordDto {
+  @ApiProperty({ type: String, required: true, example: 'nimadirda123' })
+  @IsNotEmpty()
+  @IsString()
+  current_password: string;
+
+  @ApiProperty({ type: String, required: true, example: 'nimadirda123' })
+  @IsNotEmpty()
+  @IsString()
+  new_password: string;
+
+  @ApiProperty({ type: String, required: true, example: 'nimadirda123' })
+  @IsNotEmpty()
+  @IsString()
+  confirm_password: string;
+}
