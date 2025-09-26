@@ -10,7 +10,6 @@ export class LoggingInterceptor implements NestInterceptor {
 
   private sanitizeData(data: any): any {
     if (!data || typeof data !== 'object') return data;
-
     const sensitiveFields = ['password', 'token', 'accessToken', 'refreshToken', 'secret'];
     const sanitized = { ...data };
 
@@ -21,36 +20,31 @@ export class LoggingInterceptor implements NestInterceptor {
         sanitized[key] = this.sanitizeData(sanitized[key]);
       }
     }
-
     return sanitized;
   }
 
-  private formatLog(context: ExecutionContext, statusCode: number, elapsed: number, error?: any) {
+  private formatLog(context: ExecutionContext, statusCode: number, elapsed: number, error?: any): string {
     const request = context.switchToHttp().getRequest<Request>();
     const { method, url, params, query, body, ip, headers } = request;
 
-    const logData = {
-      timestamp: new Date().toISOString(),
-      method,
-      url,
-      statusCode,
-      elapsedMs: elapsed,
-      ip,
-      userAgent: headers['user-agent'] || 'unknown',
-      params: this.sanitizeData(params),
-      query: this.sanitizeData(query),
-      body: this.sanitizeData(body),
-    };
+    let logLine =
+      `| ${method} ${url}` +
+      ` | status=${statusCode}` +
+      ` | elapsed=${elapsed}ms` +
+      ` | ip=${ip}` +
+      ` | ua="${headers['user-agent'] || 'unknown'}"` +
+      ` | params=${JSON.stringify(this.sanitizeData(params))}` +
+      ` | query=${JSON.stringify(this.sanitizeData(query))}` +
+      ` | body=${JSON.stringify(this.sanitizeData(body))}`;
 
     if (error) {
-      logData['error'] = {
-        message: error.message,
-        stack: error.stack || 'no stack trace',
-        details: error.response || null,
-      };
+      logLine +=
+        ` | error="${error.message}"` +
+        ` | stack=${error.stack || 'no stack trace'}` +
+        ` | details=${JSON.stringify(error.response || null)}`;
     }
 
-    return logData;
+    return logLine;
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -68,7 +62,7 @@ export class LoggingInterceptor implements NestInterceptor {
         const elapsed = Date.now() - now;
         const logData = this.formatLog(context, statusCode, elapsed);
 
-        this.logger.info('HTTP Request', logData);
+        this.logger.info(logData); // endi string ketadi
       }),
       catchError((error) => {
         const elapsed = Date.now() - now;
@@ -77,11 +71,11 @@ export class LoggingInterceptor implements NestInterceptor {
         const logData = this.formatLog(context, statusCode, elapsed, error);
 
         if (statusCode >= 500) {
-          this.logger.error('HTTP Server Error', logData);
+          this.logger.error(logData);
         } else if (statusCode >= 400) {
-          this.logger.warn('HTTP Client Error', logData);
+          this.logger.warn(logData);
         } else {
-          this.logger.error('HTTP Unknown Error', logData);
+          this.logger.error(logData);
         }
 
         throw error;

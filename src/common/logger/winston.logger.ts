@@ -9,15 +9,19 @@ export class WinstonLoggerService {
   constructor() {
     this.logger = createLogger({
       level: process.env.LOG_LEVEL || 'info',
-      format: format.combine(format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), format.json()),
+      format: format.combine(
+        format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        format.printf(({ timestamp, level, message }) => {
+          return `[${timestamp}] ${level.toUpperCase()}: ${message}`;
+        }),
+      ),
       transports: [
         new transports.Console({
           format: format.combine(
             format.colorize(),
-            format.printf(
-              ({ timestamp, level, message, ...meta }) =>
-                `[${timestamp}] ${level}: ${message}\n${JSON.stringify(meta, null, 2)}`,
-            ),
+            format.printf(({ timestamp, level, message }) => {
+              return `[${timestamp}] ${level}: ${message}`;
+            }),
           ),
         }),
         new transports.DailyRotateFile({
@@ -26,41 +30,50 @@ export class WinstonLoggerService {
           zippedArchive: true,
           maxSize: '20m',
           maxFiles: 10,
-          format: format.combine(format.json(), format.prettyPrint()),
+          format: format.combine(
+            format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+            format.printf(({ timestamp, level, message }) => {
+              return `[${timestamp}] ${level.toUpperCase()}: ${message}`;
+            }),
+          ),
         }),
       ],
     });
   }
 
-  info(message: string, meta?: any) {
-    this.logger.info(message, meta);
+  info(message: string) {
+    this.logger.info(message);
   }
 
-  error(message: string, meta?: any) {
-    this.logger.error(message, meta);
+  error(message: string) {
+    this.logger.error(message);
   }
 
-  warn(message: string, meta?: any) {
-    this.logger.warn(message, meta);
+  warn(message: string) {
+    this.logger.warn(message);
   }
 
-  debug(message: string, meta?: any) {
-    this.logger.debug(message, meta);
+  debug(message: string) {
+    this.logger.debug(message);
   }
 
-  verbose(message: string, meta?: any) {
-    this.logger.verbose(message, meta);
+  verbose(message: string) {
+    this.logger.verbose(message);
   }
 
   log(message: string, meta?: any) {
-    this.info(message, meta);
+    if (meta) {
+      this.logger.info(`${message} ${JSON.stringify(meta)}`);
+    } else {
+      this.logger.info(message);
+    }
   }
 
   errorLegacy(message: string, trace?: string) {
-    this.error(message, { trace });
+    this.error(`${message} | trace=${trace || ''}`);
   }
 
   warnLegacy(message: string, trace?: string) {
-    this.warn(message, { trace });
+    this.warn(`${message} | trace=${trace || ''}`);
   }
 }

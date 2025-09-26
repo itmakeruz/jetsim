@@ -197,18 +197,6 @@ export class OrderService {
       throw new BadRequestException('Корзина пуста!');
     }
 
-    // const user = await this.prisma.user.findUnique({
-    //   where: {
-    //     id: user_id,
-    //     is_verified: true,
-    //   },
-    //   select: {
-    //     id: true,
-    //     name: true,
-    //     email: true,
-    //   },
-    // });
-
     if (!basket.user.is_verified) {
       throw new BadRequestException('Пользователь не найден или не верифицирован!');
     }
@@ -615,13 +603,18 @@ export class OrderService {
 
   async bcCallback(data: BillionConnectCallbackResponse) {
     this.logger.log('BillionConnect callback data:', data);
+    console.log(data);
+
     const sim = await this.prisma.sims.findUnique({
       where: {
-        id: Number(data.tradeData.channelOrderId),
+        id: Number(data?.tradeData?.channelOrderId),
       },
     });
 
     if (!sim) {
+      this.logger.error(
+        `Error while execute BC callback can not find sim with that id: ${data?.tradeData?.channelOrderId}`,
+      );
       throw new NotFoundException('Order not found');
     }
 

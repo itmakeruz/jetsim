@@ -12,7 +12,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = app.get(WinstonLoggerService);
-  app.useGlobalInterceptors(new LoggingInterceptor(logger));
+  // app.useGlobalInterceptors(new LoggingInterceptor(logger));
 
   app.enableCors({
     origin: '*',
