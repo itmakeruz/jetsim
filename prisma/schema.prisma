@@ -298,12 +298,12 @@ model BasketItem {
   id        Int    @id @default(autoincrement())
   basket_id Int
   // package_id Int
-  tariff_id Int
+  tariff_id Int?
   quantity  Int    @default(1)
   price     String
 
-  basket Basket @relation(fields: [basket_id], references: [id])
-  tariff Tariff @relation(fields: [tariff_id], references: [id])
+  basket Basket  @relation(fields: [basket_id], references: [id])
+  tariff Tariff? @relation(fields: [tariff_id], references: [id])
 
   created_at DateTime @default(now()) @db.Timestamptz(5)
   updated_at DateTime @updatedAt @db.Timestamptz(5)
