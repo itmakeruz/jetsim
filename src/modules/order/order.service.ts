@@ -401,7 +401,7 @@ export class OrderService {
       session_id: sessionId,
       items: fullBasket.items.map((item) => ({
         id: item.id,
-        package_id: item.tariff_id,
+        tariff_id: item.tariff_id,
         name: item?.tariff?.[`name_${lang}`],
         price: item.price,
         quantity: item.quantity,

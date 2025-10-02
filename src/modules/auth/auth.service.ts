@@ -39,6 +39,7 @@ export class AuthService {
         email: true,
         name: true,
         password: true,
+        is_verified: true,
       },
     });
 
@@ -51,6 +52,7 @@ export class AuthService {
       email: user?.email,
       name: user?.name,
       password: user?.password,
+      is_verified: user?.is_verified,
     };
   }
 
@@ -66,6 +68,11 @@ export class AuthService {
     if (!isMatch) {
       throw new UnauthorizedException('Недействительные учетные данные!');
     }
+
+    if (!user.is_verified) {
+      throw new UnauthorizedException('Недействительные учетные данные!');
+    }
+    console.log(user);
 
     const accessToken = this.jwtService.sign({
       id: user?.id,
