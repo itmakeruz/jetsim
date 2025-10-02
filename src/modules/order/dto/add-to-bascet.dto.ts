@@ -5,7 +5,7 @@ export class AddToBasket {
   @ApiProperty({ type: Number, required: true, example: 1 })
   @IsNumber()
   @IsNotEmpty()
-  package_id: number;
+  tariff_id: number;
 
   @ApiProperty({ type: Number, required: true, example: 1 })
   @IsNumber()

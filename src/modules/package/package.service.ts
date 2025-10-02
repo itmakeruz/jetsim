@@ -19,17 +19,17 @@ export class PackageService {
         mb_count: true,
         sku_id: true,
         status: true,
-        tariff: {
-          select: {
-            id: true,
-            name_ru: true,
-            name_en: true,
-            description_ru: true,
-            description_en: true,
-            status: true,
-            created_at: true,
-          },
-        },
+        // tariff: {
+        //   select: {
+        //     id: true,
+        //     name_ru: true,
+        //     name_en: true,
+        //     description_ru: true,
+        //     description_en: true,
+        //     status: true,
+        //     created_at: true,
+        //   },
+        // },
         created_at: true,
       },
     });
@@ -52,17 +52,17 @@ export class PackageService {
         mb_count: true,
         sku_id: true,
         status: true,
-        tariff: {
-          select: {
-            id: true,
-            name_ru: true,
-            name_en: true,
-            description_ru: true,
-            description_en: true,
-            status: true,
-            created_at: true,
-          },
-        },
+        // tariff: {
+        //   select: {
+        //     id: true,
+        //     name_ru: true,
+        //     name_en: true,
+        //     description_ru: true,
+        //     description_en: true,
+        //     status: true,
+        //     created_at: true,
+        //   },
+        // },
         created_at: true,
       },
     });

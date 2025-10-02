@@ -45,11 +45,11 @@ export class TariffController {
     return this.tariffService.changeStatusTariff(param.id, query.status);
   }
 
-  @ApiOperation({ summary: 'Update tariff', description: 'Update tariff' })
-  @Patch('package/:id/change-status')
-  async changeStatusPackage(@Param() param: ParamId, @Query() query: QueryStatus) {
-    return this.tariffService.changeStatusPackage(param.id, query.status);
-  }
+  // @ApiOperation({ summary: 'Update tariff', description: 'Update tariff' })
+  // @Patch('package/:id/change-status')
+  // async changeStatusPackage(@Param() param: ParamId, @Query() query: QueryStatus) {
+  //   return this.tariffService.changeStatusPackage(param.id, query.status);
+  // }
 
   @ApiOperation({ summary: 'Update tariff', description: 'Update tariff' })
   @Patch(':id')

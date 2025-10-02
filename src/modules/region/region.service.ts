@@ -1,5 +1,11 @@
 import { BadRequestException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateRegionDto, GetRegionDto, UpdateRegionDto } from './dto';
+import {
+  CreateRegionCategoryDto,
+  CreateRegionDto,
+  GetRegionDto,
+  UpdateRegionCategoryDto,
+  UpdateRegionDto,
+} from './dto';
 import { paginate } from '@helpers';
 import { FilePath } from '@constants';
 import { PrismaService } from '@prisma';
@@ -233,6 +239,106 @@ export class RegionService {
     return {
       status: HttpStatus.NO_CONTENT,
       message: 'Регион успешно удален!',
+    };
+  }
+
+  /**
+   *
+   *
+   * REGION CATEGORIES
+   */
+
+  async getRegionCategoryPublic(lang: string) {
+    const regionCategories = await this.prisma.regionCategory.findMany({
+      where: {
+        status: Status.ACTIVE,
+      },
+      select: {
+        id: true,
+        [`name_${lang}`]: true,
+        icon: true,
+        created_at: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: '',
+      data: regionCategories?.map((category) => ({
+        id: category?.id,
+        name: category?.[`name_${lang}`],
+        icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+        created_at: category?.created_at,
+      })),
+    };
+  }
+
+  async getRegionCategoryAdmin() {
+    const regionCategories = await this.prisma.regionCategory.findMany();
+    return {
+      success: true,
+      message: '',
+      data: regionCategories,
+    };
+  }
+
+  async createRegionCategory(data: CreateRegionCategoryDto, fileName: string) {
+    await this.prisma.regionCategory.create({
+      data: {
+        name_ru: data.name_ru,
+        name_en: data.name_en,
+        icon: fileName,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'success',
+      data: null,
+    };
+  }
+
+  async updateRegionCategory(id: number, data: UpdateRegionCategoryDto, fileName: string) {
+    const existCategoryRegion = await this.prisma.regionCategory.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        icon: true,
+        name_ru: true,
+        name_en: true,
+      },
+    });
+
+    if (!existCategoryRegion) {
+      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+    }
+
+    if (fileName) {
+      const imagePath = path.join(process.cwd(), 'uploads', 'region_icons', existCategoryRegion.icon);
+
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
+    await this.prisma.regionCategory.update({
+      where: {
+        id: existCategoryRegion.id,
+      },
+      data: {
+        name_ru: data.name_ru ?? existCategoryRegion.name_ru,
+        name_en: data.name_en ?? existCategoryRegion.name_en,
+        icon: fileName ?? existCategoryRegion.icon,
+        updated_at: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      message: 'success',
+      data: null,
     };
   }
 }

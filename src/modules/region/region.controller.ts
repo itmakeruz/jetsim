@@ -12,7 +12,7 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { RegionService } from './region.service';
-import { CreateRegionDto, GetRegionDto, UpdateRegionDto } from './dto';
+import { CreateRegionCategoryDto, CreateRegionDto, GetRegionDto, UpdateRegionDto } from './dto';
 import { DeviceHeadersDto, ParamId } from '@enums';
 import { HeadersValidation } from '@decorators';
 import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
@@ -99,5 +99,75 @@ export class RegionController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.regionService.remove(+id);
+  }
+
+  /**
+   *
+   *
+   *
+   * REGION CATEGORIES
+   *
+   */
+
+  @ApiOperation({ summary: 'Get Region categories for public', description: 'Get Region categories for public' })
+  @Get('category')
+  async getRegionCategory(@HeadersValidation() headers: DeviceHeadersDto) {
+    return this.regionService.getRegionCategoryPublic(headers.lang);
+  }
+
+  @ApiOperation({ summary: 'Get Region categories for admin', description: 'Get Region categories for admin' })
+  @Get('admin/category')
+  async getRegionCategoryAdmin() {
+    return this.regionService.getRegionCategoryAdmin();
+  }
+
+  @ApiOperation({ summary: 'Create region category admin', description: 'Create region category admin' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreateRegionCategoryDto })
+  @Post('category')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/region_category_icons',
+        filename: (req, file, cb) => {
+          if (!file) {
+            throw new BadRequestException('Требуется изображение!');
+          }
+          const name = file.originalname.replace(/\s+/g, '');
+          const uniqueName = uuidv4() + '-' + name;
+          cb(null, uniqueName);
+        },
+      }),
+    }),
+  )
+  async createRegionCategory(@Body() data: CreateRegionDto, @UploadedFile() file: Express.Multer.File) {
+    return this.regionService.createRegionCategory(data, file?.filename);
+  }
+
+  @ApiOperation({ summary: 'Create region category admin', description: 'Create region category admin' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreateRegionCategoryDto })
+  @Patch('category')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/region_category_icons',
+        filename: (req, file, cb) => {
+          if (!file) {
+            throw new BadRequestException('Требуется изображение!');
+          }
+          const name = file.originalname.replace(/\s+/g, '');
+          const uniqueName = uuidv4() + '-' + name;
+          cb(null, uniqueName);
+        },
+      }),
+    }),
+  )
+  async updateRegionCategory(
+    @Param() param: ParamId,
+    @Body() data: CreateRegionDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.regionService.updateRegionCategory(param.id, data, file?.filename);
   }
 }

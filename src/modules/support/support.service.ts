@@ -149,7 +149,7 @@ export class SupportService {
         sims: {
           select: {
             id: true,
-            package: {
+            tariff: {
               select: {
                 id: true,
                 sku_id: true,

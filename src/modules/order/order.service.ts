@@ -36,27 +36,19 @@ export class OrderService {
       sort: query?.sort,
       select: {
         id: true,
-        created_at: true,
-        package: {
+        sims: {
           select: {
             id: true,
-            sms_count: true,
-            minutes_count: true,
-            mb_count: true,
-            tariff: {
-              select: {
-                id: true,
-                name_ru: true,
-                name_en: true,
-              },
-            },
+            qrcode: true,
+            created_at: true,
           },
         },
+        created_at: true,
       },
     });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
       message: 'success',
       data: data,
       ...meta,
@@ -75,34 +67,26 @@ export class OrderService {
       select: {
         id: true,
         created_at: true,
-        package: {
+        sims: {
           select: {
             id: true,
-            sms_count: true,
-            minutes_count: true,
-            mb_count: true,
-            tariff: {
-              select: {
-                id: true,
-                [`name_${lang}`]: true,
-                [`description_${lang}`]: true,
-              },
-            },
+            qrcode: true,
+            created_at: true,
           },
         },
       },
     });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
       message: 'success',
       data: orders?.data?.map((order: any) => {
         return {
           id: order?.id,
           tariff: order.package?.tariff?.[`name_${lang}`],
-          sms_count: order?.package?.sms_count,
-          minutes_count: order?.package?.minutes_count,
-          mb_count: order?.package?.mb_count,
+          // sms_count: order?.package?.sms_count,
+          // minutes_count: order?.package?.minutes_count,
+          // mb_count: order?.package?.mb_count,
           created_at: order?.created_at,
         };
       }),
@@ -118,20 +102,11 @@ export class OrderService {
       select: {
         id: true,
         created_at: true,
-        package: {
+        sims: {
           select: {
             id: true,
-            sms_count: true,
-            minutes_count: true,
-            mb_count: true,
-            tariff: {
-              select: {
-                id: true,
-                name_ru: true,
-                name_en: true,
-                description_ru: true,
-              },
-            },
+            qrcode: true,
+            created_at: true,
           },
         },
       },
@@ -142,14 +117,10 @@ export class OrderService {
     }
 
     return {
-      status: HttpStatus.OK,
+      success: true,
       message: 'ok',
       data: {
         id: order?.id,
-        tariff: order?.package.tariff.name_ru,
-        sms_count: order?.package.sms_count,
-        minutes_count: order?.package.minutes_count,
-        mb_count: order?.package.mb_count,
         created_at: order?.created_at,
       },
     };
@@ -174,18 +145,13 @@ export class OrderService {
         items: {
           select: {
             id: true,
-            package_id: true,
-            package: {
+            tariff_id: true,
+            tariff: {
               select: {
                 id: true,
                 status: true,
                 sku_id: true,
-                tariff: {
-                  select: {
-                    id: true,
-                    partner_id: true,
-                  },
-                },
+                partner_id: true,
               },
             },
           },
@@ -215,12 +181,12 @@ export class OrderService {
     });
 
     for (const item of basket.items) {
-      if (item.package.status !== Status.ACTIVE) {
-        throw new ConflictException(`Пакет ${item.package.id} неактивен!`);
+      if (item.tariff.status !== Status.ACTIVE) {
+        throw new ConflictException(`Пакет ${item.tariff.id} неактивен!`);
       }
 
       let response: any;
-      const partner_id = item.package.tariff.partner_id;
+      const partner_id = item.tariff.partner_id;
 
       if (partner_id === PartnerIds.JOYTEL) {
         const newSim = await this.prisma.sims.create({
@@ -229,7 +195,7 @@ export class OrderService {
             order_id: newOrder.id,
             status: OrderStatus.CREATED,
             partner_id: PartnerIds.JOYTEL,
-            package_id: item.package_id,
+            tariff_id: item.tariff_id,
           },
         });
         response = await this.joyTel.submitEsimOrder(
@@ -237,7 +203,7 @@ export class OrderService {
           'Jetsim User',
           'string',
           'jetsim@gmail.com',
-          item.package.sku_id,
+          item.tariff.sku_id,
           1,
         );
 
@@ -277,7 +243,7 @@ export class OrderService {
             order_id: newOrder.id,
             status: OrderStatus.CREATED,
             partner_id: PartnerIds.BILLION_CONNECT,
-            package_id: item.package_id,
+            tariff_id: item.tariff_id,
           },
         });
 
@@ -287,7 +253,7 @@ export class OrderService {
           subOrderList: [
             {
               channelSubOrderId: item.id.toString(),
-              deviceSkuId: item.package.sku_id,
+              deviceSkuId: item.tariff.sku_id,
               planSkuCopies: '1',
               number: '1',
             },
@@ -374,9 +340,9 @@ export class OrderService {
       }
     }
 
-    const pkg = await this.prisma.package.findUnique({
+    const pkg = await this.prisma.tariff.findUnique({
       where: {
-        id: data.package_id,
+        id: data.tariff_id,
       },
     });
     if (!pkg) {
@@ -386,7 +352,7 @@ export class OrderService {
     const existingItem = await this.prisma.basketItem.findFirst({
       where: {
         basket_id: basket.id,
-        package_id: data.package_id,
+        tariff_id: data.tariff_id,
       },
     });
 
@@ -401,7 +367,7 @@ export class OrderService {
       await this.prisma.basketItem.create({
         data: {
           basket_id: basket.id,
-          package_id: data.package_id,
+          tariff_id: data.tariff_id,
           quantity: data.quantity,
           price: '1',
         },
@@ -416,16 +382,12 @@ export class OrderService {
         items: {
           select: {
             id: true,
-            package_id: true,
+            tariff_id: true,
             price: true,
             quantity: true,
-            package: {
+            tariff: {
               select: {
-                tariff: {
-                  select: {
-                    [`name_${lang}`]: true,
-                  },
-                },
+                [`name_${lang}`]: true,
               },
             },
           },
@@ -439,8 +401,8 @@ export class OrderService {
       session_id: sessionId,
       items: fullBasket.items.map((item) => ({
         id: item.id,
-        package_id: item.package_id,
-        name: item?.package?.tariff?.[`name_${lang}`],
+        package_id: item.tariff_id,
+        name: item?.tariff?.[`name_${lang}`],
         price: item.price,
         quantity: item.quantity,
         total: Number(item.price) * item.quantity,
@@ -572,11 +534,7 @@ export class OrderService {
       },
       include: {
         user: true,
-        package: {
-          include: {
-            tariff: true,
-          },
-        },
+        tariff: true,
       },
     });
 
@@ -588,10 +546,10 @@ export class OrderService {
       'Клиент',
       updatedOrder.id,
       fasturl,
-      updatedOrder.package.tariff.name_ru,
-      updatedOrder.package.mb_count,
-      updatedOrder.package.minutes_count,
-      updatedOrder.package.sms_count,
+      updatedOrder.tariff.name_ru,
+      updatedOrder.tariff.quantity_internet,
+      updatedOrder.tariff.quantity_minute,
+      updatedOrder.tariff.quantity_sms,
     );
     await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
 
@@ -640,11 +598,7 @@ export class OrderService {
       },
       include: {
         user: true,
-        package: {
-          include: {
-            tariff: true,
-          },
-        },
+        tariff: true,
       },
     });
     await this.socketGateway.sendOrderMessage(sim.user_id, updatedSim.id, updatedSim.qrcode);
@@ -655,10 +609,10 @@ export class OrderService {
       'Клиент',
       updatedSim.id,
       fasturl,
-      updatedSim.package.tariff.name_ru,
-      updatedSim.package.mb_count,
-      updatedSim.package.minutes_count,
-      updatedSim.package.sms_count,
+      updatedSim.tariff.name_ru,
+      updatedSim.tariff.quantity_internet,
+      updatedSim.tariff.quantity_minute,
+      updatedSim.tariff.quantity_sms,
     );
     await sendMailHelper(updatedSim.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
 

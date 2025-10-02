@@ -9,7 +9,7 @@ import {
   PrismaModule,
   TariffModule,
   CityModule,
-  PackageModule,
+  // PackageModule,
   JobsModule,
   OrderModule,
   GatewayModule,
@@ -20,6 +20,7 @@ import {
 } from '@modules';
 // import { PaymentModule } from './modules/payment/payment.module';
 import { HttpModule } from '@http';
+import { StaticsModule } from './modules/statics/statics.module';
 
 @Module({
   imports: [
@@ -32,8 +33,8 @@ import { HttpModule } from '@http';
     RegionModule,
     TariffModule,
     PrismaModule,
-    CityModule,
-    PackageModule,
+    // CityModule,
+    // PackageModule,
     OrderModule,
     JobsModule,
     GatewayModule,
@@ -42,6 +43,7 @@ import { HttpModule } from '@http';
     HttpModule,
     SimsModule,
     SupportModule,
+    StaticsModule,
     // PaymentModule,
   ],
   controllers: [],
