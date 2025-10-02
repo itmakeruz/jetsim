@@ -99,8 +99,9 @@ export class AuthService {
     await this.generateAndStoreOtp(data.email);
 
     return {
-      status: HttpStatus.CREATED,
+      success: true,
       message: 'Пользователь успешно создан! OTP отправлен на ваш email.',
+      data: null,
     };
   }
 
@@ -109,7 +110,7 @@ export class AuthService {
     const storedOtp = await this.redisService.getOtp(key);
 
     if (!storedOtp) {
-      return { valid: false, message: 'OTP не найден или истек срок действия!' };
+      throw new BadRequestException('OTP не найден или истек срок действия!');
     }
 
     const isValid = storedOtp === otp;
@@ -135,8 +136,9 @@ export class AuthService {
 
     await this.redisService.deleteOtp(key);
     return {
-      valid: true,
+      success: true,
       message: 'OTP успешно подтвержден!',
+      data: null,
     };
   }
 
@@ -155,7 +157,7 @@ export class AuthService {
     });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
       message: 'Пользователь успешно получен!',
       data: user,
     };
@@ -176,7 +178,7 @@ export class AuthService {
     });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
       message: 'Пользователь успешно получен!',
       data: staff,
     };
@@ -193,7 +195,7 @@ export class AuthService {
     });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
       message: 'Токен FCM успешно обновлен!!',
       data: null,
     };
@@ -218,9 +220,9 @@ export class AuthService {
     await this.generateAndStoreOtpForgotPassword(user.email);
 
     return {
-      error: false,
-      status: HttpStatus.CREATED,
+      success: true,
       message: 'OTP отправлен на ваш email!',
+      data: null,
     };
   }
 
@@ -229,7 +231,7 @@ export class AuthService {
     const storedOtp = await this.redisService.getOtp(key);
 
     if (!storedOtp) {
-      return { valid: false, message: 'OTP не найден или истек срок действия!' };
+      throw new BadRequestException('OTP не найден или истек срок действия!');
     }
 
     const isValid = storedOtp === data.confirmation_code;
@@ -255,7 +257,7 @@ export class AuthService {
 
     await this.redisService.deleteOtp(key);
     return {
-      valid: true,
+      success: true,
       message: 'OTP успешно подтвержден!',
       data: {
         reset_token: resetToken,
@@ -287,8 +289,9 @@ export class AuthService {
     });
 
     return {
-      error: false,
-      status: HttpStatus.OK,
+      success: true,
+      message: '',
+      data: null,
     };
   }
 
@@ -321,8 +324,9 @@ export class AuthService {
     });
 
     return {
-      error: false,
-      status: HttpStatus.OK,
+      success: true,
+      message: '',
+      data: null,
     };
   }
 
