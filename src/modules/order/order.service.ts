@@ -223,7 +223,7 @@ export class OrderService {
             //   },
             // };
             let status = true;
-            if (response.tradeCode !== '1000') {
+            if (response.code !== 0 && response) {
               status = false;
             }
 
@@ -278,7 +278,7 @@ export class OrderService {
             // };
 
             let status = true;
-            if (response.code !== 0) {
+            if (response.tradeCode !== '1000') {
               status = false;
             }
 

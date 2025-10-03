@@ -42,7 +42,7 @@ export class BillionConnectService {
   constructor() {
     this.http = axios.create({
       baseURL: this.baseURL,
-      timeout: 15000,
+      timeout: 30000,
       headers: { 'Content-Type': 'application/json' },
     });
   }
