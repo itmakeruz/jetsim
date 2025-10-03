@@ -10,7 +10,20 @@ export class LoggingInterceptor implements NestInterceptor {
 
   private sanitizeData(data: any): any {
     if (!data || typeof data !== 'object') return data;
-    const sensitiveFields = ['password', 'token', 'accessToken', 'refreshToken', 'secret'];
+    const sensitiveFields = [
+      'password',
+      'token',
+      'accessToken',
+      'refreshToken',
+      'secret',
+      'confirm_code',
+      'confirmation_code',
+      'new_password',
+      'confirm_password',
+      'reset_token',
+      'current_password',
+      'new_password',
+    ];
     const sanitized = { ...data };
 
     for (const key of Object.keys(sanitized)) {
