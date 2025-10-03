@@ -41,8 +41,8 @@ export class WinstonLoggerService {
     });
   }
 
-  info(message: string) {
-    this.logger.info(message);
+  info(message: string, error?: any) {
+    this.logger.info(message, error);
   }
 
   error(message: string) {

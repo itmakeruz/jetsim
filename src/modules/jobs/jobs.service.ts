@@ -14,4 +14,9 @@ export class JobsService {
   async updateBalance() {
     this.logger.log('Joy Tel Orders Checker CRON is working!');
   }
+
+  // @Cron(CronExpression.EVERY_12_HOURS)
+  // async updateBalance() {
+  //   this.logger.log('Joy Tel Orders Checker CRON is working!');
+  // }
 }

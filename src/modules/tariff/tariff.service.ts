@@ -78,6 +78,8 @@ export class TariffService {
         id: true,
         name_ru: true,
         name_en: true,
+        title_ru: true,
+        title_en: true,
         status: true,
         is_popular: true,
         is_4g: true,
@@ -89,6 +91,7 @@ export class TariffService {
         price_sell: true,
         price_arrival: true,
         created_at: true,
+        sku_id: true,
         regions: {
           select: {
             id: true,
@@ -177,6 +180,8 @@ export class TariffService {
         id: true,
         name_ru: true,
         name_en: true,
+        title_ru: true,
+        title_en: true,
         status: true,
         is_popular: true,
         is_4g: true,
@@ -187,6 +192,7 @@ export class TariffService {
         validity_period: true,
         price_sell: true,
         price_arrival: true,
+        sku_id: true,
         regions: {
           select: {
             id: true,
