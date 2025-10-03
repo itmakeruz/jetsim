@@ -92,22 +92,24 @@ export class AuthService {
       },
     });
 
-    if (isExist) {
+    if (isExist && isExist.is_verified) {
       throw new BadRequestException(register_error[lang]);
     }
 
-    await this.prisma.user.create({
-      data: {
-        email: data.email,
-        password: await bcrypt.hash(data.password, 10),
-      },
-    });
+    if (!isExist && !isExist.is_verified) {
+      await this.prisma.user.create({
+        data: {
+          email: data.email,
+          password: await bcrypt.hash(data.password, 10),
+        },
+      });
+    }
 
     await this.generateAndStoreOtp(data.email);
 
     return {
       success: true,
-      message: 'Пользователь успешно создан! OTP отправлен на ваш email.',
+      message: 'OTP отправлен на ваш email.',
       data: null,
     };
   }
