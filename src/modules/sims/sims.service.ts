@@ -57,7 +57,8 @@ export class SimsService {
     }
 
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: 'Баланс успешно получен!',
       data: response,
     };
   }
@@ -89,7 +90,7 @@ export class SimsService {
     }
 
     return {
-      status: HttpStatus.OK,
+      success: true,
       data: response,
     };
   }
@@ -117,7 +118,7 @@ export class SimsService {
     const response = this.joyTelService.getStatus({ coupon: sim.cid });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
       data: response,
     };
   }

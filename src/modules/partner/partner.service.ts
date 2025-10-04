@@ -29,7 +29,8 @@ export class PartnerService {
       },
     });
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: 'Партнеры успешно получены!',
       ...partners,
     };
   }
@@ -52,7 +53,8 @@ export class PartnerService {
     }
 
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: 'Партнер успешно получен!',
       data: partner,
     };
   }
@@ -73,7 +75,8 @@ export class PartnerService {
     });
 
     return {
-      status: HttpStatus.CREATED,
+      success: true,
+      message: 'Партнер успешно создан!',
       data: partner,
     };
   }
@@ -114,7 +117,8 @@ export class PartnerService {
     });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: 'Партнер успешно обновлен!',
       data: partner,
     };
   }
@@ -132,7 +136,8 @@ export class PartnerService {
     });
 
     return {
-      status: HttpStatus.NO_CONTENT,
+      success: true,
+      message: 'Партнер успешно удален!',
     };
   }
 }
