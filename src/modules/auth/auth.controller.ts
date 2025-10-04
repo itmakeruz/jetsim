@@ -36,6 +36,8 @@ export class AuthController {
   @ApiBearerAuth('access_token')
   @Get('me')
   async getMeUser(@Req() request: IRequest) {
+    console.log(request.user);
+
     return await this.authService.getMeUser(request.user.id);
   }
 

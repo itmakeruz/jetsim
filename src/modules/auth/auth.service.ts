@@ -34,7 +34,7 @@ import {
   otp_successfully_sent,
   invalid_reset_token,
 } from '@constants';
-import { JWT_RESET_TOKEN, JWT_RESET_EXPIRE_TIME } from '@config';
+import { JWT_RESET_TOKEN, JWT_RESET_EXPIRE_TIME, JWT_ACCESS_SECRET } from '@config';
 
 @Injectable()
 export class AuthService {
@@ -88,15 +88,16 @@ export class AuthService {
     }
     console.log(user);
 
-    const accessToken = this.jwtService.sign({
-      id: user?.id,
-      uuid: user?.id,
-      email: user?.email,
-    });
+    const accessToken = this.jwtService.sign(
+      {
+        id: user?.id,
+        uuid: user.id,
+        email: user?.email,
+      },
+      { secret: JWT_ACCESS_SECRET },
+    );
 
-    return {
-      access_token: accessToken,
-    };
+    return { access_token: accessToken };
   }
 
   async register(data: RegisterDto, lang: string) {
