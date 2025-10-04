@@ -24,6 +24,7 @@ import {
   basket_add_success,
   basket_remove_success,
 } from '@constants';
+import { MAIL_USER } from '@config';
 
 @Injectable()
 export class OrderService {
@@ -211,7 +212,7 @@ export class OrderService {
               newSim.id,
               'Jetsim User',
               'string',
-              'jetsim@gmail.com',
+              MAIL_USER,
               item.tariff.sku_id,
               1,
             );
@@ -303,6 +304,7 @@ export class OrderService {
           responses.push({ order: newOrder, partnerResponse: response });
         } catch (error) {
           this.logger.info('Order item failed', error);
+          await this.socketGateway.sendErrorOrderMessage(user_id, newOrder.id);
         }
       }
 

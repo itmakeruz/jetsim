@@ -45,4 +45,8 @@ export class GatewayGateway implements OnGatewayConnection, OnGatewayDisconnect 
   async sendOrderMessage(user_id: number, order_id: number, qrcode: string) {
     this.server.to(`user_${user_id}`).emit('order', { order_id, qrcode });
   }
+
+  async sendErrorOrderMessage(user_id: number, order_id: number) {
+    this.server.to(`user_${user_id}`).emit('error_order', { order_id });
+  }
 }
