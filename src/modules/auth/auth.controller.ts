@@ -28,8 +28,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Login public', description: 'Login public' })
   @Post('login')
-  async login(@Body() data: LoginDto) {
-    return await this.authService.login(data);
+  async login(@Body() data: LoginDto, @HeadersValidation() headers: DeviceHeadersDto) {
+    return await this.authService.login(data, headers.lang);
   }
 
   @ApiOperation({ summary: 'Get me public', description: 'Get me public' })
@@ -50,8 +50,8 @@ export class AuthController {
     description: 'Change Password get OTP confirm code for public',
   })
   @Post('forgot-password/prepare')
-  async changePassword(@Body() data: PrepareChangePasswordDto) {
-    return await this.authService.forgotPasswordPrepare(data);
+  async changePassword(@Body() data: PrepareChangePasswordDto, @HeadersValidation() headers: DeviceHeadersDto) {
+    return await this.authService.forgotPasswordPrepare(data, headers.lang);
   }
 
   @ApiOperation({
@@ -59,8 +59,11 @@ export class AuthController {
     description: 'Confirm Otp code',
   })
   @Post('forgot-password/confirm-otp')
-  async forgotPasswordConfirmOtp(@Body() data: ConfirmChangePasswordOtp) {
-    return this.authService.forgotPasswordConfirmOtp(data);
+  async forgotPasswordConfirmOtp(
+    @Body() data: ConfirmChangePasswordOtp,
+    @HeadersValidation() headers: DeviceHeadersDto,
+  ) {
+    return this.authService.forgotPasswordConfirmOtp(data, headers.lang);
   }
 
   @ApiOperation({
@@ -68,8 +71,8 @@ export class AuthController {
     description: 'Confirm Otp code',
   })
   @Post('forgot-password/change-password')
-  async changeForgottenPassword(@Body() data: ChangePassword) {
-    return this.authService.changeForgottenpassword(data);
+  async changeForgottenPassword(@Body() data: ChangePassword, @HeadersValidation() headers: DeviceHeadersDto) {
+    return this.authService.changeForgottenpassword(data, headers.lang);
   }
 
   @ApiOperation({ summary: 'Update Fcm Token public', description: 'Update Fcm Token public' })

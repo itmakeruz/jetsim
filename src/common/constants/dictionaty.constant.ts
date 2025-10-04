@@ -53,6 +53,12 @@ export const change_password_not_equal = {
   uz: "Eski parol noto'g'ri!",
 };
 
+export const otp_successfully_sent = {
+  ru: 'Код подтверждения успешно отправлен на ваш email!',
+  en: 'Confirmation code successfully sent to your email!',
+  uz: 'Tasdiqlash kodi muvaffaqiyatli emailga yuborildi!',
+};
+
 export const change_password_not_equal_new_password = {
   ru: 'Новые пароли не совпадают!',
   en: 'The new passwords do not match!',
@@ -63,6 +69,12 @@ export const password_change_success = {
   ru: 'Пароль успешно изменен!',
   en: 'Password changed successfully!',
   uz: "Parol muvaffaqiyatli o'zgartirildi!",
+};
+
+export const invalid_reset_token = {
+  ru: 'Недействительный или просроченный токен сброса!',
+  en: 'Invalid or expired reset token!',
+  uz: "Tasdiqlash kodi muddati tugagan!",
 };
 
 // City Module Error Messages
