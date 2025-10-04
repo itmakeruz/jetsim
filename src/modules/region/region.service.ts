@@ -115,7 +115,6 @@ export class RegionService {
         })),
         created_at: region?.created_at,
       })),
-      ...regions,
     };
   }
 
