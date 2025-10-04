@@ -106,11 +106,11 @@ export class AuthService {
       },
     });
 
-    if (isExist && isExist.is_verified) {
+    if (isExist && isExist?.is_verified) {
       throw new BadRequestException(register_error[lang]);
     }
 
-    if (!isExist && !isExist.is_verified) {
+    if (!isExist && !isExist?.is_verified) {
       await this.prisma.user.create({
         data: {
           email: data.email,
