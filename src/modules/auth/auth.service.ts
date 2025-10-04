@@ -19,7 +19,19 @@ import {
 } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService, generateOtp, sendMailHelper, otpEmailTemplate } from '@helpers';
-import { register_error, change_password_not_equal, change_password_not_equal_new_password } from '@constants';
+import {
+  register_error,
+  change_password_not_equal,
+  change_password_not_equal_new_password,
+  invalid_login,
+  invalid_password,
+  user_not_found,
+  user_already_verified,
+  invalid_otp,
+  otp_expired,
+  password_change_success,
+  register_success,
+} from '@constants';
 import { JWT_RESET_TOKEN, JWT_RESET_EXPIRE_TIME } from '@config';
 
 @Injectable()
@@ -44,7 +56,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException('Пользователь не существует!');
+      throw new NotFoundException(user_not_found['ru']);
     }
 
     return {
@@ -60,17 +72,17 @@ export class AuthService {
     const user = await this.validate(data.email);
 
     if (!user) {
-      throw new NotFoundException('Логин неверный!');
+      throw new NotFoundException(invalid_login['ru']);
     }
 
     const isMatch = await bcrypt.compare(data.password, user.password);
 
     if (!isMatch) {
-      throw new UnauthorizedException('Недействительные учетные данные!');
+      throw new UnauthorizedException(invalid_password['ru']);
     }
 
     if (!user.is_verified) {
-      throw new UnauthorizedException('Недействительные учетные данные!');
+      throw new UnauthorizedException(invalid_password['ru']);
     }
     console.log(user);
 
@@ -109,23 +121,23 @@ export class AuthService {
 
     return {
       success: true,
-      message: 'OTP отправлен на ваш email.',
+      message: register_success[lang] || register_success['ru'],
       data: null,
     };
   }
 
-  async verifyOtp(email: string, otp: string) {
+  async verifyOtp(email: string, otp: string, lang: string = 'ru') {
     const key = `otp:${email}`;
     const storedOtp = await this.redisService.getOtp(key);
 
     if (!storedOtp) {
-      throw new BadRequestException('OTP не найден или истек срок действия!');
+      throw new BadRequestException(otp_expired[lang] || otp_expired['ru']);
     }
 
     const isValid = storedOtp === otp;
 
     if (!isValid) {
-      throw new UnauthorizedException('Неверный OTP код');
+      throw new UnauthorizedException(invalid_otp[lang] || invalid_otp['ru']);
     }
 
     const user = await this.prisma.user.findFirst({
@@ -146,7 +158,7 @@ export class AuthService {
     await this.redisService.deleteOtp(key);
     return {
       success: true,
-      message: 'OTP успешно подтвержден!',
+      message: register_success[lang] || register_success['ru'],
       data: null,
     };
   }
@@ -223,7 +235,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException('Этот адрес электронной почты не зарегистрирован!');
+      throw new NotFoundException(user_not_found['ru']);
     }
 
     await this.generateAndStoreOtpForgotPassword(user.email);
@@ -240,13 +252,13 @@ export class AuthService {
     const storedOtp = await this.redisService.getOtp(key);
 
     if (!storedOtp) {
-      throw new BadRequestException('OTP не найден или истек срок действия!');
+      throw new BadRequestException(otp_expired['ru']);
     }
 
     const isValid = storedOtp === data.confirmation_code;
 
     if (!isValid) {
-      throw new UnauthorizedException('Неверный OTP код');
+      throw new UnauthorizedException(invalid_otp['ru']);
     }
 
     const user = await this.prisma.user.findFirst({
@@ -276,7 +288,7 @@ export class AuthService {
 
   async changeForgottenpassword(data: ChangePassword) {
     if (data.new_password !== data.confirm_password) {
-      throw new BadRequestException('Пароли не совпадают!');
+      throw new BadRequestException(change_password_not_equal_new_password['ru']);
     }
 
     let payload;
@@ -299,7 +311,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: '',
+      message: password_change_success['ru'],
       data: null,
     };
   }
@@ -315,7 +327,8 @@ export class AuthService {
       throw new NotFoundException();
     }
 
-    if (user.password !== (await bcrypt.hash(data.current_password, 10))) {
+    const isCurrentPasswordValid = await bcrypt.compare(data.current_password, user.password);
+    if (!isCurrentPasswordValid) {
       throw new BadRequestException(change_password_not_equal[lang]);
     }
 
@@ -334,7 +347,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: '',
+      message: password_change_success[lang] || password_change_success['ru'],
       data: null,
     };
   }
