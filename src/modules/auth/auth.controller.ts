@@ -1,5 +1,5 @@
 import { AuthService } from './auth.service';
-import { Controller, Get, Post, Body, Patch, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Req, UseGuards } from '@nestjs/common';
 import {
   LoginDto,
   RegisterDto,
@@ -15,6 +15,7 @@ import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { DeviceHeadersDto } from '@enums';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -32,8 +33,9 @@ export class AuthController {
     return await this.authService.login(data, headers.lang);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Get me public', description: 'Get me public' })
-  @ApiBearerAuth('access_token')
   @Get('me')
   async getMeUser(@Req() request: IRequest) {
     console.log(request.user);
@@ -78,21 +80,24 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: 'Update Fcm Token public', description: 'Update Fcm Token public' })
-  @ApiBearerAuth('access_token')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Patch('device/fcm-token')
   async updateDeviceFcmToken(@Req() request: IRequest, data: DeviceFcmTokenUpdateDto) {
     return await this.authService.deviceFcmTokenUpdate(request.user.id, data);
   }
 
   @ApiOperation({ summary: 'Get me admin', description: 'Get me admin' })
-  @ApiBearerAuth('access_token')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Get('me-staff')
   async getMeStaff(@Req() request: IRequest) {
     return await this.authService.getMeStaff(request.user.id);
   }
 
   @ApiOperation({ summary: 'Change password public', description: 'Change password public' })
-  @ApiBearerAuth('access_token')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Get('change-password')
   async changePasswordUser(
     @Req() request: IRequest,
