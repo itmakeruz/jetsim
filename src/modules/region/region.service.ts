@@ -54,18 +54,26 @@ export class RegionService {
         image: true,
         status: true,
         created_at: true,
+        categories: true,
       },
     });
 
     return {
       status: HttpStatus.OK,
       ...regions,
-      data: regions.data.map((region) => ({
+      data: regions.data.map((region: any) => ({
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
         created_at: region?.created_at,
+        category: region?.categories?.map((category) => ({
+          id: category?.id,
+          name_ru: category?.name_ru,
+          name_en: category?.name_en,
+          icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+          created_at: category?.created_at,
+        })),
       })),
     };
   }
@@ -82,6 +90,7 @@ export class RegionService {
         name_en: true,
         image: true,
         status: true,
+        categories: true,
         created_at: true,
       },
       where: {
@@ -91,12 +100,19 @@ export class RegionService {
 
     return {
       status: HttpStatus.OK,
-      data: regions.data.map((region) => ({
+      data: regions.data.map((region: any) => ({
         id: region?.id,
         name_ru: region?.name_ru,
         name_en: region?.name_en,
         image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
+        category: region?.categories?.map((category) => ({
+          id: category?.id,
+          name_ru: category?.name_ru,
+          name_en: category?.name_en,
+          icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+          created_at: category?.created_at,
+        })),
         created_at: region?.created_at,
       })),
       ...regions,
