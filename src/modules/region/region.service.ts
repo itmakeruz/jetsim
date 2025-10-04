@@ -7,7 +7,13 @@ import {
   UpdateRegionDto,
 } from './dto';
 import { paginate } from '@helpers';
-import { FilePath } from '@constants';
+import {
+  FilePath,
+  region_not_found,
+  region_create_success,
+  region_update_success,
+  region_delete_success,
+} from '@constants';
 import { PrismaService } from '@prisma';
 import { Status } from '@prisma/client';
 import * as path from 'path';
@@ -113,7 +119,7 @@ export class RegionService {
     });
 
     if (!region) {
-      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+      throw new NotFoundException(region_not_found['ru']);
     }
 
     return {
@@ -144,7 +150,7 @@ export class RegionService {
     });
 
     if (!region) {
-      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+      throw new NotFoundException(region_not_found['ru']);
     }
 
     return {
@@ -170,7 +176,7 @@ export class RegionService {
     });
     return {
       status: HttpStatus.CREATED,
-      message: 'Регион успешно создан!',
+      message: region_create_success['ru'],
     };
   }
 
@@ -182,7 +188,7 @@ export class RegionService {
     });
 
     if (!existRegion) {
-      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+      throw new NotFoundException(region_not_found['ru']);
     }
 
     if (fileName) {
@@ -207,7 +213,7 @@ export class RegionService {
 
     return {
       status: HttpStatus.OK,
-      message: 'Регион успешно обновлен!',
+      message: region_update_success['ru'],
     };
   }
 
@@ -223,7 +229,7 @@ export class RegionService {
     });
 
     if (!existRegion) {
-      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+      throw new NotFoundException(region_not_found['ru']);
     }
 
     if (existRegion.cities.length > 0) {
@@ -238,7 +244,7 @@ export class RegionService {
 
     return {
       status: HttpStatus.NO_CONTENT,
-      message: 'Регион успешно удален!',
+      message: region_delete_success['ru'],
     };
   }
 
@@ -312,7 +318,7 @@ export class RegionService {
     });
 
     if (!existCategoryRegion) {
-      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+      throw new NotFoundException(region_not_found['ru']);
     }
 
     if (fileName) {

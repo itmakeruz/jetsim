@@ -41,8 +41,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Confirm email public', description: 'Confirm email public' })
   @Post('confirm-email')
-  async confirmEmail(@Body() data: ConfirmEmailDto) {
-    return await this.authService.verifyOtp(data.email, data.confirm_code);
+  async confirmEmail(@Body() data: ConfirmEmailDto, @HeadersValidation() headers: DeviceHeadersDto) {
+    return await this.authService.verifyOtp(data.email, data.confirm_code, headers.lang);
   }
 
   @ApiOperation({
