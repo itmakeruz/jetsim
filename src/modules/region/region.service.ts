@@ -95,7 +95,7 @@ export class RegionService {
         id: region?.id,
         name_ru: region?.name_ru,
         name_en: region?.name_en,
-        image: region?.image ? `${FilePath.REGION_ICON}/${region?.image}` : null,
+        image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
         created_at: region?.created_at,
       })),
