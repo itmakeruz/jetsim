@@ -7,7 +7,13 @@ import {
   UpdateRegionDto,
 } from './dto';
 import { paginate } from '@helpers';
-import { FilePath } from '@constants';
+import {
+  FilePath,
+  region_not_found,
+  region_create_success,
+  region_update_success,
+  region_delete_success,
+} from '@constants';
 import { PrismaService } from '@prisma';
 import { Status } from '@prisma/client';
 import * as path from 'path';
@@ -48,18 +54,26 @@ export class RegionService {
         image: true,
         status: true,
         created_at: true,
+        categories: true,
       },
     });
 
     return {
       status: HttpStatus.OK,
       ...regions,
-      data: regions.data.map((region) => ({
+      data: regions.data.map((region: any) => ({
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
         created_at: region?.created_at,
+        category: region?.categories?.map((category) => ({
+          id: category?.id,
+          name_ru: category?.name_ru,
+          name_en: category?.name_en,
+          icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+          created_at: category?.created_at,
+        })),
       })),
     };
   }
@@ -76,6 +90,7 @@ export class RegionService {
         name_en: true,
         image: true,
         status: true,
+        categories: true,
         created_at: true,
       },
       where: {
@@ -85,15 +100,21 @@ export class RegionService {
 
     return {
       status: HttpStatus.OK,
-      data: regions.data.map((region) => ({
+      data: regions.data.map((region: any) => ({
         id: region?.id,
         name_ru: region?.name_ru,
         name_en: region?.name_en,
-        image: region?.image ? `${FilePath.REGION_ICON}/${region?.image}` : null,
+        image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
+        category: region?.categories?.map((category) => ({
+          id: category?.id,
+          name_ru: category?.name_ru,
+          name_en: category?.name_en,
+          icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+          created_at: category?.created_at,
+        })),
         created_at: region?.created_at,
       })),
-      ...regions,
     };
   }
 
@@ -113,7 +134,7 @@ export class RegionService {
     });
 
     if (!region) {
-      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+      throw new NotFoundException(region_not_found['ru']);
     }
 
     return {
@@ -144,7 +165,7 @@ export class RegionService {
     });
 
     if (!region) {
-      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+      throw new NotFoundException(region_not_found['ru']);
     }
 
     return {
@@ -170,7 +191,7 @@ export class RegionService {
     });
     return {
       status: HttpStatus.CREATED,
-      message: 'Регион успешно создан!',
+      message: region_create_success['ru'],
     };
   }
 
@@ -182,7 +203,7 @@ export class RegionService {
     });
 
     if (!existRegion) {
-      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+      throw new NotFoundException(region_not_found['ru']);
     }
 
     if (fileName) {
@@ -207,7 +228,7 @@ export class RegionService {
 
     return {
       status: HttpStatus.OK,
-      message: 'Регион успешно обновлен!',
+      message: region_update_success['ru'],
     };
   }
 
@@ -223,7 +244,7 @@ export class RegionService {
     });
 
     if (!existRegion) {
-      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+      throw new NotFoundException(region_not_found['ru']);
     }
 
     if (existRegion.cities.length > 0) {
@@ -238,7 +259,7 @@ export class RegionService {
 
     return {
       status: HttpStatus.NO_CONTENT,
-      message: 'Регион успешно удален!',
+      message: region_delete_success['ru'],
     };
   }
 
@@ -312,7 +333,7 @@ export class RegionService {
     });
 
     if (!existCategoryRegion) {
-      throw new NotFoundException('Регион с указанным идентификатором не найден!');
+      throw new NotFoundException(region_not_found['ru']);
     }
 
     if (fileName) {

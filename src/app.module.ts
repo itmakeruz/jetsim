@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { WinstonLoggerService } from '@logger';
 import { LoggingInterceptor } from '@interceptors';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import {
   AuthModule,
   RegionModule,
@@ -21,6 +22,7 @@ import {
 // import { PaymentModule } from './modules/payment/payment.module';
 import { HttpModule } from '@http';
 import { StaticsModule } from './modules/statics/statics.module';
+import * as path from 'path';
 
 @Module({
   imports: [
@@ -28,6 +30,10 @@ import { StaticsModule } from './modules/statics/statics.module';
       isGlobal: true,
       validate,
       envFilePath: '.env',
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: path.join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
     }),
     AuthModule,
     RegionModule,

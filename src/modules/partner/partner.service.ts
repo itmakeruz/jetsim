@@ -2,6 +2,13 @@ import { BadRequestException, HttpStatus, Injectable, NotFoundException } from '
 import { CreatePartnerDto, UpdatePartnerDto, GetAllPartnerDto } from './dto';
 import { PrismaService } from '@prisma';
 import { paginate } from '@helpers';
+import {
+  partner_not_found,
+  partner_create_success,
+  partner_update_success,
+  partner_delete_success,
+  validation_error,
+} from '@constants';
 
 @Injectable()
 export class PartnerService {
@@ -22,7 +29,8 @@ export class PartnerService {
       },
     });
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: 'Партнеры успешно получены!',
       ...partners,
     };
   }
@@ -41,18 +49,19 @@ export class PartnerService {
     });
 
     if (!partner) {
-      throw new NotFoundException(`Партнер не найден`);
+      throw new NotFoundException(partner_not_found['ru']);
     }
 
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: 'Партнер успешно получен!',
       data: partner,
     };
   }
 
   async create(data: CreatePartnerDto) {
     if (!data.identified_number || data.identified_number < 1 || data.identified_number > 2) {
-      throw new BadRequestException(`Идентификационный номер обязателен и должен быть 1 или 2`);
+      throw new BadRequestException(validation_error['ru']);
     }
     const partner = await this.prisma.partner.create({
       data: {
@@ -66,7 +75,8 @@ export class PartnerService {
     });
 
     return {
-      status: HttpStatus.CREATED,
+      success: true,
+      message: 'Партнер успешно создан!',
       data: partner,
     };
   }
@@ -85,14 +95,14 @@ export class PartnerService {
     });
 
     if (!partner) {
-      throw new NotFoundException(`Партнер не найден`);
+      throw new NotFoundException(partner_not_found['ru']);
     }
 
     if (
       data.identified_number &&
       (!data.identified_number || data.identified_number < 1 || data.identified_number > 2)
     ) {
-      throw new BadRequestException(`Идентификационный номер обязателен и должен быть 1 или 2`);
+      throw new BadRequestException(validation_error['ru']);
     }
 
     await this.prisma.partner.update({
@@ -107,7 +117,8 @@ export class PartnerService {
     });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: 'Партнер успешно обновлен!',
       data: partner,
     };
   }
@@ -118,14 +129,15 @@ export class PartnerService {
     });
 
     if (!partner) {
-      throw new NotFoundException(`Партнер не найден`);
+      throw new NotFoundException(partner_not_found['ru']);
     }
     await this.prisma.partner.delete({
       where: { id },
     });
 
     return {
-      status: HttpStatus.NO_CONTENT,
+      success: true,
+      message: 'Партнер успешно удален!',
     };
   }
 }

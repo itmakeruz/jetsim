@@ -3,6 +3,7 @@ import { CreateTariffDto, GetTarifftDto, UpdateTariffDto } from './dto';
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
 import { Status } from '@prisma/client';
+import { tariff_not_found, tariff_create_success, tariff_update_success, tariff_delete_success } from '@constants';
 
 @Injectable()
 export class TariffService {
@@ -145,7 +146,7 @@ export class TariffService {
     });
 
     if (!tariffs) {
-      throw new NotFoundException('Тариф с указанным идентификатором не найдена!');
+      throw new NotFoundException(tariff_not_found['ru']);
     }
 
     return {
@@ -206,7 +207,7 @@ export class TariffService {
     });
 
     if (!tariff) {
-      throw new NotFoundException('Тариф с указанным идентификатором не найдена!');
+      throw new NotFoundException(tariff_not_found['ru']);
     }
 
     return {
@@ -247,7 +248,7 @@ export class TariffService {
 
     return {
       success: true,
-      message: 'Тариф успешно создан!',
+      message: tariff_create_success['ru'],
       data: null,
     };
   }
@@ -259,7 +260,7 @@ export class TariffService {
     });
 
     if (!tariff) {
-      throw new NotFoundException('Тариф с указанным идентификатором не найден!');
+      throw new NotFoundException(tariff_not_found['ru']);
     }
 
     await this.prisma.tariff.update({
@@ -294,7 +295,7 @@ export class TariffService {
 
     return {
       success: true,
-      message: 'Тариф успешно обновлен!',
+      message: tariff_update_success['ru'],
       data: null,
     };
   }
@@ -307,7 +308,7 @@ export class TariffService {
     });
 
     if (!tariff) {
-      throw new NotFoundException('Тариф с указанным идентификатором не найдена!');
+      throw new NotFoundException(tariff_not_found['ru']);
     }
 
     if (status === tariff.status) {
@@ -368,7 +369,7 @@ export class TariffService {
     });
 
     if (!service) {
-      throw new NotFoundException('Тариф с указанным идентификатором не найдена!');
+      throw new NotFoundException(tariff_not_found['ru']);
     }
 
     await this.prisma.tariff.delete({
@@ -378,7 +379,7 @@ export class TariffService {
     });
     return {
       success: true,
-      message: 'Тариф успешно удален!',
+      message: tariff_delete_success['ru'],
       data: null,
     };
   }

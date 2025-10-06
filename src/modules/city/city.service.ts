@@ -2,6 +2,7 @@ import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCityDto, GetCityDto, UpdateCityDto } from './dto';
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
+import { city_not_found } from '@constants';
 
 @Injectable()
 export class CityService {
@@ -62,7 +63,7 @@ export class CityService {
     });
 
     if (!city) {
-      throw new NotFoundException('Город не найден');
+      throw new NotFoundException(city_not_found[lan] || city_not_found['ru']);
     }
 
     return {
@@ -86,7 +87,7 @@ export class CityService {
     });
 
     if (!city) {
-      throw new NotFoundException('Город не найден');
+      throw new NotFoundException(city_not_found['ru']);
     }
 
     return city;

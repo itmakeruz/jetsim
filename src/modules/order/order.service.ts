@@ -16,6 +16,15 @@ import { v4 as uuidv4 } from 'uuid';
 import { BillionConnectCallbackResponse, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
 import { GatewayGateway } from '../gateway';
 import { WinstonLoggerService } from '@logger';
+import {
+  basket_empty,
+  user_not_found,
+  order_not_found,
+  order_create_success,
+  basket_add_success,
+  basket_remove_success,
+} from '@constants';
+import { MAIL_USER } from '@config';
 
 @Injectable()
 export class OrderService {
@@ -160,11 +169,11 @@ export class OrderService {
     });
 
     if (!basket || basket?.items?.length === 0) {
-      throw new BadRequestException('Корзина пуста!');
+      throw new BadRequestException(basket_empty['ru']);
     }
 
     if (!basket.user.is_verified) {
-      throw new BadRequestException('Пользователь не найден или не верифицирован!');
+      throw new BadRequestException(user_not_found['ru']);
     }
 
     const newOrder = await this.prisma.order.create({
@@ -203,7 +212,7 @@ export class OrderService {
               newSim.id,
               'Jetsim User',
               'string',
-              'jetsim@gmail.com',
+              MAIL_USER,
               item.tariff.sku_id,
               1,
             );
@@ -295,6 +304,7 @@ export class OrderService {
           responses.push({ order: newOrder, partnerResponse: response });
         } catch (error) {
           this.logger.info('Order item failed', error);
+          await this.socketGateway.sendErrorOrderMessage(user_id, newOrder.id);
         }
       }
 
@@ -353,7 +363,7 @@ export class OrderService {
       },
     });
     if (!pkg) {
-      throw new NotFoundException('Пакет не найден!');
+      throw new NotFoundException(order_not_found['ru']);
     }
 
     const existingItem = await this.prisma.basketItem.findFirst({
@@ -593,7 +603,7 @@ export class OrderService {
       this.logger.error(
         `Error while execute BC callback can not find sim with that id: ${data?.tradeData?.channelOrderId}`,
       );
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException(order_not_found['en']);
     }
 
     const updatedSim = await this.prisma.sims.update({

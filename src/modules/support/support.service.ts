@@ -3,6 +3,7 @@ import { CreateSupportOperatorsDto, GetUserInfosDto, UpdateSupportOperatorsDto }
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
 import * as bcrypt from 'bcrypt';
+import { support_not_found, support_create_success, support_update_success, support_delete_success } from '@constants';
 
 @Injectable()
 export class SupportService {
@@ -50,7 +51,7 @@ export class SupportService {
     });
 
     if (!operator) {
-      throw new NotFoundException('Оператор с указанным идентификатором не найден!');
+      throw new NotFoundException(support_not_found['ru']);
     }
 
     return {
@@ -93,7 +94,7 @@ export class SupportService {
     });
 
     if (!existOperator) {
-      throw new NotFoundException('Оператор с указанным идентификатором не найден!');
+      throw new NotFoundException(support_not_found['ru']);
     }
 
     await this.prisma.supportOperators.update({
@@ -124,7 +125,7 @@ export class SupportService {
     });
 
     if (!existOperator) {
-      throw new NotFoundException('Оператор с указанным идентификатором не найден!');
+      throw new NotFoundException(support_not_found['ru']);
     }
 
     await this.prisma.supportOperators.delete({

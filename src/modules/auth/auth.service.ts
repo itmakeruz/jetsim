@@ -19,8 +19,22 @@ import {
 } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService, generateOtp, sendMailHelper, otpEmailTemplate } from '@helpers';
-import { register_error, change_password_not_equal, change_password_not_equal_new_password } from '@constants';
-import { JWT_RESET_TOKEN, JWT_RESET_EXPIRE_TIME } from '@config';
+import {
+  register_error,
+  change_password_not_equal,
+  change_password_not_equal_new_password,
+  invalid_login,
+  invalid_password,
+  user_not_found,
+  user_already_verified,
+  invalid_otp,
+  otp_expired,
+  password_change_success,
+  register_success,
+  otp_successfully_sent,
+  invalid_reset_token,
+} from '@constants';
+import { JWT_RESET_TOKEN, JWT_RESET_EXPIRE_TIME, JWT_ACCESS_SECRET } from '@config';
 
 @Injectable()
 export class AuthService {
@@ -44,7 +58,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException('Пользователь не существует!');
+      throw new NotFoundException(user_not_found['ru']);
     }
 
     return {
@@ -56,33 +70,34 @@ export class AuthService {
     };
   }
 
-  async login(data: LoginDto) {
+  async login(data: LoginDto, lang: string) {
     const user = await this.validate(data.email);
 
     if (!user) {
-      throw new NotFoundException('Логин неверный!');
+      throw new NotFoundException(invalid_login[lang]);
     }
 
     const isMatch = await bcrypt.compare(data.password, user.password);
 
     if (!isMatch) {
-      throw new UnauthorizedException('Недействительные учетные данные!');
+      throw new UnauthorizedException(invalid_password[lang]);
     }
 
     if (!user.is_verified) {
-      throw new UnauthorizedException('Недействительные учетные данные!');
+      throw new UnauthorizedException(invalid_password[lang]);
     }
     console.log(user);
 
-    const accessToken = this.jwtService.sign({
-      id: user?.id,
-      uuid: user?.id,
-      email: user?.email,
-    });
+    const accessToken = this.jwtService.sign(
+      {
+        id: user?.id,
+        uuid: user.id,
+        email: user?.email,
+      },
+      { secret: JWT_ACCESS_SECRET },
+    );
 
-    return {
-      access_token: accessToken,
-    };
+    return { access_token: accessToken };
   }
 
   async register(data: RegisterDto, lang: string) {
@@ -92,38 +107,40 @@ export class AuthService {
       },
     });
 
-    if (isExist) {
+    if (isExist && isExist?.is_verified) {
       throw new BadRequestException(register_error[lang]);
     }
 
-    await this.prisma.user.create({
-      data: {
-        email: data.email,
-        password: await bcrypt.hash(data.password, 10),
-      },
-    });
+    if (!isExist && !isExist?.is_verified) {
+      await this.prisma.user.create({
+        data: {
+          email: data.email,
+          password: await bcrypt.hash(data.password, 10),
+        },
+      });
+    }
 
     await this.generateAndStoreOtp(data.email);
 
     return {
       success: true,
-      message: 'Пользователь успешно создан! OTP отправлен на ваш email.',
+      message: register_success[lang],
       data: null,
     };
   }
 
-  async verifyOtp(email: string, otp: string) {
+  async verifyOtp(email: string, otp: string, lang: string = 'ru') {
     const key = `otp:${email}`;
     const storedOtp = await this.redisService.getOtp(key);
 
     if (!storedOtp) {
-      throw new BadRequestException('OTP не найден или истек срок действия!');
+      throw new BadRequestException(otp_expired[lang]);
     }
 
     const isValid = storedOtp === otp;
 
     if (!isValid) {
-      throw new UnauthorizedException('Неверный OTP код');
+      throw new UnauthorizedException(invalid_otp[lang]);
     }
 
     const user = await this.prisma.user.findFirst({
@@ -144,7 +161,7 @@ export class AuthService {
     await this.redisService.deleteOtp(key);
     return {
       success: true,
-      message: 'OTP успешно подтвержден!',
+      message: register_success[lang],
       data: null,
     };
   }
@@ -203,12 +220,12 @@ export class AuthService {
 
     return {
       success: true,
-      message: 'Токен FCM успешно обновлен!!',
+      message: 'Токен FCM успешно обновлен!',
       data: null,
     };
   }
 
-  async forgotPasswordPrepare(data: PrepareChangePasswordDto) {
+  async forgotPasswordPrepare(data: PrepareChangePasswordDto, lang: string) {
     const user = await this.prisma.user.findFirst({
       where: {
         email: data.email,
@@ -221,30 +238,30 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException('Этот адрес электронной почты не зарегистрирован!');
+      throw new NotFoundException(user_not_found[lang]);
     }
 
     await this.generateAndStoreOtpForgotPassword(user.email);
 
     return {
       success: true,
-      message: 'OTP отправлен на ваш email!',
+      message: otp_successfully_sent[lang],
       data: null,
     };
   }
 
-  async forgotPasswordConfirmOtp(data: ConfirmChangePasswordOtp) {
+  async forgotPasswordConfirmOtp(data: ConfirmChangePasswordOtp, lang: string) {
     const key = `otp:forgot:${data.email}`;
     const storedOtp = await this.redisService.getOtp(key);
 
     if (!storedOtp) {
-      throw new BadRequestException('OTP не найден или истек срок действия!');
+      throw new BadRequestException(otp_expired[lang]);
     }
 
     const isValid = storedOtp === data.confirmation_code;
 
     if (!isValid) {
-      throw new UnauthorizedException('Неверный OTP код');
+      throw new UnauthorizedException(invalid_otp[lang]);
     }
 
     const user = await this.prisma.user.findFirst({
@@ -265,16 +282,16 @@ export class AuthService {
     await this.redisService.deleteOtp(key);
     return {
       success: true,
-      message: 'OTP успешно подтвержден!',
+      message: otp_successfully_sent[lang],
       data: {
         reset_token: resetToken,
       },
     };
   }
 
-  async changeForgottenpassword(data: ChangePassword) {
+  async changeForgottenpassword(data: ChangePassword, lang: string) {
     if (data.new_password !== data.confirm_password) {
-      throw new BadRequestException('Пароли не совпадают!');
+      throw new BadRequestException(change_password_not_equal_new_password[lang]);
     }
 
     let payload;
@@ -283,7 +300,7 @@ export class AuthService {
         secret: JWT_RESET_TOKEN,
       });
     } catch (error) {
-      throw new UnauthorizedException('Недействительный или просроченный токен сброса!');
+      throw new UnauthorizedException(invalid_reset_token[lang]);
     }
 
     await this.prisma.user.update({
@@ -297,7 +314,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: '',
+      message: password_change_success[lang],
       data: null,
     };
   }
@@ -310,10 +327,11 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException();
+      throw new NotFoundException(user_not_found[lang]);
     }
 
-    if (user.password !== (await bcrypt.hash(data.current_password, 10))) {
+    const isCurrentPasswordValid = await bcrypt.compare(data.current_password, user.password);
+    if (!isCurrentPasswordValid) {
       throw new BadRequestException(change_password_not_equal[lang]);
     }
 
@@ -332,7 +350,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: '',
+      message: password_change_success[lang],
       data: null,
     };
   }

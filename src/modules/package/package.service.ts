@@ -2,6 +2,13 @@ import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePackageDto, GetPackageDto, UpdatePackageDto } from './dto';
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
+import {
+  package_not_found,
+  tariff_not_found,
+  package_create_success,
+  package_update_success,
+  package_delete_success,
+} from '@constants';
 
 @Injectable()
 export class PackageService {
@@ -68,7 +75,7 @@ export class PackageService {
     });
 
     if (!packageData) {
-      throw new NotFoundException('Пакет с указанным идентификатором не найден!');
+      throw new NotFoundException(package_not_found['ru']);
     }
 
     return {
@@ -85,7 +92,7 @@ export class PackageService {
     });
 
     if (!tariff) {
-      throw new NotFoundException('Тариф с указанным идентификатором не найден!');
+      throw new NotFoundException(tariff_not_found['ru']);
     }
 
     await this.prisma.package.create({
@@ -101,7 +108,7 @@ export class PackageService {
 
     return {
       status: HttpStatus.CREATED,
-      message: 'Пакет успешно создан!',
+      message: package_create_success['ru'],
     };
   }
 
@@ -113,7 +120,7 @@ export class PackageService {
     });
 
     if (!packageData) {
-      throw new NotFoundException('Пакет с указанным идентификатором не найден!');
+      throw new NotFoundException(package_not_found['ru']);
     }
 
     if (data.tariff_id) {
@@ -124,7 +131,7 @@ export class PackageService {
       });
 
       if (!tariff) {
-        throw new NotFoundException('Тариф с указанным идентификатором не найден!');
+        throw new NotFoundException(tariff_not_found['ru']);
       }
     }
 
@@ -144,7 +151,7 @@ export class PackageService {
 
     return {
       status: HttpStatus.OK,
-      message: 'Пакет успешно обновлен!',
+      message: package_update_success['ru'],
     };
   }
 
@@ -156,7 +163,7 @@ export class PackageService {
     });
 
     if (!packageData) {
-      throw new NotFoundException('Пакет с указанным идентификатором не найден!');
+      throw new NotFoundException(package_not_found['ru']);
     }
 
     await this.prisma.package.delete({
@@ -167,7 +174,7 @@ export class PackageService {
 
     return {
       status: HttpStatus.NO_CONTENT,
-      message: 'Пакет успешно удален!',
+      message: package_delete_success['ru'],
     };
   }
 }

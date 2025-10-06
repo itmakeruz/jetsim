@@ -3,6 +3,7 @@ import { paginate } from '@helpers';
 import { HttpService, JoyTel } from '@http';
 import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
+import { sim_not_found } from '@constants';
 
 @Injectable()
 export class SimsService {
@@ -24,7 +25,7 @@ export class SimsService {
     });
 
     if (!sim) {
-      throw new BadRequestException('Esim с таким ID не существует!');
+      throw new BadRequestException(sim_not_found['ru']);
     }
     return sim;
   }
@@ -46,7 +47,7 @@ export class SimsService {
     });
 
     if (!sim) {
-      throw new BadRequestException('Esim с таким ID не существует!');
+      throw new BadRequestException(sim_not_found['ru']);
     }
 
     let response;
@@ -56,7 +57,8 @@ export class SimsService {
     }
 
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: 'Баланс успешно получен!',
       data: response,
     };
   }
@@ -78,7 +80,7 @@ export class SimsService {
     });
 
     if (!sim) {
-      throw new BadRequestException('Esim с таким ID не существует!');
+      throw new BadRequestException(sim_not_found['ru']);
     }
 
     let response;
@@ -88,7 +90,7 @@ export class SimsService {
     }
 
     return {
-      status: HttpStatus.OK,
+      success: true,
       data: response,
     };
   }
@@ -110,13 +112,13 @@ export class SimsService {
     });
 
     if (!sim) {
-      throw new BadRequestException('Esim с таким ID не существует!');
+      throw new BadRequestException(sim_not_found['ru']);
     }
 
     const response = this.joyTelService.getStatus({ coupon: sim.cid });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
       data: response,
     };
   }
