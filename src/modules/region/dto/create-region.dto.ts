@@ -1,6 +1,6 @@
 import { Status } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateRegionDto {
   @ApiProperty({ type: String, required: true, example: 'Ташкент' })
@@ -28,7 +28,6 @@ export class CreateRegionDto {
   status: Status;
 
   @ApiProperty({ type: Array, required: true, example: [1, 2] })
-  @IsNotEmpty()
-  @IsString()
+  @IsInt({ each: true })
   region_category: number[];
 }
