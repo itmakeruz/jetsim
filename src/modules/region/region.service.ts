@@ -36,17 +36,12 @@ export class RegionService {
               mode: 'insensitive',
             },
           },
-          {
-            cities: {
-              some: {
-                [`name_${lan}`]: {
-                  contains: query?.search,
-                  mode: 'insensitive',
-                },
-              },
-            },
-          },
         ],
+        categories: {
+          some: {
+            id: query?.category_id,
+          },
+        },
       },
       select: {
         id: true,

@@ -12,7 +12,13 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { RegionService } from './region.service';
-import { CreateRegionCategoryDto, CreateRegionDto, GetRegionDto, UpdateRegionDto } from './dto';
+import {
+  CreateRegionCategoryDto,
+  CreateRegionDto,
+  GetRegionDto,
+  UpdateRegionCategoryDto,
+  UpdateRegionDto,
+} from './dto';
 import { DeviceHeadersDto, ParamId } from '@enums';
 import { HeadersValidation } from '@decorators';
 import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
@@ -140,7 +146,7 @@ export class RegionController {
       }),
     }),
   )
-  async createRegionCategory(@Body() data: CreateRegionDto, @UploadedFile() file: Express.Multer.File) {
+  async createRegionCategory(@Body() data: CreateRegionCategoryDto, @UploadedFile() file: Express.Multer.File) {
     return this.regionService.createRegionCategory(data, file?.filename);
   }
 
@@ -165,7 +171,7 @@ export class RegionController {
   )
   async updateRegionCategory(
     @Param() param: ParamId,
-    @Body() data: CreateRegionDto,
+    @Body() data: UpdateRegionCategoryDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.regionService.updateRegionCategory(param.id, data, file?.filename);

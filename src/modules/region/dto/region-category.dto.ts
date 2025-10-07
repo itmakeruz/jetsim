@@ -11,6 +11,15 @@ export class CreateRegionCategoryDto {
   @IsNotEmpty()
   @IsString()
   name_en: string;
+
+  @ApiProperty({
+    description: 'Region Category icon',
+    example: 'icon.png',
+    required: true,
+    type: String,
+    format: 'binary',
+  })
+  icon: string;
 }
 
 export class UpdateRegionCategoryDto {
@@ -23,4 +32,13 @@ export class UpdateRegionCategoryDto {
   @IsNotEmpty()
   @IsString()
   name_en: string;
+
+  @ApiProperty({
+    description: 'Region Category icon',
+    example: 'icon.png',
+    required: true,
+    type: String,
+    format: 'binary',
+  })
+  icon: string;
 }
