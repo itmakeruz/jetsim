@@ -15,7 +15,7 @@ export class GatewayGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
   handleConnection(client: Socket, ...args: any[]) {
     try {
-      const token = client.handshake.query?.token as string;
+      const token = client?.handshake.query?.token as string;
 
       if (!token) {
         client.disconnect();
