@@ -37,7 +37,7 @@ export class RegionService {
             },
           },
         ],
-        categories: query?.category_id ? { some: { id: query.category_id } } : null,
+        categories: query?.category_id ? { some: { id: query.category_id } } : {},
       },
       select: {
         id: true,
