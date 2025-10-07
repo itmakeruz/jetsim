@@ -23,6 +23,14 @@ import * as fs from 'fs';
 export class RegionService {
   constructor(private readonly prisma: PrismaService) {}
   async findAll(query: GetRegionDto, lan: string) {
+    const where: any = {};
+    if (query?.category_id) {
+      where.categories = {
+        some: {
+          id: query.category_id,
+        },
+      };
+    }
     const regions = await paginate('region', {
       page: query?.page,
       size: query?.size,
@@ -37,11 +45,7 @@ export class RegionService {
             },
           },
         ],
-        categories: {
-          some: {
-            id: query?.category_id,
-          },
-        },
+        categories: where,
       },
       select: {
         id: true,
