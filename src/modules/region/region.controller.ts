@@ -132,7 +132,7 @@ export class RegionController {
   @ApiBody({ type: CreateRegionCategoryDto })
   @Post('category')
   @UseInterceptors(
-    FileInterceptor('image', {
+    FileInterceptor('icon', {
       storage: diskStorage({
         destination: './uploads/region_category_icons',
         filename: (req, file, cb) => {
@@ -155,7 +155,7 @@ export class RegionController {
   @ApiBody({ type: CreateRegionCategoryDto })
   @Patch('category')
   @UseInterceptors(
-    FileInterceptor('image', {
+    FileInterceptor('icon', {
       storage: diskStorage({
         destination: './uploads/region_category_icons',
         filename: (req, file, cb) => {
