@@ -23,9 +23,9 @@ import * as fs from 'fs';
 export class RegionService {
   constructor(private readonly prisma: PrismaService) {}
   async findAll(query: GetRegionDto, lan: string) {
-    const where: any = {};
+    let where: any = {};
     if (query?.category_id) {
-      where.categories = {
+      where = {
         some: {
           id: query.category_id,
         },
