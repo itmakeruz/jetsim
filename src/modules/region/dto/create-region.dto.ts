@@ -29,8 +29,15 @@ export class CreateRegionDto {
   status: Status;
 
   @ApiProperty({ type: [Number], required: true, example: [1, 2] })
-  @IsInt({ each: true })
-  @Transform(({ value }) => (typeof value === 'string' ? value.split(',').map(Number) : value))
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map((v) => Number(v.trim()));
+    }
+    if (Array.isArray(value)) {
+      return value.map((v) => Number(v));
+    }
+    return [];
+  })
   @Type(() => Number)
   region_category: number[];
 }
