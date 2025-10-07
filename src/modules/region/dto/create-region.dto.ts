@@ -28,7 +28,7 @@ export class CreateRegionDto {
   @IsEnum(Status)
   status: Status;
 
-  @ApiProperty({ type: Array, required: true, example: [1, 2] })
+  @ApiProperty({ type: [Number], required: true, example: [1, 2] })
   @IsInt({ each: true })
   @Type(() => Number)
   region_category: number[];
