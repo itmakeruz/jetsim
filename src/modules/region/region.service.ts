@@ -37,7 +37,11 @@ export class RegionService {
             },
           },
         ],
-        categories: query?.category_id ? { some: { id: query.category_id } } : {},
+        categories: {
+          some: {
+            id: +query?.category_id,
+          },
+        },
       },
       select: {
         id: true,
@@ -178,6 +182,9 @@ export class RegionService {
         name_en: data.name_en,
         image: fileName,
         status: data.status,
+        categories: {
+          connect: data.region_category?.map((id) => ({ id })) || [],
+        },
       },
     });
     return {

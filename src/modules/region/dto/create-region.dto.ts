@@ -26,4 +26,9 @@ export class CreateRegionDto {
   @IsOptional()
   @IsEnum(Status)
   status: Status;
+
+  @ApiProperty({ type: Array, required: true, example: [1, 2] })
+  @IsNotEmpty()
+  @IsString()
+  region_category: number[];
 }

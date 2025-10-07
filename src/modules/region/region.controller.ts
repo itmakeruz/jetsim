@@ -42,6 +42,18 @@ export class RegionController {
     return await this.regionService.findAllAdmin(query);
   }
 
+  @ApiOperation({ summary: 'Get Region categories for public', description: 'Get Region categories for public' })
+  @Get('category')
+  async getRegionCategory(@HeadersValidation() headers: DeviceHeadersDto) {
+    return this.regionService.getRegionCategoryPublic(headers.lang);
+  }
+
+  @ApiOperation({ summary: 'Get Region categories for admin', description: 'Get Region categories for admin' })
+  @Get('admin/category')
+  async getRegionCategoryAdmin() {
+    return this.regionService.getRegionCategoryAdmin();
+  }
+
   @ApiOperation({ summary: 'Get region by id public', description: 'Get region by id public' })
   @Get(':id')
   async findOne(@Param() param: ParamId, @HeadersValidation() headers: DeviceHeadersDto) {
@@ -114,18 +126,6 @@ export class RegionController {
    * REGION CATEGORIES
    *
    */
-
-  @ApiOperation({ summary: 'Get Region categories for public', description: 'Get Region categories for public' })
-  @Get('category')
-  async getRegionCategory(@HeadersValidation() headers: DeviceHeadersDto) {
-    return this.regionService.getRegionCategoryPublic(headers.lang);
-  }
-
-  @ApiOperation({ summary: 'Get Region categories for admin', description: 'Get Region categories for admin' })
-  @Get('admin/category')
-  async getRegionCategoryAdmin() {
-    return this.regionService.getRegionCategoryAdmin();
-  }
 
   @ApiOperation({ summary: 'Create region category admin', description: 'Create region category admin' })
   @ApiConsumes('multipart/form-data')
