@@ -1,7 +1,7 @@
 import { Status } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateRegionDto {
   @ApiProperty({ type: String, required: true, example: 'Ташкент' })
@@ -30,6 +30,7 @@ export class CreateRegionDto {
 
   @ApiProperty({ type: [Number], required: true, example: [1, 2] })
   @IsInt({ each: true })
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',').map(Number) : value))
   @Type(() => Number)
   region_category: number[];
 }
