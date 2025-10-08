@@ -70,7 +70,7 @@ export class RegionService {
         created_at: true,
       },
     });
-    console.log(regions);
+    console.log(regions.data);
 
     return {
       success: true,
