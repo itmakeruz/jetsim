@@ -54,7 +54,8 @@ export class RegionService {
     });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: '',
       ...regions,
       data: regions.data.map((region: any) => ({
         id: region?.id,
@@ -94,7 +95,8 @@ export class RegionService {
     });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: '',
       data: regions.data.map((region: any) => ({
         id: region?.id,
         name_ru: region?.name_ru,
@@ -133,7 +135,8 @@ export class RegionService {
     }
 
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: null,
       data: {
         id: region?.id,
         name: region?.[`name_${lan}`],
@@ -164,7 +167,8 @@ export class RegionService {
     }
 
     return {
-      status: HttpStatus.OK,
+      success: true,
+      message: '',
       data: {
         id: region?.id,
         name_ru: region?.name_ru,
@@ -190,8 +194,9 @@ export class RegionService {
       },
     });
     return {
-      status: HttpStatus.CREATED,
+      success: true,
       message: region_create_success['ru'],
+      data: null,
     };
   }
 
@@ -227,8 +232,9 @@ export class RegionService {
     });
 
     return {
-      status: HttpStatus.OK,
+      success: true,
       message: region_update_success['ru'],
+      data: null,
     };
   }
 
@@ -258,8 +264,9 @@ export class RegionService {
     });
 
     return {
-      status: HttpStatus.NO_CONTENT,
+      success: true,
       message: region_delete_success['ru'],
+      data: null,
     };
   }
 
