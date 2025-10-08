@@ -9,6 +9,7 @@ import {
   ConfirmChangePasswordOtp,
   PrepareChangePasswordDto,
   VerifyOtpDto,
+  AuthDto,
   ChangePasswordDto,
 } from './dto';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -23,8 +24,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Register public', description: 'Register public' })
   @Post('register')
-  async register(@Body() data: RegisterDto, @HeadersValidation() headers: DeviceHeadersDto) {
-    return await this.authService.register(data, headers.lang);
+  async auth(@Body() data: AuthDto, @HeadersValidation() headers: DeviceHeadersDto) {
+    return await this.authService.auth(data, headers.lang);
   }
 
   @ApiOperation({ summary: 'Login public', description: 'Login public' })

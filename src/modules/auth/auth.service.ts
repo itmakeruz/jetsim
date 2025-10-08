@@ -16,6 +16,7 @@ import {
   ConfirmChangePasswordOtp,
   ChangePassword,
   ChangePasswordDto,
+  AuthDto,
 } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService, generateOtp, sendMailHelper, otpEmailTemplate } from '@helpers';
@@ -100,22 +101,17 @@ export class AuthService {
     return { access_token: accessToken };
   }
 
-  async register(data: RegisterDto, lang: string) {
+  async auth(data: AuthDto, lang: string) {
     const isExist = await this.prisma.user.findFirst({
       where: {
         email: data.email,
       },
     });
 
-    if (isExist && isExist?.is_verified) {
-      throw new BadRequestException(register_error[lang]);
-    }
-
-    if (!isExist && !isExist?.is_verified) {
+    if (!isExist) {
       await this.prisma.user.create({
         data: {
           email: data.email,
-          password: await bcrypt.hash(data.password, 10),
         },
       });
     }
@@ -159,10 +155,22 @@ export class AuthService {
     });
 
     await this.redisService.deleteOtp(key);
+
+    const accessToken = this.jwtService.sign(
+      {
+        id: user?.id,
+        uuid: user.id,
+        email: user?.email,
+      },
+      { secret: JWT_ACCESS_SECRET },
+    );
+
     return {
       success: true,
       message: register_success[lang],
-      data: null,
+      data: {
+        access_token: accessToken,
+      },
     };
   }
 
