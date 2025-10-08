@@ -4,6 +4,7 @@ import { HttpService, JoyTel } from '@http';
 import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
 import { sim_not_found } from '@constants';
+import { OrderStatus } from '@prisma/client';
 
 @Injectable()
 export class SimsService {
@@ -13,7 +14,12 @@ export class SimsService {
   ) {}
 
   async findAll(query: any) {
-    const sims = await paginate('sims', query);
+    const sims = await paginate('sims', {
+      page: query?.page,
+      size: query?.size,
+      filter: query?.filters,
+      sort: query?.sort,
+    });
     return sims;
   }
 

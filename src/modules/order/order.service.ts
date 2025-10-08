@@ -49,6 +49,15 @@ export class OrderService {
           select: {
             id: true,
             qrcode: true,
+            tariff: {
+              select: {
+                id: true,
+                quantity_sms: true,
+                quantity_minute: true,
+                quantity_internet: true,
+                price_sell: true,
+              },
+            },
             created_at: true,
           },
         },
@@ -79,6 +88,15 @@ export class OrderService {
         sims: {
           select: {
             id: true,
+            tariff: {
+              select: {
+                id: true,
+                quantity_sms: true,
+                quantity_minute: true,
+                quantity_internet: true,
+                price_sell: true,
+              },
+            },
             qrcode: true,
             created_at: true,
           },
