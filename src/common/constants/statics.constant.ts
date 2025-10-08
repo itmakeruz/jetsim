@@ -1,4 +1,4 @@
-export const Status = {
+export const Statuses = {
   ACTIVE: {
     ru: 'Активный',
     en: 'Active',

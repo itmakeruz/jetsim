@@ -14,6 +14,7 @@ import {
   region_update_success,
   region_delete_success,
   TariffType,
+  Statuses,
 } from '@constants';
 import { PrismaService } from '@prisma';
 import { Status } from '@prisma/client';
@@ -78,10 +79,10 @@ export class RegionService {
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
-        status: region?.status,
+        status: Statuses[region?.status][lan],
         tariffs: region?.tariffs?.map((tariff: any) => ({
           id: tariff?.id,
-          status: tariff?.status,
+          status: Statuses[tariff?.status][lan],
           type: TariffType[tariff?.type][lan],
           quantity_sms: tariff?.quantity_sms,
           quantity_minute: tariff?.quantity_minute,
@@ -93,7 +94,7 @@ export class RegionService {
             id: region?.id,
             name: region?.[`name_${lan}`],
             image: `${FilePath.REGION_ICON}/${region?.image}`,
-            status: region?.status,
+            status: Statuses[region?.status][lan],
           })),
         })),
         // category: region?.categories?.map((category) => ({
