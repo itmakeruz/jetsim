@@ -17,6 +17,18 @@ export const invalid_login = {
   uz: "Login noto'g'ri!",
 };
 
+export const otp_sent = {
+  ru: 'Код подтверждения отправлен на вашу почту!',
+  en: 'Verification code has been sent to your email!',
+  uz: 'Tasdiqlash kodi emailingizga yuborildi!',
+};
+
+export const authorization_success = {
+  ru: 'Авторизация прошла успешно!',
+  en: 'Authorization completed successfully!',
+  uz: 'Tizimga muvaffaqiyatli kirdingiz!',
+};
+
 export const invalid_password = {
   ru: 'Недействительные учетные данные!',
   en: 'Invalid credentials!',
@@ -74,7 +86,7 @@ export const password_change_success = {
 export const invalid_reset_token = {
   ru: 'Недействительный или просроченный токен сброса!',
   en: 'Invalid or expired reset token!',
-  uz: "Tasdiqlash kodi muddati tugagan!",
+  uz: 'Tasdiqlash kodi muddati tugagan!',
 };
 
 // City Module Error Messages

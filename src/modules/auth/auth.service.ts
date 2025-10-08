@@ -34,6 +34,8 @@ import {
   register_success,
   otp_successfully_sent,
   invalid_reset_token,
+  otp_sent,
+  authorization_success,
 } from '@constants';
 import { JWT_RESET_TOKEN, JWT_RESET_EXPIRE_TIME, JWT_ACCESS_SECRET } from '@config';
 
@@ -120,7 +122,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: register_success[lang],
+      message: otp_sent[lang],
       data: null,
     };
   }
@@ -167,7 +169,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: register_success[lang],
+      message: authorization_success[lang],
       data: {
         access_token: accessToken,
       },
