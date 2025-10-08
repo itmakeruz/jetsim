@@ -23,7 +23,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiOperation({ summary: 'Register public', description: 'Register public' })
-  @Post('register')
+  @Post('user')
   async auth(@Body() data: AuthDto, @HeadersValidation() headers: DeviceHeadersDto) {
     return await this.authService.auth(data, headers.lang);
   }
