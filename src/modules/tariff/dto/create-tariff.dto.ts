@@ -132,7 +132,7 @@ export class CreateTariffDto {
 
   @ApiProperty({ type: String, required: false, example: 'TURBO', enum: TariffType })
   @IsNotEmpty()
-  @IsBoolean()
+  @IsString()
   type: TariffType;
 
   // @ApiProperty({

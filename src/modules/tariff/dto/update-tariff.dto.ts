@@ -107,6 +107,6 @@ export class UpdateTariffDto {
 
   @ApiProperty({ type: String, required: false, example: 'TURBO', enum: TariffType })
   @IsOptional()
-  @IsBoolean()
+  @IsString()
   type: TariffType;
 }
