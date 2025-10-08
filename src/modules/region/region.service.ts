@@ -70,11 +70,6 @@ export class RegionService {
         created_at: true,
       },
     });
-    console.log(
-      regions.data.map((el) => {
-        console.log(el);
-      }),
-    );
 
     return {
       success: true,
@@ -94,7 +89,7 @@ export class RegionService {
           validity_period: tariff?.validity_period,
           is_4g: tariff?.is_4g,
           is_5g: tariff?.is_5g,
-          regions: tariff?.map((region) => ({
+          regions: tariff?.regions?.map((region: any) => ({
             id: region?.id,
             name: region?.[`name_${lan}`],
             image: `${FilePath.REGION_ICON}/${region?.image}`,
