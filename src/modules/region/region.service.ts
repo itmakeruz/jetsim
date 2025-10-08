@@ -13,6 +13,7 @@ import {
   region_create_success,
   region_update_success,
   region_delete_success,
+  TariffType,
 } from '@constants';
 import { PrismaService } from '@prisma';
 import { Status } from '@prisma/client';
@@ -44,7 +45,28 @@ export class RegionService {
         [`name_${lan}`]: true,
         image: true,
         status: true,
-        categories: true,
+        tariffs: {
+          select: {
+            id: true,
+            status: true,
+            type: true,
+            quantity_sms: true,
+            quantity_minute: true,
+            quantity_internet: true,
+            validity_period: true,
+            is_4g: true,
+            is_5g: true,
+            regions: {
+              select: {
+                id: true,
+                [`name_${lan}`]: true,
+                image: true,
+                status: true,
+                created_at: true,
+              },
+            },
+          },
+        },
         created_at: true,
       },
     });
@@ -52,20 +74,36 @@ export class RegionService {
     return {
       success: true,
       message: '',
-      ...regions,
       data: regions.data.map((region: any) => ({
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
-        created_at: region?.created_at,
-        category: region?.categories?.map((category) => ({
-          id: category?.id,
-          name_ru: category?.name_ru,
-          name_en: category?.name_en,
-          icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
-          created_at: category?.created_at,
+        tariffs: region?.tariffs?.map((tariff: any) => ({
+          id: tariff?.id,
+          status: tariff?.status,
+          type: TariffType[tariff?.type][lan],
+          quantity_sms: tariff?.quantity_sms,
+          quantity_minute: tariff?.quantity_minute,
+          quantity_internet: tariff?.quantity_internet,
+          validity_period: tariff?.validity_period,
+          is_4g: tariff?.is_4g,
+          is_5g: tariff?.is_5g,
+          regions: tariff?.map((region) => ({
+            id: region?.id,
+            name: region?.[`name_${lan}`],
+            image: `${FilePath.REGION_ICON}/${region?.image}`,
+            status: region?.status,
+          })),
         })),
+        // category: region?.categories?.map((category) => ({
+        //   id: category?.id,
+        //   name_ru: category?.name_ru,
+        //   name_en: category?.name_en,
+        //   icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+        //   created_at: category?.created_at,
+        // })),
+        created_at: region?.created_at,
       })),
     };
   }

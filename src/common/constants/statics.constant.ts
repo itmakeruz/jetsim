@@ -92,3 +92,21 @@ export const UserRoles = {
     en: 'Pre-accountant',
   },
 };
+
+export const TariffType = {
+  ECONOMY: {
+    ru: 'Эконом',
+    en: 'Economy',
+    uz: 'Iqtisod',
+  },
+  STANDARD: {
+    ru: 'Стандарт',
+    en: 'Standard',
+    uz: 'Standart',
+  },
+  TURBO: {
+    ru: 'Турбо',
+    en: 'Turbo',
+    uz: 'Turbo',
+  },
+};

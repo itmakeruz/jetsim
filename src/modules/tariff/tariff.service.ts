@@ -243,6 +243,7 @@ export class TariffService {
               id: region,
             })) ?? [],
         },
+        type: data?.type,
       },
     });
 
@@ -290,6 +291,7 @@ export class TariffService {
           : undefined,
 
         updated_at: new Date(),
+        type: data?.type ?? tariff?.type,
       },
     });
 

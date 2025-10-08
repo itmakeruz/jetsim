@@ -121,15 +121,15 @@ model Transaction {
 }
 
 model Tariff {
-  id                Int     @id @default(autoincrement())
+  id                Int         @id @default(autoincrement())
   name_ru           String
   name_en           String
   title_ru          String?
   title_en          String?
   status            Status
-  is_popular        Boolean @default(false)
-  is_4g             Boolean @default(false)
-  is_5g             Boolean @default(false)
+  is_popular        Boolean     @default(false)
+  is_4g             Boolean     @default(false)
+  is_5g             Boolean     @default(false)
   quantity_sms      Int?
   quantity_minute   Int?
   quantity_internet Int?
@@ -138,6 +138,7 @@ model Tariff {
   price_sell        Int?
   sku_id            String
   cashback_percent  Int?
+  type              TariffType?
 
   partner_id Int
 
@@ -351,4 +352,10 @@ enum UserRoles {
   ADMIN
   ACCOUNTANT
   PRE_ACCOUNTANT
+}
+
+enum TariffType {
+  ECONOMY
+  STANDARD
+  TURBO
 }

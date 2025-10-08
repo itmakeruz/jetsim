@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Status } from '@prisma/client';
+import { Status, TariffType } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -129,6 +129,11 @@ export class CreateTariffDto {
   @IsNotEmpty()
   @IsNumber()
   cashback_percent: number;
+
+  @ApiProperty({ type: String, required: false, example: 'TURBO', enum: TariffType })
+  @IsNotEmpty()
+  @IsBoolean()
+  type: TariffType;
 
   // @ApiProperty({
   //   type: [Package],
