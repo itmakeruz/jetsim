@@ -29,17 +29,13 @@ export class RegionService {
       filter: query?.filters,
       sort: query?.sort,
       where: {
-        OR: [
-          {
-            [`name_${lan}`]: {
-              contains: query?.search,
-              mode: 'insensitive',
-            },
-          },
-        ],
+        [`name_${lan}`]: {
+          contains: query?.search,
+          mode: 'insensitive',
+        },
         categories: {
           some: {
-            id: +query?.category_id,
+            id: query.category_id,
           },
         },
       },
@@ -48,8 +44,8 @@ export class RegionService {
         [`name_${lan}`]: true,
         image: true,
         status: true,
-        created_at: true,
         categories: true,
+        created_at: true,
       },
     });
 
