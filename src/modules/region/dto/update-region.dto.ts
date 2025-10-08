@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Status } from '@prisma/client';
+import { Transform } from 'class-transformer';
 import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateRegionDto {
@@ -26,4 +27,24 @@ export class UpdateRegionDto {
   @IsOptional()
   @IsString()
   status: Status;
+
+  @ApiProperty({
+    type: [Number],
+    required: false,
+    example: [1, 2],
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (!value) return [];
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) return parsed.map(Number);
+      } catch {
+        return value.split(',').map((v) => Number(v.trim()));
+      }
+    }
+    return Array.isArray(value) ? value.map(Number) : [];
+  })
+  region_category: number[];
 }

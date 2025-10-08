@@ -224,6 +224,9 @@ export class RegionService {
         name_en: data?.name_en ?? existRegion.name_en,
         image: fileName ?? existRegion.image,
         status: data?.status ?? existRegion.status,
+        categories: {
+          connect: data.region_category?.map((id) => ({ id })) || [],
+        },
       },
     });
 
