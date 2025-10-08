@@ -176,6 +176,8 @@ export class RegionService {
   }
 
   async create(data: CreateRegionDto, fileName: string) {
+    console.log(data);
+
     await this.prisma.region.create({
       data: {
         name_ru: data.name_ru,
