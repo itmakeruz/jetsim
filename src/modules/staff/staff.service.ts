@@ -88,7 +88,7 @@ export class StaffService {
         login: data?.login ?? staff?.login,
         password: hashedPassword,
         role: data?.role ?? staff?.role,
-        status: (data?.role as Status) ?? (staff.role as Status),
+        status: (data?.status as Status) ?? (staff.status as Status),
       },
     });
 
