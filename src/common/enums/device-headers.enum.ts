@@ -1,5 +1,5 @@
 import { ParameterObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
-import { IsEnum } from 'class-validator';
+import { IsEnum, IsOptional } from 'class-validator';
 
 enum Lang {
   ru = 'ru',
@@ -7,8 +7,9 @@ enum Lang {
 }
 
 export class DeviceHeadersDto {
+  @IsOptional()
   @IsEnum(Lang)
-  'lang': Lang;
+  lang?: Lang;
 }
 
 export const globalHeaderParametrs: ParameterObject[] = [
