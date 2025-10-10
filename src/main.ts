@@ -8,7 +8,7 @@ import * as basicAuth from 'express-basic-auth';
 import { LoggingInterceptor } from '@interceptors';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AllExceptionFilter } from '@exceptions';
+import { AllExceptionFilter, HttpExceptionFilter } from '@exceptions';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -38,6 +38,7 @@ async function bootstrap() {
     );
 
   app.useGlobalFilters(new AllExceptionFilter());
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   app.use(
     '/docs',
