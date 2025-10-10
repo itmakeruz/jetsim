@@ -38,6 +38,7 @@ import {
   authorization_success,
 } from '@constants';
 import { JWT_RESET_TOKEN, JWT_RESET_EXPIRE_TIME, JWT_ACCESS_SECRET } from '@config';
+import { access } from 'fs';
 
 @Injectable()
 export class AuthService {
@@ -122,7 +123,13 @@ export class AuthService {
       { secret: JWT_ACCESS_SECRET },
     );
 
-    return { access_token: accessToken };
+    return {
+      success: true,
+      message: authorization_success[lang],
+      data: {
+        access_token: accessToken,
+      },
+    };
   }
 
   async auth(data: AuthDto, lang: string) {
