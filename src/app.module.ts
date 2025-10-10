@@ -22,6 +22,7 @@ import {
 // import { PaymentModule } from './modules/payment/payment.module';
 import { HttpModule } from '@http';
 import { StaticsModule } from './modules/statics/statics.module';
+import { StaffModule } from './modules/staff/staff.module';
 import * as path from 'path';
 
 @Module({
@@ -50,6 +51,7 @@ import * as path from 'path';
     SimsModule,
     SupportModule,
     StaticsModule,
+    StaffModule,
     // PaymentModule,
   ],
   controllers: [],

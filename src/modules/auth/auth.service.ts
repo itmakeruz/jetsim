@@ -73,29 +73,51 @@ export class AuthService {
     };
   }
 
-  async login(data: LoginDto, lang: string) {
-    const user = await this.validate(data.email);
+  async validateStaff(login: string) {
+    const user = await this.prisma.staff.findFirst({
+      where: {
+        login: login,
+      },
+      select: {
+        id: true,
+        login: true,
+        role: true,
+        name: true,
+        password: true,
+      },
+    });
 
     if (!user) {
+      throw new NotFoundException(user_not_found['ru']);
+    }
+
+    return {
+      id: user?.id,
+      login: user?.login,
+      name: user?.name,
+      password: user?.password,
+      role: user?.role,
+    };
+  }
+
+  async login(data: LoginDto, lang: string) {
+    const staff = await this.validateStaff(data.login);
+
+    if (!staff) {
       throw new NotFoundException(invalid_login[lang]);
     }
 
-    const isMatch = await bcrypt.compare(data.password, user.password);
+    const isMatch = await bcrypt.compare(data.password, staff.password);
 
     if (!isMatch) {
       throw new UnauthorizedException(invalid_password[lang]);
     }
 
-    if (!user.is_verified) {
-      throw new UnauthorizedException(invalid_password[lang]);
-    }
-    console.log(user);
-
     const accessToken = this.jwtService.sign(
       {
-        id: user?.id,
-        uuid: user.id,
-        email: user?.email,
+        id: staff?.id,
+        uuid: staff.id,
+        role: staff?.role,
       },
       { secret: JWT_ACCESS_SECRET },
     );
