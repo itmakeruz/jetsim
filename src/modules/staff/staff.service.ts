@@ -54,7 +54,7 @@ export class StaffService {
         login: data?.login,
         password: await bcrypt.hash(data.password, saltOrRounds),
         role: data?.role,
-        status: data?.role as Status,
+        status: data?.status as Status,
       },
     });
 
