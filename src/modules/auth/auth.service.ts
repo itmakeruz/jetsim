@@ -235,6 +235,7 @@ export class AuthService {
         id: true,
         name: true,
         login: true,
+        role: true,
         status: true,
         created_at: true,
       },
