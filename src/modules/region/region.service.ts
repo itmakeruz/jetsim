@@ -353,12 +353,25 @@ export class RegionService {
     };
   }
 
-  async getRegionCategoryAdmin() {
-    const regionCategories = await this.prisma.regionCategory.findMany();
+  async getRegionCategoryAdmin(query: GetRegionDto) {
+    const regionCategories = await paginate('regionCategory', {
+      page: query?.page,
+      size: query?.size,
+      filter: query?.filters,
+      sort: query?.sort,
+      select: {
+        id: true,
+        name_ru: true,
+        name_en: true,
+        icon: true,
+        created_at: true,
+      },
+    });
     return {
       success: true,
       message: '',
-      data: regionCategories,
+      data: regionCategories.data,
+      meta: regionCategories.meta,
     };
   }
 

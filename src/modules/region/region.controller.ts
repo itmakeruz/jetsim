@@ -50,8 +50,8 @@ export class RegionController {
 
   @ApiOperation({ summary: 'Get Region categories for admin', description: 'Get Region categories for admin' })
   @Get('admin/category')
-  async getRegionCategoryAdmin() {
-    return this.regionService.getRegionCategoryAdmin();
+  async getRegionCategoryAdmin(@Query() query: GetRegionDto) {
+    return this.regionService.getRegionCategoryAdmin(query);
   }
 
   @ApiOperation({ summary: 'Get region by id public', description: 'Get region by id public' })
