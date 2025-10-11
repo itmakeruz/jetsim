@@ -314,11 +314,24 @@ export class RegionService {
    * REGION CATEGORIES
    */
 
-  async getRegionCategoryPublic(lang: string) {
-    const regionCategories = await this.prisma.regionCategory.findMany({
-      where: {
-        status: Status.ACTIVE,
-      },
+  async getRegionCategoryPublic(query: GetRegionDto, lang: string) {
+    // const regionCategories = await this.prisma.regionCategory.findMany({
+    //   where: {
+    //     status: Status.ACTIVE,
+    //   },
+    //   select: {
+    //     id: true,
+    //     [`name_${lang}`]: true,
+    //     icon: true,
+    //     created_at: true,
+    //   },
+    // });
+
+    const regionCategories = await paginate('regionCategory', {
+      page: query?.page,
+      size: query?.size,
+      filter: query?.filters,
+      sort: query?.sort,
       select: {
         id: true,
         [`name_${lang}`]: true,
@@ -330,12 +343,13 @@ export class RegionService {
     return {
       success: true,
       message: '',
-      data: regionCategories?.map((category) => ({
+      data: regionCategories?.data?.map((category) => ({
         id: category?.id,
         name: category?.[`name_${lang}`],
         icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
         created_at: category?.created_at,
       })),
+      ...regionCategories,
     };
   }
 

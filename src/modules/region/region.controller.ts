@@ -44,8 +44,8 @@ export class RegionController {
 
   @ApiOperation({ summary: 'Get Region categories for public', description: 'Get Region categories for public' })
   @Get('category')
-  async getRegionCategory(@HeadersValidation() headers: DeviceHeadersDto) {
-    return this.regionService.getRegionCategoryPublic(headers.lang);
+  async getRegionCategory(@Query() query: GetRegionDto, @HeadersValidation() headers: DeviceHeadersDto) {
+    return this.regionService.getRegionCategoryPublic(query, headers.lang);
   }
 
   @ApiOperation({ summary: 'Get Region categories for admin', description: 'Get Region categories for admin' })
