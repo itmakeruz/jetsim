@@ -155,7 +155,7 @@ export class RegionController {
   @ApiOperation({ summary: 'Create region category admin', description: 'Create region category admin' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionCategoryDto })
-  @Patch('category')
+  @Patch('category/:id')
   @UseInterceptors(
     FileInterceptor('icon', {
       storage: diskStorage({
