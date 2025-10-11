@@ -15,6 +15,7 @@ export type PaginationResponse<T> = {
   // totalItems: number;
   meta: {
     totalPage: number;
+    totalSize: number;
     currentPage: number;
     hasNextPage: boolean;
     hasPreviousPage: boolean;
@@ -79,6 +80,7 @@ export async function paginate<
     data: items,
     meta: {
       totalPage: totalPages,
+      totalSize: size,
       currentPage: page,
       hasNextPage: page < totalPages,
       hasPreviousPage: page > 1,
