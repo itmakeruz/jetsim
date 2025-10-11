@@ -89,7 +89,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException(user_not_found['ru']);
+      throw new NotFoundException(invalid_password['ru']);
     }
 
     return {
