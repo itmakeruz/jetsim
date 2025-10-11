@@ -367,11 +367,27 @@ export class RegionService {
         created_at: true,
       },
     });
+    console.log(
+      regionCategories?.data?.map((category) => ({
+        id: category?.id,
+        name_ru: category?.name_ru,
+        name_en: category?.name_en,
+        icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+        created_at: category?.created_at,
+      })),
+    );
+
     return {
       success: true,
       message: '',
-      data: regionCategories.data,
-      meta: regionCategories.meta,
+      ...regionCategories,
+      data: regionCategories?.data?.map((category) => ({
+        id: category?.id,
+        name_ru: category?.name_ru,
+        name_en: category?.name_en,
+        icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+        created_at: category?.created_at,
+      })),
     };
   }
 
