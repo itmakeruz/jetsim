@@ -80,6 +80,7 @@ export class RegionService {
     return {
       success: true,
       message: '',
+      ...regions,
       data: regions.data.map((region: any) => ({
         id: region?.id,
         name: region?.[`name_${lan}`],
@@ -137,6 +138,7 @@ export class RegionService {
     return {
       success: true,
       message: '',
+      ...regions,
       data: regions.data.map((region: any) => ({
         id: region?.id,
         name_ru: region?.name_ru,
