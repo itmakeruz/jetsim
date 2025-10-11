@@ -105,7 +105,7 @@ export class AuthService {
     const staff = await this.validateStaff(data.login);
 
     if (!staff) {
-      throw new NotFoundException(invalid_login[lang]);
+      throw new NotFoundException(invalid_password[lang]);
     }
 
     const isMatch = await bcrypt.compare(data.password, staff.password);
