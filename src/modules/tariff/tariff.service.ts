@@ -16,6 +16,9 @@ export class TariffService {
       sort: query?.sort,
       where: {
         status: Status.ACTIVE,
+        deleted_at: {
+          equals: null,
+        },
       },
       select: {
         id: true,
@@ -75,6 +78,11 @@ export class TariffService {
       size: query?.size,
       filter: query?.filters,
       sort: query?.sort,
+      where: {
+        deleted_at: {
+          equals: null,
+        },
+      },
       select: {
         id: true,
         name_ru: true,
@@ -120,6 +128,9 @@ export class TariffService {
       where: {
         id: id,
         status: Status.ACTIVE,
+        deleted_at: {
+          equals: null,
+        },
       },
       select: {
         id: true,
@@ -176,6 +187,9 @@ export class TariffService {
     const tariff = await this.prisma.tariff.findUnique({
       where: {
         id: id,
+        deleted_at: {
+          equals: null,
+        },
       },
       select: {
         id: true,
@@ -256,7 +270,12 @@ export class TariffService {
 
   async update(id: number, data: UpdateTariffDto) {
     const tariff = await this.prisma.tariff.findUnique({
-      where: { id },
+      where: {
+        id: id,
+        deleted_at: {
+          equals: null,
+        },
+      },
       include: { regions: true },
     });
 
@@ -306,6 +325,9 @@ export class TariffService {
     const tariff = await this.prisma.tariff.findUnique({
       where: {
         id: id,
+        deleted_at: {
+          equals: null,
+        },
       },
     });
 
@@ -374,9 +396,13 @@ export class TariffService {
       throw new NotFoundException(tariff_not_found['ru']);
     }
 
-    await this.prisma.tariff.delete({
+    await this.prisma.tariff.update({
       where: {
         id: service.id,
+      },
+      data: {
+        deleted_at: new Date(),
+        status: Status.INACTIVE,
       },
     });
     return {

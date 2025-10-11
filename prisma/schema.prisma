@@ -151,6 +151,7 @@ model Tariff {
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
+  deleted_at DateTime? @db.Timestamptz(5) 
 
   @@map("tariff")
 }

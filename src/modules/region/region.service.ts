@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CreateRegionCategoryDto,
   CreateRegionDto,
@@ -14,7 +14,6 @@ import {
   region_update_success,
   region_delete_success,
   TariffType,
-  Statuses,
   region_category_find,
   region_category_create,
   region_category_update,
@@ -45,6 +44,7 @@ export class RegionService {
             id: query.category_id,
           },
         },
+        status: Status.ACTIVE,
       },
       select: {
         id: true,
@@ -85,10 +85,10 @@ export class RegionService {
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
-        status: Statuses[region?.status][lan],
+        status: region?.status,
         tariffs: region?.tariffs?.map((tariff: any) => ({
           id: tariff?.id,
-          status: Statuses[tariff?.status][lan],
+          status: tariff?.status,
           type: TariffType[tariff?.type][lan],
           quantity_sms: tariff?.quantity_sms,
           quantity_minute: tariff?.quantity_minute,
@@ -96,13 +96,13 @@ export class RegionService {
           validity_period: tariff?.validity_period,
           is_4g: tariff?.is_4g,
           is_5g: tariff?.is_5g,
-          regions: tariff?.regions?.map((region: any) => ({
-            id: region?.id,
-            name: region?.[`name_${lan}`],
-            image: `${FilePath.REGION_ICON}/${region?.image}`,
-            status: Statuses[region?.status][lan],
-            created_at: region?.created_at,
-          })),
+          // regions: tariff?.regions?.map((region: any) => ({
+          //   id: region?.id,
+          //   name: region?.[`name_${lan}`],
+          //   image: `${FilePath.REGION_ICON}/${region?.image}`,
+          //   status: Statuses[][lan],
+          //   created_at: region?.created_at,
+          // })),
         })),
         // category: region?.categories?.map((category) => ({
         //   id: category?.id,
@@ -131,9 +131,6 @@ export class RegionService {
         categories: true,
         created_at: true,
       },
-      where: {
-        status: Status.ACTIVE,
-      },
     });
 
     return {
@@ -145,10 +142,10 @@ export class RegionService {
         name_ru: region?.name_ru,
         name_en: region?.name_en,
         image: `${FilePath.REGION_ICON}/${region?.image}`,
-        status: Statuses[region?.status]['ru'],
+        status: region?.status,
         category: region?.categories?.map((category) => ({
           id: category?.id,
-          status: Statuses[category?.status]['ru'],
+          status: category?.status,
           name_ru: category?.name_ru,
           name_en: category?.name_en,
           icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
@@ -163,6 +160,7 @@ export class RegionService {
     const region = await this.prisma.region.findUnique({
       where: {
         id: id,
+        status: Status.ACTIVE,
       },
       select: {
         id: true,
@@ -186,10 +184,10 @@ export class RegionService {
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
-        status: Statuses[region?.status][lan],
+        status: region?.status,
         category: region?.categories?.map((category) => ({
           id: category?.id,
-          status: Statuses[category?.status][lan],
+          status: category?.status,
           name_ru: category?.name_ru,
           name_en: category?.name_en,
           icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
@@ -204,7 +202,6 @@ export class RegionService {
     const region = await this.prisma.region.findUnique({
       where: {
         id: id,
-        status: Status.ACTIVE,
       },
       select: {
         id: true,
@@ -229,11 +226,11 @@ export class RegionService {
         name_ru: region?.name_ru,
         name_en: region?.name_en,
         image: `${FilePath.REGION_ICON}/${region?.image}`,
-        status: Statuses[region?.status]['ru'],
+        status: region?.status,
         created_at: region?.created_at,
         category: region?.categories?.map((category) => ({
           id: category?.id,
-          status: Statuses[category?.status]['ru'],
+          status: category?.status,
           name_ru: category?.name_ru,
           name_en: category?.name_en,
           icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
@@ -361,6 +358,9 @@ export class RegionService {
       size: query?.size,
       filter: query?.filters,
       sort: query?.sort,
+      where: {
+        status: Status.ACTIVE,
+      },
       select: {
         id: true,
         [`name_${lang}`]: true,
