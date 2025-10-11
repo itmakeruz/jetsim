@@ -27,24 +27,4 @@ export class CreateRegionDto {
   @IsOptional()
   @IsEnum(Status)
   status: Status;
-
-  @ApiProperty({
-    type: [Number],
-    required: false,
-    example: [1, 2],
-  })
-  @IsOptional()
-  @Transform(({ value }) => {
-    if (!value) return [];
-    if (typeof value === 'string') {
-      try {
-        const parsed = JSON.parse(value);
-        if (Array.isArray(parsed)) return parsed.map(Number);
-      } catch {
-        return value.split(',').map((v) => Number(v.trim()));
-      }
-    }
-    return Array.isArray(value) ? value.map(Number) : [];
-  })
-  region_category: number[];
 }

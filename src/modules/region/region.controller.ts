@@ -86,8 +86,6 @@ export class RegionController {
     }),
   )
   async create(@Body() data: CreateRegionDto, @UploadedFile() file: Express.Multer.File) {
-    console.log(data.region_category);
-
     return this.regionService.create(data, file?.filename);
   }
 

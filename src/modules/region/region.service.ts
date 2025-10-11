@@ -230,9 +230,9 @@ export class RegionService {
         name_en: data.name_en,
         image: fileName,
         status: data.status,
-        categories: {
-          connect: data.region_category?.map((id) => ({ id })) || [],
-        },
+        // categories: {
+        //   connect: data.region_category?.map((id) => ({ id })) || [],
+        // },
       },
     });
     return {
@@ -270,9 +270,9 @@ export class RegionService {
         name_en: data?.name_en ?? existRegion.name_en,
         image: fileName ?? existRegion.image,
         status: data?.status ?? existRegion.status,
-        categories: {
-          connect: data.region_category?.map((id) => ({ id })) || [],
-        },
+        // categories: {
+        //   connect: data.region_category?.map((id) => ({ id })) || [],
+        // },
       },
     });
 
@@ -395,6 +395,9 @@ export class RegionService {
         name_ru: data.name_ru,
         name_en: data.name_en,
         icon: fileName,
+        regions: {
+          connect: data.regions?.map((id) => ({ id })) || [],
+        },
       },
     });
 
@@ -438,6 +441,9 @@ export class RegionService {
         name_ru: data.name_ru ?? existCategoryRegion.name_ru,
         name_en: data.name_en ?? existCategoryRegion.name_en,
         icon: fileName ?? existCategoryRegion.icon,
+        regions: {
+          set: data.regions?.map((id) => ({ id })) || [],
+        },
         updated_at: new Date(),
       },
     });
