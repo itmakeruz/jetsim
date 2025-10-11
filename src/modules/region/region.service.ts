@@ -15,6 +15,11 @@ import {
   region_delete_success,
   TariffType,
   Statuses,
+  region_category_find,
+  region_category_create,
+  region_category_update,
+  region_category_not_found,
+  region_category_delete,
 } from '@constants';
 import { PrismaService } from '@prisma';
 import { Status } from '@prisma/client';
@@ -342,7 +347,7 @@ export class RegionService {
 
     return {
       success: true,
-      message: '',
+      message: region_category_find['ru'],
       data: regionCategories?.data?.map((category) => ({
         id: category?.id,
         name: category?.[`name_${lang}`],
@@ -370,7 +375,7 @@ export class RegionService {
 
     return {
       success: true,
-      message: '',
+      message: region_category_find['ru'],
       ...regionCategories,
       data: regionCategories?.data?.map((category) => ({
         id: category?.id,
@@ -393,7 +398,7 @@ export class RegionService {
 
     return {
       success: true,
-      message: 'success',
+      message: region_category_create['ru'],
       data: null,
     };
   }
@@ -437,7 +442,30 @@ export class RegionService {
 
     return {
       success: true,
-      message: 'success',
+      message: region_category_update['ru'],
+      data: null,
+    };
+  }
+
+  async removeRegionCategory(id: number) {
+    const regionCategory = await this.prisma.regionCategory.findUnique({
+      where: {
+        id: id,
+      },
+    });
+    if (!regionCategory) {
+      throw new NotFoundException(region_category_not_found['ru']);
+    }
+
+    await this.prisma.regionCategory.delete({
+      where: {
+        id: id,
+      },
+    });
+
+    return {
+      success: true,
+      message: region_category_delete['ru'],
       data: null,
     };
   }

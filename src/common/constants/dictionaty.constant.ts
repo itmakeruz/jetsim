@@ -429,3 +429,36 @@ export const data_deleted_success = {
   en: 'Data deleted successfully!',
   uz: "Ma'lumotlar muvaffaqiyatli o'chirildi!",
 };
+
+export const region_category_create = {
+  ru: 'Категория региона успешно создана!',
+  en: 'Region category created successfully!',
+  uz: 'Hudud kategoriyasi muvaffaqiyatli yaratildi!',
+};
+
+export const region_category_update = {
+  ru: 'Категория региона успешно обновлена!',
+  en: 'Region category updated successfully!',
+  uz: 'Hudud kategoriyasi muvaffaqiyatli yangilandi!',
+};
+export const region_category_delete = {
+  ru: 'Категория региона успешно удалена!',
+  en: 'Region category deleted successfully!',
+  uz: 'Hudud kategoriyasi muvaffaqiyatli o‘chirildi!',
+};
+
+export const region_category_find = {
+  ru: 'Категории регионов успешно получены!',
+  en: 'Region categories retrieved successfully!',
+  uz: 'Hudud kategoriyalari muvaffaqiyatli olindi!',
+};
+export const region_category_find_one = {
+  ru: 'Категория региона успешно получена!',
+  en: 'Region category retrieved successfully!',
+  uz: 'Hudud kategoriyasi muvaffaqiyatli olindi!',
+};
+export const region_category_not_found = {
+  ru: 'Категория региона не найдена!',
+  en: 'Region category not found!',
+  uz: 'Hudud kategoriyasi topilmadi!',
+};
