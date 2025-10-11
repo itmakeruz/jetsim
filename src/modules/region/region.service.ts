@@ -122,6 +122,22 @@ export class RegionService {
       size: query?.size,
       filter: query?.filters,
       sort: query?.sort,
+      where: {
+        OR: [
+          {
+            name_ru: {
+              contains: query?.search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            name_en: {
+              contains: query?.search,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
       select: {
         id: true,
         name_ru: true,

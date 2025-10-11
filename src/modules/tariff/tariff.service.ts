@@ -33,6 +33,8 @@ export class TariffService {
         quantity_internet: true,
         validity_period: true,
         price_sell: true,
+        partner_id: true,
+        type: true,
         regions: {
           select: {
             id: true,
@@ -61,6 +63,7 @@ export class TariffService {
         quantity_internet: tariff?.quantity_internet,
         validity_period: tariff?.validity_period,
         price_sell: tariff?.price_sell,
+        type: tariff?.type,
         regions: tariff?.regions?.map((region) => ({
           id: region?.id,
           name: region?.[`name_${lang}`],
@@ -99,16 +102,27 @@ export class TariffService {
         validity_period: true,
         price_sell: true,
         price_arrival: true,
-        created_at: true,
         sku_id: true,
+        cashback_percent: true,
         regions: {
           select: {
             id: true,
             name_ru: true,
             name_en: true,
+            status: true,
             created_at: true,
           },
         },
+        partner: {
+          select: {
+            id: true,
+            status: true,
+            name_ru: true,
+            identified_number: true,
+            created_at: true,
+          },
+        },
+        created_at: true,
       },
     });
 
@@ -208,11 +222,22 @@ export class TariffService {
         price_sell: true,
         price_arrival: true,
         sku_id: true,
+        cashback_percent: true,
         regions: {
           select: {
             id: true,
             name_ru: true,
             name_en: true,
+            status: true,
+            created_at: true,
+          },
+        },
+        partner: {
+          select: {
+            id: true,
+            status: true,
+            name_ru: true,
+            identified_number: true,
             created_at: true,
           },
         },
