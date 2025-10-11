@@ -178,4 +178,10 @@ export class RegionController {
   ) {
     return this.regionService.updateRegionCategory(param.id, data, file?.filename);
   }
+
+  @ApiOperation({ summary: 'Delete region category', description: 'Delete region category' })
+  @Delete('category/:id')
+  async removeRegionCategory(@Param('id') id: string) {
+    return this.regionService.removeRegionCategory(+id);
+  }
 }
