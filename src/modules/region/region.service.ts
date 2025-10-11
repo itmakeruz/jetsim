@@ -388,7 +388,7 @@ export class RegionService {
         regions: category?.regions?.map((region) => ({
           id: region?.id,
           name: region?.[`name_${lang}`],
-          image: `${FilePath.REGION_ICON}/${category?.icon}`,
+          image: `${FilePath.REGION_ICON}/${region?.icon}`,
           status: region?.status,
           created_at: region?.created_at,
         })),
@@ -436,7 +436,7 @@ export class RegionService {
           id: region?.id,
           name_ru: region?.name_ru,
           name_en: region?.name_en,
-          image: `${FilePath.REGION_ICON}/${category?.icon}`,
+          image: `${FilePath.REGION_ICON}/${region?.image}`,
           status: region?.status,
           created_at: region?.created_at,
         })),
