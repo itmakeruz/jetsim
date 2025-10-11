@@ -101,6 +101,7 @@ export class RegionService {
             name: region?.[`name_${lan}`],
             image: `${FilePath.REGION_ICON}/${region?.image}`,
             status: Statuses[region?.status][lan],
+            created_at: region?.created_at,
           })),
         })),
         // category: region?.categories?.map((category) => ({
@@ -144,9 +145,10 @@ export class RegionService {
         name_ru: region?.name_ru,
         name_en: region?.name_en,
         image: `${FilePath.REGION_ICON}/${region?.image}`,
-        status: region?.status,
+        status: Statuses[region?.status]['ru'],
         category: region?.categories?.map((category) => ({
           id: category?.id,
+          status: Statuses[category?.status]['ru'],
           name_ru: category?.name_ru,
           name_en: category?.name_en,
           icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
@@ -168,6 +170,7 @@ export class RegionService {
         name_en: true,
         image: true,
         status: true,
+        categories: true,
         created_at: true,
       },
     });
@@ -183,7 +186,15 @@ export class RegionService {
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
-        status: region?.status,
+        status: Statuses[region?.status][lan],
+        category: region?.categories?.map((category) => ({
+          id: category?.id,
+          status: Statuses[category?.status][lan],
+          name_ru: category?.name_ru,
+          name_en: category?.name_en,
+          icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+          created_at: category?.created_at,
+        })),
         created_at: region?.created_at,
       },
     };
@@ -200,7 +211,9 @@ export class RegionService {
         name_ru: true,
         name_en: true,
         image: true,
+        categories: true,
         status: true,
+        created_at: true,
       },
     });
 
@@ -216,7 +229,16 @@ export class RegionService {
         name_ru: region?.name_ru,
         name_en: region?.name_en,
         image: `${FilePath.REGION_ICON}/${region?.image}`,
-        status: region?.status,
+        status: Statuses[region?.status]['ru'],
+        created_at: region?.created_at,
+        category: region?.categories?.map((category) => ({
+          id: category?.id,
+          status: Statuses[category?.status]['ru'],
+          name_ru: category?.name_ru,
+          name_en: category?.name_en,
+          icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+          created_at: category?.created_at,
+        })),
       },
     };
   }
@@ -343,6 +365,15 @@ export class RegionService {
         id: true,
         [`name_${lang}`]: true,
         icon: true,
+        regions: {
+          select: {
+            id: true,
+            [`name_${lang}`]: true,
+            image: true,
+            status: true,
+            created_at: true,
+          },
+        },
         created_at: true,
       },
     });
@@ -350,10 +381,17 @@ export class RegionService {
     return {
       success: true,
       message: region_category_find['ru'],
-      data: regionCategories?.data?.map((category) => ({
+      data: regionCategories?.data?.map((category: any) => ({
         id: category?.id,
         name: category?.[`name_${lang}`],
         icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+        regions: category?.regions?.map((region) => ({
+          id: region?.id,
+          name: region?.[`name_${lang}`],
+          image: `${FilePath.REGION_ICON}/${category?.icon}`,
+          status: region?.status,
+          created_at: region?.created_at,
+        })),
         created_at: category?.created_at,
       })),
       ...regionCategories,
@@ -371,6 +409,16 @@ export class RegionService {
         name_ru: true,
         name_en: true,
         icon: true,
+        regions: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+            image: true,
+            status: true,
+            created_at: true,
+          },
+        },
         created_at: true,
       },
     });
@@ -379,11 +427,19 @@ export class RegionService {
       success: true,
       message: region_category_find['ru'],
       ...regionCategories,
-      data: regionCategories?.data?.map((category) => ({
+      data: regionCategories?.data?.map((category: any) => ({
         id: category?.id,
         name_ru: category?.name_ru,
         name_en: category?.name_en,
         icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
+        regions: category?.regions?.map((region) => ({
+          id: region?.id,
+          name_ru: region?.name_ru,
+          name_en: region?.name_en,
+          image: `${FilePath.REGION_ICON}/${category?.icon}`,
+          status: region?.status,
+          created_at: region?.created_at,
+        })),
         created_at: category?.created_at,
       })),
     };
