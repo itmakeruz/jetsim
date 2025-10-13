@@ -96,13 +96,13 @@ export class RegionService {
           validity_period: tariff?.validity_period,
           is_4g: tariff?.is_4g,
           is_5g: tariff?.is_5g,
-          // regions: tariff?.regions?.map((region: any) => ({
-          //   id: region?.id,
-          //   name: region?.[`name_${lan}`],
-          //   image: `${FilePath.REGION_ICON}/${region?.image}`,
-          //   status: Statuses[][lan],
-          //   created_at: region?.created_at,
-          // })),
+          regions: tariff?.regions?.map((region: any) => ({
+            id: region?.id,
+            name: region?.[`name_${lan}`],
+            image: `${FilePath.REGION_ICON}/${region?.image}`,
+            status: region?.status,
+            created_at: region?.created_at,
+          })),
         })),
         // category: region?.categories?.map((category) => ({
         //   id: category?.id,
@@ -391,11 +391,12 @@ export class RegionService {
     return {
       success: true,
       message: region_category_find['ru'],
+      ...regionCategories,
       data: regionCategories?.data?.map((category: any) => ({
         id: category?.id,
         name: category?.[`name_${lang}`],
         icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
-        regions: category?.regions?.map((region) => ({
+        regions: category?.regions?.map((region: any) => ({
           id: region?.id,
           name: region?.[`name_${lang}`],
           image: `${FilePath.REGION_ICON}/${region?.icon}`,
@@ -404,7 +405,6 @@ export class RegionService {
         })),
         created_at: category?.created_at,
       })),
-      ...regionCategories,
     };
   }
 
