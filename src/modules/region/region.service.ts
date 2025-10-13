@@ -35,20 +35,22 @@ export class RegionService {
       filter: query?.filters,
       sort: query?.sort,
       where: {
-        OR: [
-          {
-            name_ru: {
-              contains: query.search,
-              mode: 'insensitive',
+        ...(query?.search && {
+          OR: [
+            {
+              name_ru: {
+                contains: query.search,
+                mode: 'insensitive',
+              },
             },
-          },
-          {
-            name_en: {
-              contains: query.search,
-              mode: 'insensitive',
+            {
+              name_en: {
+                contains: query.search,
+                mode: 'insensitive',
+              },
             },
-          },
-        ],
+          ],
+        }),
         categories: {
           some: {
             id: query.category_id,
