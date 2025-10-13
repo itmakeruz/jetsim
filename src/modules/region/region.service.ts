@@ -35,7 +35,11 @@ export class RegionService {
       filter: query?.filters,
       sort: query?.sort,
       where: {
-        [`name_${lan}`]: {
+        name_ru: {
+          contains: query?.search,
+          mode: 'insensitive',
+        },
+        name_en: {
           contains: query?.search,
           mode: 'insensitive',
         },
