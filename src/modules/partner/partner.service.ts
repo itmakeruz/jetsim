@@ -25,6 +25,7 @@ export class PartnerService {
         name_en: true,
         description_ru: true,
         description_en: true,
+        identified_number: true,
         status: true,
       },
     });
@@ -44,6 +45,7 @@ export class PartnerService {
         name_en: true,
         description_ru: true,
         description_en: true,
+        identified_number: true,
         status: true,
       },
     });
@@ -90,6 +92,7 @@ export class PartnerService {
         name_en: true,
         description_ru: true,
         description_en: true,
+        identified_number: true,
         status: true,
       },
     });
@@ -106,13 +109,16 @@ export class PartnerService {
     }
 
     await this.prisma.partner.update({
-      where: { id },
+      where: {
+        id: id,
+      },
       data: {
-        name_ru: data.name_ru,
-        name_en: data.name_en,
-        description_ru: data.description_ru,
-        description_en: data.description_en,
-        status: data.status,
+        name_ru: data?.name_ru ?? partner?.name_ru,
+        name_en: data?.name_en ?? partner?.name_ru,
+        description_ru: data?.description_ru ?? partner?.description_ru,
+        description_en: data.description_en ?? partner?.description_en,
+        status: data?.status ?? partner?.status,
+        identified_number: data?.identified_number ?? partner?.identified_number,
       },
     });
 
