@@ -6,6 +6,7 @@ import { BillionConnectCallbackResponse, IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { DeviceHeadersDto } from '@enums';
 import { AuthGuard } from '@nestjs/passport';
+import { OptionalJwtAuthGuard } from '@guards';
 
 @Controller('order')
 export class OrderController {
@@ -43,7 +44,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Add tariff to basket public', description: 'Add tariff to basket public' })
   @ApiHeader({ name: 'x-session-id' })
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(OptionalJwtAuthGuard)
   @Post('add-to-basket')
   async addTobascet(
     @Body() data: AddToBasket,
@@ -55,7 +56,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'remove item from basket public', description: 'remove item from basket public' })
   @ApiHeader({ name: 'x-session-id' })
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(OptionalJwtAuthGuard)
   @Post('remove-item-from-basket')
   async removeFromBascet(
     @Body() data: RemoveFromBasketDto,
@@ -67,7 +68,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'decrease item from basket public', description: 'decrease item from basket public' })
   @ApiHeader({ name: 'x-session-id' })
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(OptionalJwtAuthGuard)
   @Post('decrease-item-from-basket')
   async decreaseQuantity(
     @Body() data: DecreaseQuantityDto,
