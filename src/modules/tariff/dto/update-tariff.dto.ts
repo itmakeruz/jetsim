@@ -105,8 +105,8 @@ export class UpdateTariffDto {
   @IsNumber()
   cashback_percent: number;
 
-  @ApiProperty({ type: String, required: false, example: 'TURBO', enum: TariffType })
+  @ApiProperty({ type: Number, required: false, example: 1 })
   @IsOptional()
-  @IsString()
-  type: TariffType;
+  @IsNumber()
+  type: number;
 }

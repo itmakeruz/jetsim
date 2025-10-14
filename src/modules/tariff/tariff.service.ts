@@ -34,7 +34,7 @@ export class TariffService {
         validity_period: true,
         price_sell: true,
         partner_id: true,
-        type: true,
+        tariff_type: true,
         regions: {
           select: {
             id: true,
@@ -63,7 +63,10 @@ export class TariffService {
         quantity_internet: tariff?.quantity_internet,
         validity_period: tariff?.validity_period,
         price_sell: tariff?.price_sell,
-        type: tariff?.type,
+        type: {
+          id: tariff?.tariff_type?.id,
+          name: tariff?.tariff_type?.[`name_${lang}`],
+        },
         regions: tariff?.regions?.map((region) => ({
           id: region?.id,
           name: region?.[`name_${lang}`],
@@ -104,6 +107,13 @@ export class TariffService {
         price_arrival: true,
         sku_id: true,
         cashback_percent: true,
+        tariff_type: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+          },
+        },
         regions: {
           select: {
             id: true,
@@ -131,14 +141,14 @@ export class TariffService {
       message: 'Тарифы успешно найдены!',
       data: tariffs?.data?.map((tariff: any) => ({
         ...tariff,
-        package_count: tariff?._count?.package,
+        // package_count: tariff?._count?.package,
       })),
       ...tariffs,
     };
   }
 
   async findOne(id: number, lang: string) {
-    const tariffs = await this.prisma.tariff.findUnique({
+    const tariffs: any = await this.prisma.tariff.findUnique({
       where: {
         id: id,
         status: Status.ACTIVE,
@@ -159,6 +169,7 @@ export class TariffService {
         quantity_internet: true,
         validity_period: true,
         price_sell: true,
+        tariff_type: true,
         created_at: true,
         regions: {
           select: {
@@ -173,6 +184,7 @@ export class TariffService {
     if (!tariffs) {
       throw new NotFoundException(tariff_not_found['ru']);
     }
+    console.log();
 
     return {
       success: true,
@@ -189,6 +201,10 @@ export class TariffService {
         quantity_internet: tariffs?.quantity_internet,
         validity_period: tariffs?.validity_period,
         price_sell: tariffs?.price_sell,
+        type: {
+          id: tariffs?.tariff_type?.id,
+          name: tariffs?.tariff_type?.[`name_${lang}`],
+        },
         regions: tariffs?.regions?.map((region) => ({
           id: region?.id,
           name: region?.[`name_${lang}`],
@@ -223,6 +239,13 @@ export class TariffService {
         price_arrival: true,
         sku_id: true,
         cashback_percent: true,
+        tariff_type: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+          },
+        },
         regions: {
           select: {
             id: true,

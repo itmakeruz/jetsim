@@ -130,10 +130,10 @@ export class CreateTariffDto {
   @IsNumber()
   cashback_percent: number;
 
-  @ApiProperty({ type: String, required: false, example: 'TURBO', enum: TariffType })
+  @ApiProperty({ type: Number, required: true, example: 1 })
   @IsNotEmpty()
-  @IsString()
-  type: TariffType;
+  @IsNumber()
+  type: number;
 
   // @ApiProperty({
   //   type: [Package],

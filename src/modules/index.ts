@@ -11,3 +11,4 @@ export * from './partner';
 export * from './support';
 export * from './users';
 export * from './sims';
+export * from './statics';

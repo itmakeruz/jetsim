@@ -18,10 +18,10 @@ import {
   UsersModule,
   SimsModule,
   SupportModule,
+  StaticsModule,
 } from '@modules';
 // import { PaymentModule } from './modules/payment/payment.module';
 import { HttpModule } from '@http';
-import { StaticsModule } from './modules/statics/statics.module';
 import { StaffModule } from './modules/staff/staff.module';
 import * as path from 'path';
 

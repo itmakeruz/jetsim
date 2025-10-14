@@ -23,6 +23,7 @@ import {
   order_create_success,
   basket_add_success,
   basket_remove_success,
+  tariff_not_found,
 } from '@constants';
 import { MAIL_USER } from '@config';
 
@@ -340,79 +341,62 @@ export class OrderService {
     };
   }
 
-  async addToBascet(data: AddToBasket, sessionId: string, userId: number, lang: string) {
-    let basket;
-    if (userId) {
-      basket = await this.prisma.basket.findFirst({
-        where: {
+  async addItemsToBascet(data: AddToBasket[], userId: number, lang: string) {
+    const basket = await this.prisma.basket.findFirst({
+      where: {
+        user_id: userId,
+      },
+    });
+
+    if (!basket) {
+      await this.prisma.basket.create({
+        data: {
           user_id: userId,
-          status: 'ACTIVE',
+          status: Status.ACTIVE,
         },
       });
-      if (!basket) {
-        basket = await this.prisma.basket.create({
-          data: {
-            user_id: userId,
-          },
-        });
+    }
+
+    for (let item of data) {
+      const pkg = await this.prisma.tariff.findUnique({
+        where: { id: item?.tariff_id },
+      });
+
+      if (!pkg) {
+        throw new NotFoundException(tariff_not_found['ru']);
       }
-    } else {
-      if (!sessionId) {
-        sessionId = uuidv4();
-      }
-      basket = await this.prisma.basket.findFirst({
+
+      const existingItem = await this.prisma.basketItem.findFirst({
         where: {
-          session_id: sessionId,
-          status: 'ACTIVE',
+          basket_id: basket.id,
+          tariff_id: item.tariff_id,
         },
       });
-      if (!basket) {
-        basket = await this.prisma.basket.create({
+
+      if (existingItem) {
+        await this.prisma.basketItem.update({
+          where: {
+            id: existingItem.id,
+          },
           data: {
-            session_id: sessionId,
+            quantity: existingItem.quantity + item.quantity,
+          },
+        });
+      } else {
+        await this.prisma.basketItem.create({
+          data: {
+            basket_id: basket.id,
+            tariff_id: item.tariff_id,
+            quantity: item.quantity,
+            region_id: item?.region_id,
+            price: '1',
           },
         });
       }
-    }
-
-    const pkg = await this.prisma.tariff.findUnique({
-      where: {
-        id: data.tariff_id,
-      },
-    });
-    if (!pkg) {
-      throw new NotFoundException(order_not_found['ru']);
-    }
-
-    const existingItem = await this.prisma.basketItem.findFirst({
-      where: {
-        basket_id: basket.id,
-        tariff_id: data.tariff_id,
-      },
-    });
-
-    if (existingItem) {
-      await this.prisma.basketItem.update({
-        where: { id: existingItem.id },
-        data: {
-          quantity: existingItem.quantity + data.quantity,
-        },
-      });
-    } else {
-      await this.prisma.basketItem.create({
-        data: {
-          basket_id: basket.id,
-          tariff_id: data.tariff_id,
-          quantity: data.quantity,
-          price: '1',
-        },
-      });
     }
 
     const fullBasket = await this.prisma.basket.findUnique({
-      where: {
-        id: basket.id,
-      },
+      where: { id: basket.id },
       select: {
         items: {
           select: {
@@ -421,14 +405,13 @@ export class OrderService {
             price: true,
             quantity: true,
             tariff: {
-              select: {
-                [`name_${lang}`]: true,
-              },
+              select: { [`name_${lang}`]: true },
             },
           },
         },
       },
     });
+
     const total = fullBasket.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
 
     return {
@@ -436,7 +419,6 @@ export class OrderService {
       message: '',
       data: {
         basket_id: basket.id,
-        session_id: sessionId,
         items: fullBasket.items.map((item) => ({
           id: item.id,
           tariff_id: item.tariff_id,
@@ -450,23 +432,105 @@ export class OrderService {
     };
   }
 
-  async removeFromBasket(itemId: number, sessionId?: string, userId?: number) {
-    const basket = await this.prisma.basket.findFirst({
+  async addToBasket(data: AddToBasket, userId: number, lang: string) {
+    let basket = await this.prisma.basket.findFirst({
       where: {
+        user_id: userId,
         status: 'ACTIVE',
-        ...(userId ? { user_id: userId } : { session_id: sessionId }),
       },
     });
 
     if (!basket) {
-      throw new Error('Basket not found');
+      basket = await this.prisma.basket.create({
+        data: { user_id: userId },
+      });
     }
 
-    await this.prisma.basketItem.delete({
+    const pkg = await this.prisma.tariff.findUnique({
+      where: { id: data.tariff_id },
+    });
+
+    if (!pkg) {
+      throw new NotFoundException(tariff_not_found['ru']);
+    }
+
+    const existingItem = await this.prisma.basketItem.findFirst({
       where: {
-        id: itemId,
         basket_id: basket.id,
+        tariff_id: data.tariff_id,
       },
+    });
+
+    if (existingItem) {
+      await this.prisma.basketItem.update({
+        where: {
+          id: existingItem.id,
+        },
+        data: {
+          quantity: existingItem.quantity + data.quantity,
+        },
+      });
+    } else {
+      await this.prisma.basketItem.create({
+        data: {
+          basket_id: basket.id,
+          tariff_id: data.tariff_id,
+          quantity: data.quantity,
+          region_id: data?.region_id,
+          price: '1',
+        },
+      });
+    }
+
+    const fullBasket = await this.prisma.basket.findUnique({
+      where: { id: basket.id },
+      select: {
+        items: {
+          select: {
+            id: true,
+            tariff_id: true,
+            price: true,
+            quantity: true,
+            tariff: {
+              select: { [`name_${lang}`]: true },
+            },
+          },
+        },
+      },
+    });
+
+    const total = fullBasket.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+
+    return {
+      success: true,
+      message: '',
+      data: {
+        basket_id: basket.id,
+        items: fullBasket.items.map((item) => ({
+          id: item.id,
+          tariff_id: item.tariff_id,
+          name: item?.tariff?.[`name_${lang}`],
+          price: item.price,
+          quantity: item.quantity,
+          total: Number(item.price) * item.quantity,
+        })),
+        total,
+      },
+    };
+  }
+
+  async removeFromBasket(itemId: number, userId: number) {
+    const basket = await this.prisma.basket.findFirst({
+      where: {
+        status: 'ACTIVE',
+        user_id: userId,
+      },
+    });
+
+    if (!basket) throw new NotFoundException('Basket not found');
+
+    await this.prisma.basketItem.delete({
+      where: { id: itemId },
     });
 
     return {
@@ -476,21 +540,21 @@ export class OrderService {
     };
   }
 
-  async decreaseQuantity(itemId: number, sessionId?: string, userId?: number) {
+  async decreaseQuantity(itemId: number, userId: number) {
     const basket = await this.prisma.basket.findFirst({
       where: {
         status: 'ACTIVE',
-        ...(userId ? { user_id: userId } : { session_id: sessionId }),
+        user_id: userId,
       },
     });
 
-    if (!basket) throw new Error('Basket not found');
+    if (!basket) throw new NotFoundException('Basket not found');
 
     const item = await this.prisma.basketItem.findFirst({
       where: { id: itemId, basket_id: basket.id },
     });
 
-    if (!item) throw new Error('Item not found');
+    if (!item) throw new NotFoundException('Item not found');
 
     if (item.quantity > 1) {
       await this.prisma.basketItem.update({
@@ -498,10 +562,9 @@ export class OrderService {
         data: { quantity: item.quantity - 1 },
       });
     } else {
-      await this.prisma.basketItem.delete({
-        where: { id: itemId },
-      });
+      await this.prisma.basketItem.delete({ where: { id: itemId } });
     }
+
     return {
       success: true,
       message: '',

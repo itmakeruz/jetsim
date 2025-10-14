@@ -121,15 +121,15 @@ model Transaction {
 }
 
 model Tariff {
-  id                Int         @id @default(autoincrement())
+  id                Int     @id @default(autoincrement())
   name_ru           String
   name_en           String
   title_ru          String?
   title_en          String?
   status            Status
-  is_popular        Boolean     @default(false)
-  is_4g             Boolean     @default(false)
-  is_5g             Boolean     @default(false)
+  is_popular        Boolean @default(false)
+  is_4g             Boolean @default(false)
+  is_5g             Boolean @default(false)
   quantity_sms      Int?
   quantity_minute   Int?
   quantity_internet Int?
@@ -138,7 +138,7 @@ model Tariff {
   price_sell        Int?
   sku_id            String
   cashback_percent  Int?
-  type              TariffType?
+  type              Int?
 
   partner_id Int
 
@@ -146,12 +146,13 @@ model Tariff {
   partner     Partner      @relation(fields: [partner_id], references: [id])
   bascet_item BasketItem[]
   sims        Sims[]
+  tariff_type StaticTypes? @relation(fields: [type], references: [id])
 
   // packages Package[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  deleted_at DateTime? @db.Timestamptz(5) 
+  deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("tariff")
 }
@@ -297,6 +298,7 @@ model BasketItem {
   basket_id Int
   // package_id Int
   tariff_id Int?
+  region_id Int?
   quantity  Int    @default(1)
   price     String
 
@@ -307,6 +309,20 @@ model BasketItem {
   updated_at DateTime @updatedAt @db.Timestamptz(5)
 
   @@map("basket_item")
+}
+
+model StaticTypes {
+  id                    Int     @id @default(autoincrement())
+  identification_number Int?
+  name_ru               String?
+  name_en               String?
+
+  created_at DateTime @default(now()) @db.Timestamptz(5)
+  updated_at DateTime @updatedAt @db.Timestamptz(5)
+
+  tariffs Tariff[]
+
+  @@map("static_type")
 }
 
 model Error {
