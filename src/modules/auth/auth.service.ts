@@ -229,7 +229,7 @@ export class AuthService {
       message: 'Пользователь успешно получен!',
       data: {
         ...user,
-        image: `${FilePath.USER_PROFILE_IMAGE}/${user?.image}`,
+        image: user?.image ? `${FilePath.USER_PROFILE_IMAGE}/${user?.image}` : null,
       },
     };
   }

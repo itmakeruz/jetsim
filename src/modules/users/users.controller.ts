@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   BadRequestException,
   UploadedFile,
+  Delete,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { DeviceHeadersDto, ParamId } from '@enums';
@@ -61,6 +62,13 @@ export class UsersController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.usersService.updateProfile(request?.user?.id, data, file?.filename, headers?.lang);
+  }
+
+  @ApiOperation({ summary: 'delete profile', description: 'delete profile' })
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id')
+  async removeProfile(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
+    return this.usersService.removeProfile(request?.user?.id, headers.lang);
   }
 
   @Get(':id')

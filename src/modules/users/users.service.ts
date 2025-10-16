@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto, UpdateProfileDto } from './dto';
 import { PrismaService } from '@prisma';
-import { FilePath, user_not_found } from '@constants';
+import { FilePath, profile_image_deleted, user_not_found } from '@constants';
 import { paginate } from '@helpers';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -36,8 +36,39 @@ export class UsersService {
       ...users,
       data: users.data?.map((user) => ({
         ...user,
-        image: `${FilePath.USER_PROFILE_IMAGE}/${user?.image}`,
+        image: user?.image ? `${FilePath.USER_PROFILE_IMAGE}/${user?.image}` : null,
       })),
+    };
+  }
+
+  async removeProfile(id: number, lang: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        image: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(user_not_found['ru']);
+    }
+
+    await this.prisma.user.update({
+      where: {
+        id: user?.id,
+      },
+      data: {
+        image: null,
+      },
+    });
+
+    return {
+      success: true,
+      message: profile_image_deleted[lang],
+      data: null,
     };
   }
 
@@ -100,7 +131,7 @@ export class UsersService {
       throw new NotFoundException(user_not_found[lan]);
     }
 
-    if (fileName) {
+    if (fileName && userExists?.image) {
       const imagePath = path.join(process.cwd(), 'uploads', 'user_profile_image', userExists.image);
 
       if (fs.existsSync(imagePath)) {

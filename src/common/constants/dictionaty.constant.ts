@@ -41,6 +41,12 @@ export const user_not_found = {
   uz: 'Foydalanuvchi topilmadi!',
 };
 
+export const profile_image_deleted = {
+  ru: 'Изображение профиля успешно удалено!',
+  en: 'Profile image deleted successfully!',
+  uz: 'Profil rasmi muvaffaqiyatli oʻchirildi!',
+};
+
 export const user_already_verified = {
   ru: 'Пользователь уже подтвержден!',
   en: 'User already verified!',
