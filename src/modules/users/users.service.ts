@@ -27,6 +27,7 @@ export class UsersService {
         phone_number: true,
         address: true,
         about: true,
+        image: true,
         created_at: true,
       },
     });
