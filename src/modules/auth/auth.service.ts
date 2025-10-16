@@ -215,6 +215,9 @@ export class AuthService {
         name: true,
         email: true,
         is_verified: true,
+        phone_number: true,
+        address: true,
+        about: true,
         created_at: true,
       },
     });

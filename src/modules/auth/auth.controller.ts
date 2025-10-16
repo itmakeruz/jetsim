@@ -39,8 +39,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Get me public', description: 'Get me public' })
   @Get('me')
   async getMeUser(@Req() request: IRequest) {
-    console.log(request.user);
-
     return await this.authService.getMeUser(request.user.id);
   }
 
