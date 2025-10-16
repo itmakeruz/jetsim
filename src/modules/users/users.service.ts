@@ -178,6 +178,14 @@ export class UsersService {
       },
     });
 
+    if (user?.image) {
+      const imagePath = path.join(process.cwd(), 'uploads', 'user_profile_image', user.image);
+
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
     return {
       success: true,
       message: profile_image_deleted[lang],
