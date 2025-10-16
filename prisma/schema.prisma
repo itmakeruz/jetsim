@@ -23,6 +23,7 @@ model User {
   phone_number String?
   address      String?
   about        String?
+  image        String?
 
   transaction Transaction[]
   basket      Basket[]

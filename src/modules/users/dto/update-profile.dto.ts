@@ -21,4 +21,13 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   about?: string;
+
+  @ApiProperty({
+    description: 'User Progile Image',
+    example: 'icon.png',
+    required: true,
+    type: String,
+    format: 'binary',
+  })
+  image: string;
 }

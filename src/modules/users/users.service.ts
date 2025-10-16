@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto, UpdateProfileDto } from './dto';
 import { PrismaService } from '@prisma';
-import { user_not_found } from '@constants';
+import { FilePath, user_not_found } from '@constants';
 import { paginate } from '@helpers';
+import * as path from 'path';
+import * as fs from 'fs';
 
 @Injectable()
 export class UsersService {
@@ -32,7 +34,10 @@ export class UsersService {
       success: true,
       message: '',
       ...users,
-      data: users.data,
+      data: users.data?.map((user) => ({
+        ...user,
+        image: `${FilePath.USER_PROFILE_IMAGE}/${user?.image}`,
+      })),
     };
   }
 
@@ -41,15 +46,30 @@ export class UsersService {
       where: {
         id: id,
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        is_verified: true,
+        phone_number: true,
+        address: true,
+        about: true,
+        image: true,
+        created_at: true,
+      },
     });
 
     if (!user) {
       throw new NotFoundException(user_not_found['ru']);
     }
+
     return {
       success: true,
-      message: '',
-      data: user,
+      message: 'Пользователь успешно получен!',
+      data: {
+        ...user,
+        image: `${FilePath.USER_PROFILE_IMAGE}/${user?.image}`,
+      },
     };
   }
 
@@ -69,25 +89,35 @@ export class UsersService {
     return user;
   }
 
-  async updateProfile(id: number, data: UpdateProfileDto, lan: string) {
-    // const userExists = await this.prisma.user?.findUnique({
-    //   where: {
-    //     id: id,
-    //   },
-    // });
+  async updateProfile(id: number, data: UpdateProfileDto, fileName: string, lan: string) {
+    const userExists = await this.prisma.user?.findUnique({
+      where: {
+        id: id,
+      },
+    });
 
-    // if(!userExists) {
-    //   throw new Nor
-    // }
+    if (!userExists) {
+      throw new NotFoundException(user_not_found[lan]);
+    }
+
+    if (fileName) {
+      const imagePath = path.join(process.cwd(), 'uploads', 'user_profile_image', userExists.image);
+
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
     await this.prisma.user.update({
       where: {
         id: id,
       },
       data: {
-        name: data?.name,
-        phone_number: data?.phone_number,
-        address: data?.address,
-        about: data?.about,
+        name: data?.name ?? userExists?.name,
+        phone_number: data?.phone_number ?? userExists?.phone_number,
+        address: data?.address ?? userExists?.address,
+        about: data?.about ?? userExists?.about,
+        image: fileName ?? userExists?.image,
       },
     });
 

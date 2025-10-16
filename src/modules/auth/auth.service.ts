@@ -36,6 +36,7 @@ import {
   invalid_reset_token,
   otp_sent,
   authorization_success,
+  FilePath,
 } from '@constants';
 import { JWT_RESET_TOKEN, JWT_RESET_EXPIRE_TIME, JWT_ACCESS_SECRET } from '@config';
 import { access } from 'fs';
@@ -218,6 +219,7 @@ export class AuthService {
         phone_number: true,
         address: true,
         about: true,
+        image: true,
         created_at: true,
       },
     });
@@ -225,7 +227,10 @@ export class AuthService {
     return {
       success: true,
       message: 'Пользователь успешно получен!',
-      data: user,
+      data: {
+        ...user,
+        image: `${FilePath.USER_PROFILE_IMAGE}/${user?.image}`,
+      },
     };
   }
 
