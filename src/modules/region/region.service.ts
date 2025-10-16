@@ -78,6 +78,7 @@ export class RegionService {
             quantity_minute: true,
             quantity_internet: true,
             validity_period: true,
+            price_sell: true,
             is_4g: true,
             is_5g: true,
             tariff_type: {
@@ -124,6 +125,7 @@ export class RegionService {
           validity_period: tariff?.validity_period,
           is_4g: tariff?.is_4g,
           is_5g: tariff?.is_5g,
+          price_sell: tariff?.price_sell,
           regions: tariff?.regions?.map((region: any) => ({
             id: region?.id,
             name: region?.[`name_${lan}`],
