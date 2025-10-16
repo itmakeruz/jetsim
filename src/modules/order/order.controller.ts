@@ -18,6 +18,14 @@ export class OrderController {
     return this.orderService.findAll(query);
   }
 
+  @ApiOperation({ summary: 'Get orders admin', description: 'Get orders admin' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Get('cart')
+  async getBascet(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
+    return this.orderService.getBascet(request?.user?.id, headers?.lang);
+  }
+
   @ApiOperation({ summary: 'Get orders public', description: 'Get orders public' })
   @Get('static')
   async findStaticOrders(

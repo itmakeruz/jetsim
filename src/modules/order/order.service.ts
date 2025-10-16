@@ -341,6 +341,43 @@ export class OrderService {
     };
   }
 
+  async getBascet(userId: number, lang: string) {
+    const fullBasket = await this.prisma.basket.findFirst({
+      where: { user_id: userId },
+      select: {
+        items: {
+          select: {
+            id: true,
+            tariff_id: true,
+            price: true,
+            quantity: true,
+            tariff: {
+              select: { [`name_${lang}`]: true },
+            },
+          },
+        },
+      },
+    });
+
+    const total = fullBasket.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+
+    return {
+      success: true,
+      message: '',
+      data: {
+        items: fullBasket.items.map((item) => ({
+          id: item.id,
+          tariff_id: item.tariff_id,
+          name: item?.tariff?.[`name_${lang}`],
+          price: item.price,
+          quantity: item.quantity,
+          total: Number(item.price) * item.quantity,
+        })),
+        total,
+      },
+    };
+  }
+
   async addItemsToBascet(data: AddToBasket[], userId: number, lang: string) {
     const basket = await this.prisma.basket.findFirst({
       where: {
