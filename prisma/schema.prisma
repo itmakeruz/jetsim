@@ -14,12 +14,15 @@ datasource db {
 }
 
 model User {
-  id          Int     @id @default(autoincrement())
-  name        String?
-  email       String?
-  password    String?
-  is_verified Boolean @default(false)
-  fcm_token   String?
+  id           Int     @id @default(autoincrement())
+  name         String?
+  email        String?
+  password     String?
+  is_verified  Boolean @default(false)
+  fcm_token    String?
+  phone_number String?
+  address      String?
+  about        String?
 
   transaction Transaction[]
   basket      Basket[]

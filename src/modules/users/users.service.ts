@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from './dto';
+import { CreateUserDto, UpdateProfileDto } from './dto';
 import { PrismaService } from '@prisma';
 import { user_not_found } from '@constants';
 
@@ -42,5 +42,34 @@ export class UsersService {
       throw new NotFoundException(user_not_found['ru']);
     }
     return user;
+  }
+
+  async updateProfile(id: number, data: UpdateProfileDto, lan: string) {
+    // const userExists = await this.prisma.user?.findUnique({
+    //   where: {
+    //     id: id,
+    //   },
+    // });
+
+    // if(!userExists) {
+    //   throw new Nor
+    // }
+    await this.prisma.user.update({
+      where: {
+        id: id,
+      },
+      data: {
+        name: data?.name,
+        phone_number: data?.phone_number,
+        address: data?.address,
+        about: data?.about,
+      },
+    });
+
+    return {
+      success: true,
+      message: user_not_found[lan],
+      data: null,
+    };
   }
 }
