@@ -56,6 +56,7 @@ export class RegionService {
             id: query.category_id,
           },
         },
+
         status: Status.ACTIVE,
       },
       select: {
@@ -64,6 +65,11 @@ export class RegionService {
         image: true,
         status: true,
         tariffs: {
+          where: {
+            deleted_at: {
+              equals: null,
+            },
+          },
           select: {
             id: true,
             status: true,

@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Post, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Post, Body, Req, UseGuards, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { DeviceHeadersDto, ParamId } from '@enums';
 import { UpdateProfileDto } from './dto';
@@ -12,8 +12,8 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() query: any) {
+    return this.usersService.findAll(query);
   }
 
   @ApiBearerAuth()
