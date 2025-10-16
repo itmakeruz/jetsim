@@ -23,7 +23,7 @@ export class OrderController {
   @UseGuards(AuthGuard('jwt'))
   @Get('cart')
   async getBascet(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
-    return this.orderService.getBascet(request?.user?.id, headers?.lang);
+    return this.orderService.getBasket(request?.user?.id, headers?.lang);
   }
 
   @ApiOperation({ summary: 'Get orders public', description: 'Get orders public' })
@@ -58,7 +58,7 @@ export class OrderController {
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
-    return this.orderService.addItemsToBascet(data, request?.user?.id, headers.lang);
+    return this.orderService.addItemsToBasket(data, request?.user?.id, headers.lang);
   }
 
   @ApiOperation({ summary: 'Add tariff to basket public', description: 'Add tariff to basket public' })

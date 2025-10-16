@@ -69,8 +69,9 @@ model Region {
   image   String?
   status  Status
 
-  cities  City[]
-  tariffs Tariff[] @relation("tariff_regions")
+  cities       City[]
+  tariffs      Tariff[]     @relation("tariff_regions")
+  bascet_items BasketItem[] @relation("basketitem_to_region")
 
   categories RegionCategory[] @relation("region_to_category")
 
@@ -308,6 +309,7 @@ model BasketItem {
 
   basket Basket  @relation(fields: [basket_id], references: [id])
   tariff Tariff? @relation(fields: [tariff_id], references: [id])
+  region Region? @relation("basketitem_to_region", fields: [region_id], references: [id])
 
   created_at DateTime @default(now()) @db.Timestamptz(5)
   updated_at DateTime @updatedAt @db.Timestamptz(5)

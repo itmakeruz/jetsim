@@ -341,34 +341,44 @@ export class OrderService {
     };
   }
 
-  async getBascet(userId: number, lang: string) {
-    const fullBasket = await this.prisma.basket.findFirst({
+  async getBasket(userId: number, lang: string) {
+    const basket = await this.prisma.basket.findFirst({
       where: { user_id: userId },
       select: {
         items: {
           select: {
             id: true,
-            tariff_id: true,
+            region_id: true,
             price: true,
             quantity: true,
-            tariff: {
-              select: { [`name_${lang}`]: true },
+            region: {
+              select: {
+                [`name_${lang}`]: true,
+              },
             },
           },
         },
       },
     });
 
-    const total = fullBasket.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+    if (!basket) {
+      return {
+        success: true,
+        message: '',
+        data: { items: [], total: 0 },
+      };
+    }
+
+    const total = basket.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
 
     return {
       success: true,
       message: '',
       data: {
-        items: fullBasket.items.map((item) => ({
+        items: basket.items.map((item) => ({
           id: item.id,
-          tariff_id: item.tariff_id,
-          name: item?.tariff?.[`name_${lang}`],
+          region_id: item.region_id,
+          name: item?.region?.[`name_${lang}`],
           price: item.price,
           quantity: item.quantity,
           total: Number(item.price) * item.quantity,
@@ -378,55 +388,45 @@ export class OrderService {
     };
   }
 
-  async addItemsToBascet(data: AddToBasket[], userId: number, lang: string) {
-    const basket = await this.prisma.basket.findFirst({
-      where: {
-        user_id: userId,
-      },
+  async addItemsToBasket(data: AddToBasket[], userId: number, lang: string) {
+    let basket = await this.prisma.basket.findFirst({
+      where: { user_id: userId, status: 'ACTIVE' },
     });
 
     if (!basket) {
-      await this.prisma.basket.create({
-        data: {
-          user_id: userId,
-          status: Status.ACTIVE,
-        },
+      basket = await this.prisma.basket.create({
+        data: { user_id: userId, status: 'ACTIVE' },
       });
     }
 
-    for (let item of data) {
-      const pkg = await this.prisma.tariff.findUnique({
-        where: { id: item?.tariff_id },
+    for (const item of data) {
+      const region = await this.prisma.region.findUnique({
+        where: { id: item.region_id },
       });
 
-      if (!pkg) {
-        throw new NotFoundException(tariff_not_found['ru']);
+      if (!region) {
+        throw new NotFoundException('Region not found');
       }
 
       const existingItem = await this.prisma.basketItem.findFirst({
         where: {
           basket_id: basket.id,
-          tariff_id: item.tariff_id,
+          region_id: item.region_id,
         },
       });
 
       if (existingItem) {
         await this.prisma.basketItem.update({
-          where: {
-            id: existingItem.id,
-          },
-          data: {
-            quantity: existingItem.quantity + item.quantity,
-          },
+          where: { id: existingItem.id },
+          data: { quantity: existingItem.quantity + item.quantity },
         });
       } else {
         await this.prisma.basketItem.create({
           data: {
             basket_id: basket.id,
-            tariff_id: item.tariff_id,
+            region_id: item.region_id,
             quantity: item.quantity,
-            region_id: item?.region_id,
-            price: '1',
+            price: '1', // narxni regionga qarab keyin o‘zgartirsa bo‘ladi
           },
         });
       }
@@ -438,11 +438,10 @@ export class OrderService {
         items: {
           select: {
             id: true,
-            tariff_id: true,
+            region_id: true,
             price: true,
             quantity: true,
-            region_id: true,
-            tariff: {
+            region: {
               select: { [`name_${lang}`]: true },
             },
           },
@@ -459,8 +458,8 @@ export class OrderService {
         basket_id: basket.id,
         items: fullBasket.items.map((item) => ({
           id: item.id,
-          tariff_id: item.tariff_id,
-          name: item?.tariff?.[`name_${lang}`],
+          region_id: item.region_id,
+          name: item?.region?.[`name_${lang}`],
           price: item.price,
           quantity: item.quantity,
           total: Number(item.price) * item.quantity,
@@ -472,49 +471,41 @@ export class OrderService {
 
   async addToBasket(data: AddToBasket, userId: number, lang: string) {
     let basket = await this.prisma.basket.findFirst({
-      where: {
-        user_id: userId,
-        status: 'ACTIVE',
-      },
+      where: { user_id: userId, status: 'ACTIVE' },
     });
 
     if (!basket) {
       basket = await this.prisma.basket.create({
-        data: { user_id: userId },
+        data: { user_id: userId, status: 'ACTIVE' },
       });
     }
 
-    const pkg = await this.prisma.tariff.findUnique({
-      where: { id: data.tariff_id },
+    const region = await this.prisma.region.findUnique({
+      where: { id: data.region_id },
     });
 
-    if (!pkg) {
-      throw new NotFoundException(tariff_not_found['ru']);
+    if (!region) {
+      throw new NotFoundException('Region not found');
     }
 
     const existingItem = await this.prisma.basketItem.findFirst({
       where: {
         basket_id: basket.id,
-        tariff_id: data.tariff_id,
+        region_id: data.region_id,
       },
     });
 
     if (existingItem) {
       await this.prisma.basketItem.update({
-        where: {
-          id: existingItem.id,
-        },
-        data: {
-          quantity: existingItem.quantity + data.quantity,
-        },
+        where: { id: existingItem.id },
+        data: { quantity: existingItem.quantity + data.quantity },
       });
     } else {
       await this.prisma.basketItem.create({
         data: {
           basket_id: basket.id,
-          tariff_id: data.tariff_id,
+          region_id: data.region_id,
           quantity: data.quantity,
-          region_id: data?.region_id,
           price: '1',
         },
       });
@@ -526,10 +517,10 @@ export class OrderService {
         items: {
           select: {
             id: true,
-            tariff_id: true,
+            region_id: true,
             price: true,
             quantity: true,
-            tariff: {
+            region: {
               select: { [`name_${lang}`]: true },
             },
           },
@@ -546,8 +537,8 @@ export class OrderService {
         basket_id: basket.id,
         items: fullBasket.items.map((item) => ({
           id: item.id,
-          tariff_id: item.tariff_id,
-          name: item?.tariff?.[`name_${lang}`],
+          region_id: item.region_id,
+          name: item?.region?.[`name_${lang}`],
           price: item.price,
           quantity: item.quantity,
           total: Number(item.price) * item.quantity,
@@ -559,13 +550,12 @@ export class OrderService {
 
   async removeFromBasket(itemId: number, userId: number) {
     const basket = await this.prisma.basket.findFirst({
-      where: {
-        status: 'ACTIVE',
-        user_id: userId,
-      },
+      where: { user_id: userId, status: 'ACTIVE' },
     });
 
-    if (!basket) throw new NotFoundException('Basket not found');
+    if (!basket) {
+      throw new NotFoundException('Basket not found');
+    }
 
     await this.prisma.basketItem.delete({
       where: { id: itemId },
