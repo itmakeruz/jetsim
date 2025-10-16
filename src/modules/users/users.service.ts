@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto';
 import { PrismaService } from '@prisma';
 import { user_not_found } from '@constants';
+import { paginate } from '@helpers';
 
 @Injectable()
 export class UsersService {
@@ -10,9 +11,26 @@ export class UsersService {
     return 'This action adds a new user';
   }
 
-  async findAll() {
-    const users = await this.prisma.user.findMany();
-    return users;
+  async findAll(query: any) {
+    const users = await paginate('user', {
+      page: query?.page,
+      size: query?.size,
+      filter: query?.filters,
+      sort: query?.sort,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        is_verified: true,
+        created_at: true,
+      },
+    });
+    return {
+      success: true,
+      message: '',
+      ...users,
+      data: users.data,
+    };
   }
 
   async findOne(id: number) {
@@ -25,7 +43,11 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(user_not_found['ru']);
     }
-    return user;
+    return {
+      success: true,
+      message: '',
+      data: user,
+    };
   }
 
   async changeStatus(id: number) {
