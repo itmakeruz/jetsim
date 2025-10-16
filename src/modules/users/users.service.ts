@@ -41,37 +41,6 @@ export class UsersService {
     };
   }
 
-  async removeProfile(id: number, lang: string) {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: id,
-      },
-      select: {
-        id: true,
-        image: true,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException(user_not_found['ru']);
-    }
-
-    await this.prisma.user.update({
-      where: {
-        id: user?.id,
-      },
-      data: {
-        image: null,
-      },
-    });
-
-    return {
-      success: true,
-      message: profile_image_deleted[lang],
-      data: null,
-    };
-  }
-
   async findOne(id: number) {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -139,7 +108,7 @@ export class UsersService {
       }
     }
 
-    await this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: {
         id: id,
       },
@@ -150,12 +119,71 @@ export class UsersService {
         about: data?.about ?? userExists?.about,
         image: fileName ?? userExists?.image,
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        is_verified: true,
+        phone_number: true,
+        address: true,
+        about: true,
+        image: true,
+        created_at: true,
+      },
     });
 
     return {
       success: true,
       message: user_not_found[lan],
-      data: null,
+      data: {
+        ...updatedUser,
+        image: updatedUser?.image ? `${FilePath.USER_PROFILE_IMAGE}/${updatedUser?.image}` : null,
+      },
+    };
+  }
+
+  async removeProfile(id: number, lang: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        image: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(user_not_found['ru']);
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: {
+        id: user?.id,
+      },
+      data: {
+        image: null,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        is_verified: true,
+        phone_number: true,
+        address: true,
+        about: true,
+        image: true,
+        created_at: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: profile_image_deleted[lang],
+      data: {
+        ...updatedUser,
+        image: updatedUser?.image ? `${FilePath.USER_PROFILE_IMAGE}/${updatedUser?.image}` : null,
+      },
     };
   }
 }
