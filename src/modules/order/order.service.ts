@@ -404,6 +404,7 @@ export class OrderService {
             tariff_id: true,
             price: true,
             quantity: true,
+            region_id: true,
             tariff: {
               select: { [`name_${lang}`]: true },
             },

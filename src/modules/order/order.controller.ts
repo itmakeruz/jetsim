@@ -43,7 +43,6 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'Add items to basket public', description: 'Add items to basket public' })
-  @ApiHeader({ name: 'x-session-id' })
   @UseGuards(AuthGuard('jwt'))
   @Post('add-items')
   async addItemsToBascet(
@@ -55,7 +54,6 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'Add tariff to basket public', description: 'Add tariff to basket public' })
-  @ApiHeader({ name: 'x-session-id' })
   @UseGuards(AuthGuard('jwt'))
   @Post('add-to-basket')
   async addTobascet(
@@ -67,7 +65,6 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'remove item from basket public', description: 'remove item from basket public' })
-  @ApiHeader({ name: 'x-session-id' })
   @UseGuards(AuthGuard('jwt'))
   @Post('remove-item-from-basket')
   async removeFromBascet(
@@ -75,11 +72,10 @@ export class OrderController {
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
-    return this.orderService.removeFromBasket(data.package_id, request?.user?.id);
+    return this.orderService.removeFromBasket(data.tariff_id, request?.user?.id);
   }
 
   @ApiOperation({ summary: 'decrease item from basket public', description: 'decrease item from basket public' })
-  @ApiHeader({ name: 'x-session-id' })
   @UseGuards(AuthGuard('jwt'))
   @Post('decrease-item-from-basket')
   async decreaseQuantity(
@@ -87,7 +83,7 @@ export class OrderController {
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
-    return this.orderService.decreaseQuantity(data.package_id, request?.user?.id);
+    return this.orderService.decreaseQuantity(data.tariff_id, request?.user?.id);
   }
 
   /**
