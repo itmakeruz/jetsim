@@ -66,7 +66,7 @@ export class UsersController {
 
   @ApiOperation({ summary: 'delete profile', description: 'delete profile' })
   @UseGuards(AuthGuard('jwt'))
-  @Delete(':id')
+  @Delete('delete-profile-image/:id')
   async removeProfile(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.usersService.removeProfile(request?.user?.id, headers.lang);
   }
