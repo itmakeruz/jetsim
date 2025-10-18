@@ -592,7 +592,7 @@ export class OrderService {
     return this.getBasket(userId, lang);
   }
 
-  async removeFromBasket(data: { tariff_id: number; region_id: number }, userId: number) {
+  async removeFromBasket(data: { tariff_id: number; region_id: number }, userId: number, lang: string) {
     const basket = await this.prisma.basket.findFirst({
       where: { user_id: userId, status: 'ACTIVE' },
     });
@@ -611,10 +611,10 @@ export class OrderService {
 
     await this.prisma.basketItem.delete({ where: { id: item.id } });
 
-    return { success: true, message: '', data: null };
+    return this.getBasket(userId, lang);
   }
 
-  async decreaseQuantity(data: { tariff_id: number; region_id: number }, userId: number) {
+  async decreaseQuantity(data: { tariff_id: number; region_id: number }, userId: number, lang: string) {
     const basket = await this.prisma.basket.findFirst({
       where: { user_id: userId, status: 'ACTIVE' },
     });
@@ -640,7 +640,7 @@ export class OrderService {
       await this.prisma.basketItem.delete({ where: { id: item.id } });
     }
 
-    return { success: true, message: '', data: null };
+    return this.getBasket(userId, lang);
   }
 
   async redeemCoupon(data: JoyTelCallbackResponse) {

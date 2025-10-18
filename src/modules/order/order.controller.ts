@@ -81,7 +81,7 @@ export class OrderController {
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
-    return this.orderService.removeFromBasket(data, request?.user?.id);
+    return this.orderService.removeFromBasket(data, request?.user?.id, headers.lang);
   }
 
   @ApiOperation({ summary: 'decrease item from basket public', description: 'decrease item from basket public' })
@@ -92,7 +92,7 @@ export class OrderController {
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
-    return this.orderService.decreaseQuantity(data, request?.user?.id);
+    return this.orderService.decreaseQuantity(data, request?.user?.id, headers.lang);
   }
 
   @ApiOperation({ summary: 'Get Usage', description: 'Get Usage' })
