@@ -771,7 +771,7 @@ export class OrderService {
     let response;
 
     if (sim?.partner?.identified_number === PartnerIds.JOYTEL) {
-      response = this.joyTel.getUsage({ coupon: sim?.coupon });
+      response = await this.joyTel.getUsage({ coupon: sim?.coupon });
       console.log(response);
     }
 
