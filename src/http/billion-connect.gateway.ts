@@ -107,8 +107,17 @@ export class BillionConnectService {
         language: 2, //english,
       },
     };
+
+    const payloadJson = JSON.stringify(payload);
+    const sign = this.md5(this.appSecret + payloadJson);
+
+    const headers = {
+      'x-channel-id': this.appKey,
+      'x-sign-method': this.signMethod, // 'md5'
+      'x-sign-value': sign,
+    };
     try {
-      const response = await this.http.post('', payload);
+      const response = await this.http.post('', payloadJson, { headers });
       // if (!this.isSuccess(response.data)) {
       //   throw new InternalServerErrorException(response.data?.tradeMsg);
       // }
