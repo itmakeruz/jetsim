@@ -371,6 +371,15 @@ export class OrderService {
                 is_5g: true,
                 price_sell: true,
                 tariff_type: true,
+                regions: {
+                  select: {
+                    id: true,
+                    [`name_${lang}`]: true,
+                    image: true,
+                    status: true,
+                    created_at: true,
+                  },
+                },
               },
             },
           },
@@ -417,6 +426,13 @@ export class OrderService {
                 is_4g: item.tariff.is_4g,
                 is_5g: item.tariff.is_5g,
                 price_sell: item.tariff.price_sell,
+                regions: item?.tariff?.regions?.map((region: any) => ({
+                  id: region?.id,
+                  name: region?.[`name_${lang}`],
+                  image: `${FilePath.REGION_ICON}/${region?.image}`,
+                  status: region?.status,
+                  created_at: region?.created_at,
+                })),
               }
             : null,
         })),
