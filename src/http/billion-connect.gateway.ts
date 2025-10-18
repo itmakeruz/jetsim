@@ -1,4 +1,5 @@
 // src/integrations/billion-connect.service.ts
+import { GetUsageRequest } from '@interfaces';
 import { HttpException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
@@ -83,6 +84,31 @@ export class BillionConnectService {
 
     try {
       const response = await this.http.post('', payloadJson, { headers });
+      // if (!this.isSuccess(response.data)) {
+      //   throw new InternalServerErrorException(response.data?.tradeMsg);
+      // }
+      return response.data;
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const resp = err?.response?.data;
+      const msg = `BillionConnect F040 failed${status ? ` [${status}]` : ''}: ${JSON.stringify(resp || err.message)}`;
+      throw new InternalServerErrorException(msg);
+    }
+  }
+
+  async getUsage(data: GetUsageRequest) {
+    const payload = {
+      tradeType: 'F040',
+      tradeTime: this.formatDateTime(new Date()),
+      tradeData: {
+        orderId: data?.orderId,
+        channelOrderId: data?.channelOrderId,
+        iccid: data?.iccid,
+        language: 2, //english,
+      },
+    };
+    try {
+      const response = await this.http.post('', payload);
       // if (!this.isSuccess(response.data)) {
       //   throw new InternalServerErrorException(response.data?.tradeMsg);
       // }

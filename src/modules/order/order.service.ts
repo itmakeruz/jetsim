@@ -750,6 +750,7 @@ export class OrderService {
         channel_sub_order_id: true,
         iccid: true,
         coupon: true,
+        order_code: true,
         tariff: {
           select: {
             id: true,
@@ -774,7 +775,14 @@ export class OrderService {
       response = await this.joyTel.getUsage({ coupon: sim?.coupon });
       console.log(response);
     }
-
+    if (sim?.partner?.identified_number === PartnerIds.BILLION_CONNECT) {
+      response = await this.billionConnect.getUsage({
+        orderId: sim?.order_code,
+        channelOrderId: sim?.channel_order_id,
+        iccid: sim?.iccid,
+        language: 2,
+      });
+    }
     return {
       success: true,
       message: true,
