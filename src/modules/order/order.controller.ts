@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query, UseGuards } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { UpdateOrderDto, GetOrderDto, AddToBasket, RemoveFromBasketDto, DecreaseQuantityDto } from './dto';
-import { ApiBearerAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiHeader, ApiOperation } from '@nestjs/swagger';
 import { BillionConnectCallbackResponse, IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { DeviceHeadersDto, ParamId } from '@enums';
@@ -51,6 +51,7 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'Add items to basket public', description: 'Add items to basket public' })
+  @ApiBody({ type: [AddToBasket] })
   @UseGuards(AuthGuard('jwt'))
   @Post('add-items')
   async addItemsToBascet(
