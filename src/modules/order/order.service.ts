@@ -84,7 +84,7 @@ export class OrderService {
   }
 
   async staticOrders(query: GetOrderDto, userId: number, lang: string) {
-    const orders = await paginate('order', {
+    const sims = await paginate('sims', {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
@@ -94,77 +94,70 @@ export class OrderService {
       },
       select: {
         id: true,
+        order_id: true,
         created_at: true,
-        sims: {
+        main_region: {
           select: {
             id: true,
-            main_region: {
+            name_ru: true,
+            name_en: true,
+            image: true,
+            created_at: true,
+          },
+        },
+        tariff: {
+          select: {
+            id: true,
+            is_4g: true,
+            is_5g: true,
+            regions: {
               select: {
                 id: true,
-                name_ru: true,
-                name_en: true,
+                [`name_${lang}`]: true,
                 image: true,
+                status: true,
                 created_at: true,
               },
             },
-            tariff: {
-              select: {
-                id: true,
-                is_4g: true,
-                is_5g: true,
-                regions: {
-                  select: {
-                    id: true,
-                    [`name_${lang}`]: true,
-                    image: true,
-                    status: true,
-                    created_at: true,
-                  },
-                },
-              },
-            },
-            created_at: true,
           },
         },
       },
     });
-    console.log(orders);
+    console.log();
 
-    // return {
-    //   success: true,
-    //   message: 'success',
-    //   ...orders,
-    //   data: orders?.data?.map((order: any) => {
-    //     return {
-    //       id: order?.id,
-    //       region: {
-    //         id: order?.main_region?.id,
-    //         name: order?.main_region?.[`name_${lang}`],
-    //         image: `${FilePath.REGION_ICON}/${order?.main_region?.image}`,
-    //         created_at: order?.main_region?.created_at,
-    //       },
-    //       tariff: {
-    //         id: order?.tariff?.id,
-    //         usage: 1,
-    //         day_left: 1,
-    //         is_4g: order?.tariff?.is_4g,
-    //         is_5g: order?.tariff?.is_5g,
-    //         qrcode: `${FilePath.QR_CODE_IMAGES}/`,
-    //         regions: order?.regions?.map((region: any) => ({
-    //           id: region?.id,
-    //           name: region?.[`name_${lang}`],
-    //           image: `${FilePath.REGION_ICON}/${region?.image}/qr_content_${}`,
-    //           status: region?.status,
-    //           created_at: region?.created_at,
-    //         })),
-    //       },
-    //       //
-    //       // sms_count: order?.package?.sms_count,
-    //       // minutes_count: order?.package?.minutes_count,
-    //       // mb_count: order?.package?.mb_count,
-    //     };
-    //   }),
-    // };
+    return {
+      success: true,
+      message: 'success',
+      ...sims,
+      data: sims?.data?.map((sim: any) => {
+        return {
+          id: sim?.id,
+          order_id: sim?.order_id,
+          region: {
+            id: sim?.main_region?.id,
+            name: sim?.main_region?.[`name_${lang}`],
+            image: sim?.main_region?.image ? `${FilePath.REGION_ICON}/${sim?.main_region?.image}` : null,
+            created_at: sim?.main_region?.created_at,
+          },
+          tariff: {
+            id: sim?.tariff?.id,
+            usage: 1,
+            day_left: 1,
+            is_4g: sim?.tariff?.is_4g,
+            is_5g: sim?.tariff?.is_5g,
+            qrcode: `${FilePath.QR_CODE_IMAGES}/`,
+            regions: sim?.regions?.map((region: any) => ({
+              id: region?.id,
+              name: region?.[`name_${lang}`],
+              image: `${FilePath.REGION_ICON}/${region?.image}/qr_content_${sim?.id}`,
+              status: region?.status,
+              created_at: region?.created_at,
+            })),
+          },
+          created_at: sim?.created_at,
+        };
+      }),
+    };
   }
 
   async findOne(id: number) {
