@@ -96,7 +96,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Get Usage', description: 'Get Usage' })
   // @UseGuards(AuthGuard('jwt'))
-  @Post('get-usage')
+  @Post('get-usage/:id')
   async getUsage(@Param() param: ParamId) {
     return this.orderService.getUsage(param.id);
   }
