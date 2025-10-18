@@ -72,6 +72,7 @@ model Region {
   cities       City[]
   tariffs      Tariff[]     @relation("tariff_regions")
   bascet_items BasketItem[] @relation("basketitem_to_region")
+  sims         Sims[]
 
   categories RegionCategory[] @relation("region_to_category")
 
@@ -197,7 +198,7 @@ model Sims {
   sn_pin               String?
   product_expire_date  String?
   coupon               String?
-  qrcodeType           Int?
+  qrcode_type          Int?
   qrcode               String?
   cid                  String?
   sale_plan_name       String?
@@ -217,11 +218,13 @@ model Sims {
   channel_sub_order_id String?
   msisdn               String?
   apn                  String?
+  main_region_id       Int?
 
-  user    User    @relation(fields: [user_id], references: [id])
-  partner Partner @relation(fields: [partner_id], references: [id])
-  tariff  Tariff  @relation(fields: [tariff_id], references: [id])
-  Order   Order?  @relation(fields: [order_id], references: [id])
+  user        User    @relation(fields: [user_id], references: [id])
+  partner     Partner @relation(fields: [partner_id], references: [id])
+  tariff      Tariff  @relation(fields: [tariff_id], references: [id])
+  order       Order?  @relation(fields: [order_id], references: [id])
+  main_region Region? @relation(fields: [main_region_id], references: [id])
 
   request  Json?
   response Json?

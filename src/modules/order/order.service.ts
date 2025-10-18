@@ -11,7 +11,14 @@ import { PrismaService } from '@prisma';
 import { OrderStatus, Status } from '@prisma/client';
 import { BillionConnectService, JoyTel } from '@http';
 import { PartnerIds } from '@enums';
-import { paginate, QrService, sendMailHelper, generateFastEsimInstallmentString, newOrderMessage } from '@helpers';
+import {
+  paginate,
+  QrService,
+  sendMailHelper,
+  generateFastEsimInstallmentString,
+  newOrderMessage,
+  saveQrCode,
+} from '@helpers';
 import { v4 as uuidv4 } from 'uuid';
 import { BillionConnectCallbackResponse, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
 import { GatewayGateway } from '../gateway';
@@ -94,9 +101,6 @@ export class OrderService {
             tariff: {
               select: {
                 id: true,
-                quantity_sms: true,
-                quantity_minute: true,
-                quantity_internet: true,
                 price_sell: true,
               },
             },
@@ -176,6 +180,7 @@ export class OrderService {
           select: {
             id: true,
             tariff_id: true,
+            region_id: true,
             tariff: {
               select: {
                 id: true,
@@ -227,6 +232,7 @@ export class OrderService {
                 status: OrderStatus.CREATED,
                 partner_id: PartnerIds.JOYTEL,
                 tariff_id: item.tariff_id,
+                main_region_id: item?.region_id,
               },
             });
             response = await this.joyTel.submitEsimOrder(
@@ -275,6 +281,7 @@ export class OrderService {
                 status: OrderStatus.CREATED,
                 partner_id: PartnerIds.BILLION_CONNECT,
                 tariff_id: item.tariff_id,
+                main_region_id: item?.region_id,
               },
             });
 
@@ -652,7 +659,7 @@ export class OrderService {
       },
       data: {
         coupon: data.data.coupon,
-        qrcodeType: data.data.qrcodeType,
+        qrcode_type: data.data.qrcodeType,
         qrcode: data.data.qrcode,
         cid: data.data.cid,
         sale_plan_name: data.data.salePlanName,
@@ -683,6 +690,7 @@ export class OrderService {
       updatedOrder.tariff.quantity_sms,
     );
     await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+    saveQrCode(updatedOrder.id, qrBuffer);
 
     return {
       code: '000',
@@ -725,7 +733,7 @@ export class OrderService {
         channel_order_id: data?.tradeData?.channelOrderId,
         order_code: data?.tradeData?.orderId,
         qrcode: data?.tradeData?.subOrderList?.[0]?.qrCodeContent,
-        qrcodeType: 0,
+        qrcode_type: 0,
       },
       include: {
         user: true,
@@ -746,6 +754,7 @@ export class OrderService {
       updatedSim.tariff.quantity_sms,
     );
     await sendMailHelper(updatedSim.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+    saveQrCode(updatedSim.id, qrBuffer);
 
     return {
       code: '000',
