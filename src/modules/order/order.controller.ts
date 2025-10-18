@@ -4,7 +4,7 @@ import { UpdateOrderDto, GetOrderDto, AddToBasket, RemoveFromBasketDto, Decrease
 import { ApiBearerAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
 import { BillionConnectCallbackResponse, IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
-import { DeviceHeadersDto } from '@enums';
+import { DeviceHeadersDto, ParamId } from '@enums';
 import { AuthGuard } from '@nestjs/passport';
 import { OptionalJwtAuthGuard } from '@guards';
 
@@ -92,6 +92,13 @@ export class OrderController {
     @Req() request: IRequest,
   ) {
     return this.orderService.decreaseQuantity(data.item_id, request?.user?.id);
+  }
+
+  @ApiOperation({ summary: 'Get Usage', description: 'Get Usage' })
+  // @UseGuards(AuthGuard('jwt'))
+  @Post('get-usage')
+  async getUsage(@Param() param: ParamId) {
+    return this.orderService.getUsage(param?.id);
   }
 
   /**
