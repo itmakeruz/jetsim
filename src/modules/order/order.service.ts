@@ -98,34 +98,73 @@ export class OrderService {
         sims: {
           select: {
             id: true,
+            main_region: {
+              select: {
+                id: true,
+                name_ru: true,
+                name_en: true,
+                image: true,
+                created_at: true,
+              },
+            },
             tariff: {
               select: {
                 id: true,
-                price_sell: true,
+                is_4g: true,
+                is_5g: true,
+                regions: {
+                  select: {
+                    id: true,
+                    [`name_${lang}`]: true,
+                    image: true,
+                    status: true,
+                    created_at: true,
+                  },
+                },
               },
             },
-            qrcode: true,
             created_at: true,
           },
         },
       },
     });
+    console.log(orders);
 
-    return {
-      success: true,
-      message: 'success',
-      data: orders?.data?.map((order: any) => {
-        return {
-          id: order?.id,
-          tariff: order.package?.tariff?.[`name_${lang}`],
-          // sms_count: order?.package?.sms_count,
-          // minutes_count: order?.package?.minutes_count,
-          // mb_count: order?.package?.mb_count,
-          created_at: order?.created_at,
-        };
-      }),
-      ...orders,
-    };
+    // return {
+    //   success: true,
+    //   message: 'success',
+    //   ...orders,
+    //   data: orders?.data?.map((order: any) => {
+    //     return {
+    //       id: order?.id,
+    //       region: {
+    //         id: order?.main_region?.id,
+    //         name: order?.main_region?.[`name_${lang}`],
+    //         image: `${FilePath.REGION_ICON}/${order?.main_region?.image}`,
+    //         created_at: order?.main_region?.created_at,
+    //       },
+    //       tariff: {
+    //         id: order?.tariff?.id,
+    //         usage: 1,
+    //         day_left: 1,
+    //         is_4g: order?.tariff?.is_4g,
+    //         is_5g: order?.tariff?.is_5g,
+    //         qrcode: `${FilePath.QR_CODE_IMAGES}/`,
+    //         regions: order?.regions?.map((region: any) => ({
+    //           id: region?.id,
+    //           name: region?.[`name_${lang}`],
+    //           image: `${FilePath.REGION_ICON}/${region?.image}/qr_content_${}`,
+    //           status: region?.status,
+    //           created_at: region?.created_at,
+    //         })),
+    //       },
+    //       //
+    //       // sms_count: order?.package?.sms_count,
+    //       // minutes_count: order?.package?.minutes_count,
+    //       // mb_count: order?.package?.mb_count,
+    //     };
+    //   }),
+    // };
   }
 
   async findOne(id: number) {
@@ -560,21 +599,7 @@ export class OrderService {
     return this.getBasket(userId, lang);
   }
 
-  async removeFromBasket(itemId: number, userId: number) {
-    const basket = await this.prisma.basket.findFirst({
-      where: { user_id: userId, status: 'ACTIVE' },
-    });
-
-    if (!basket) throw new NotFoundException('Basket not found');
-
-    await this.prisma.basketItem.delete({
-      where: { id: itemId },
-    });
-
-    return { success: true, message: '', data: null };
-  }
-
-  async decreaseQuantity(itemId: number, userId: number) {
+  async removeFromBasket(data: { tariff_id: number; region_id: number }, userId: number) {
     const basket = await this.prisma.basket.findFirst({
       where: { user_id: userId, status: 'ACTIVE' },
     });
@@ -582,18 +607,44 @@ export class OrderService {
     if (!basket) throw new NotFoundException('Basket not found');
 
     const item = await this.prisma.basketItem.findFirst({
-      where: { id: itemId, basket_id: basket.id },
+      where: {
+        basket_id: basket.id,
+        tariff_id: data.tariff_id,
+        region_id: data.region_id,
+      },
+    });
+
+    if (!item) throw new NotFoundException('Item not found');
+
+    await this.prisma.basketItem.delete({ where: { id: item.id } });
+
+    return { success: true, message: '', data: null };
+  }
+
+  async decreaseQuantity(data: { tariff_id: number; region_id: number }, userId: number) {
+    const basket = await this.prisma.basket.findFirst({
+      where: { user_id: userId, status: 'ACTIVE' },
+    });
+
+    if (!basket) throw new NotFoundException('Basket not found');
+
+    const item = await this.prisma.basketItem.findFirst({
+      where: {
+        basket_id: basket.id,
+        tariff_id: data.tariff_id,
+        region_id: data.region_id,
+      },
     });
 
     if (!item) throw new NotFoundException('Item not found');
 
     if (item.quantity > 1) {
       await this.prisma.basketItem.update({
-        where: { id: itemId },
+        where: { id: item.id },
         data: { quantity: item.quantity - 1 },
       });
     } else {
-      await this.prisma.basketItem.delete({ where: { id: itemId } });
+      await this.prisma.basketItem.delete({ where: { id: item.id } });
     }
 
     return { success: true, message: '', data: null };

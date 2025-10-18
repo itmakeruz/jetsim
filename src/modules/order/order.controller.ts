@@ -76,22 +76,22 @@ export class OrderController {
   @UseGuards(AuthGuard('jwt'))
   @Post('remove-item-from-basket')
   async removeFromBascet(
-    @Body() data: RemoveFromBasketDto,
+    @Body() data: AddToBasket,
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
-    return this.orderService.removeFromBasket(data.item_id, request?.user?.id);
+    return this.orderService.removeFromBasket(data, request?.user?.id);
   }
 
   @ApiOperation({ summary: 'decrease item from basket public', description: 'decrease item from basket public' })
   @UseGuards(AuthGuard('jwt'))
   @Post('decrease-item-from-basket')
   async decreaseQuantity(
-    @Body() data: DecreaseQuantityDto,
+    @Body() data: AddToBasket,
     @HeadersValidation() headers: DeviceHeadersDto,
     @Req() request: IRequest,
   ) {
-    return this.orderService.decreaseQuantity(data.item_id, request?.user?.id);
+    return this.orderService.decreaseQuantity(data, request?.user?.id);
   }
 
   @ApiOperation({ summary: 'Get Usage', description: 'Get Usage' })
