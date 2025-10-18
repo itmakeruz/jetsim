@@ -98,7 +98,7 @@ export class OrderController {
   // @UseGuards(AuthGuard('jwt'))
   @Post('get-usage')
   async getUsage(@Param() param: ParamId) {
-    return this.orderService.getUsage(param?.id);
+    return this.orderService.getUsage(param.id);
   }
 
   /**

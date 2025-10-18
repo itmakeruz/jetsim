@@ -738,6 +738,8 @@ export class OrderService {
   }
 
   async getUsage(simId: number) {
+    console.log(simId);
+
     const sim = await this.prisma.sims.findUnique({
       where: {
         id: simId,
