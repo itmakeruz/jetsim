@@ -25,6 +25,7 @@ import {
   basket_remove_success,
   tariff_not_found,
   FilePath,
+  partner_not_found,
 } from '@constants';
 import { MAIL_USER } from '@config';
 
@@ -733,6 +734,49 @@ export class OrderService {
     return {
       code: '000',
       mesg: 'Success',
+    };
+  }
+
+  async getUsage(simId: number) {
+    const sim = await this.prisma.sims.findUnique({
+      where: {
+        id: simId,
+      },
+      select: {
+        id: true,
+        channel_order_id: true,
+        channel_sub_order_id: true,
+        iccid: true,
+        coupon: true,
+        tariff: {
+          select: {
+            id: true,
+            sku_id: true,
+          },
+        },
+        partner: {
+          select: {
+            id: true,
+            identified_number: true,
+          },
+        },
+      },
+    });
+
+    if (!sim) {
+      throw new NotFoundException(partner_not_found['ru']);
+    }
+    let response;
+
+    if (sim?.partner?.identified_number === PartnerIds.JOYTEL) {
+      response = this.joyTel.getUsage({ coupon: sim?.coupon });
+      console.log(response);
+    }
+
+    return {
+      success: true,
+      message: true,
+      data: response,
     };
   }
 
