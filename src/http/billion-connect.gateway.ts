@@ -98,7 +98,7 @@ export class BillionConnectService {
 
   async getUsage(data: GetUsageRequest) {
     const payload = {
-      tradeType: 'F040',
+      tradeType: 'F046',
       tradeTime: this.formatDateTime(new Date()),
       tradeData: {
         orderId: data?.orderId,
