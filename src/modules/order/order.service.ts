@@ -110,6 +110,8 @@ export class OrderService {
             id: true,
             is_4g: true,
             is_5g: true,
+            quantity_internet: true,
+            validity_period: true,
             regions: {
               select: {
                 id: true,
@@ -123,12 +125,10 @@ export class OrderService {
         },
       },
     });
-    console.log();
 
     return {
       success: true,
       message: 'success',
-      ...sims,
       data: sims?.data?.map((sim: any) => {
         return {
           id: sim?.id,
@@ -145,6 +145,8 @@ export class OrderService {
             day_left: 1,
             is_4g: sim?.tariff?.is_4g,
             is_5g: sim?.tariff?.is_5g,
+            quantity_internet: sim?.tariff?.quantity_internet,
+            validity_period: sim?.tariff?.validity_period,
             qrcode: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
             regions: sim?.regions?.map((region: any) => ({
               id: region?.id,
@@ -157,6 +159,7 @@ export class OrderService {
           created_at: sim?.created_at,
         };
       }),
+      ...sims,
     };
   }
 
