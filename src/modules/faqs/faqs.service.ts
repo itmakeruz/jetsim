@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateFaqDto, UpdateFaqDto } from './dto';
 import { PrismaService } from '@prisma';
-import { faq_get, faq_not_found } from '@constants';
+import { faq_created, faq_get, faq_not_found } from '@constants';
 import { Status } from '@prisma/client';
 
 @Injectable()
@@ -84,14 +84,68 @@ export class FaqsService {
       },
     });
 
-    return {};
+    return {
+      success: true,
+      message: faq_created['ru'],
+      data: null,
+    };
   }
 
-  update(id: number, updateFaqDto: UpdateFaqDto) {
-    return `This action updates a #${id} faq`;
+  async update(id: number, data: UpdateFaqDto) {
+    const faq = await this.prisma.faq.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!faq) {
+      throw new NotFoundException(faq_not_found['ru']);
+    }
+
+    await this.prisma.faq.update({
+      where: {
+        id: id,
+      },
+      data: {
+        question_ru: data?.question_ru ?? faq?.question_ru,
+        question_en: data?.question_en ?? faq?.question_en,
+        answer_ru: data?.answer_ru ?? faq?.answer_ru,
+        answer_en: data?.answer_en ?? faq?.answer_en,
+        updated_at: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      message: faq_created['ru'],
+      data: null,
+    };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} faq`;
+  async remove(id: number) {
+    const faq = await this.prisma.faq.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!faq) {
+      throw new NotFoundException(faq_not_found['ru']);
+    }
+
+    await this.prisma.faq.delete({
+      where: {
+        id: id,
+      },
+    });
+
+    return {
+      success: true,
+      message: faq_created['ru'],
+      data: null,
+    };
   }
 }
