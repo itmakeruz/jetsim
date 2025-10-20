@@ -149,7 +149,7 @@ export class OrderService {
             quantity_internet: sim?.tariff?.quantity_internet,
             validity_period: sim?.tariff?.validity_period,
             qrcode: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
-            regions: sim?.regions?.map((region: any) => ({
+            regions: sim?.tariff?.regions?.map((region: any) => ({
               id: region?.id,
               name: region?.[`name_${lang}`],
               image: `${FilePath.REGION_ICON}/${region?.image}`,
