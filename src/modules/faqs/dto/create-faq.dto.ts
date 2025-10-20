@@ -33,7 +33,7 @@ export class CreateFaqDto {
   @IsString()
   answer_en: string;
 
-  @ApiProperty({ type: String, required: true, example: 'ACTIVE', enum: Status })
+  @ApiProperty({ type: String, required: false, example: 'ACTIVE', enum: Status, default: 'ACTIVE' })
   @IsNotEmpty()
   @IsString()
   status: Status;
