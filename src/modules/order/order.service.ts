@@ -110,6 +110,8 @@ export class OrderService {
             id: true,
             is_4g: true,
             is_5g: true,
+            name_ru: true,
+            name_en: true,
             quantity_internet: true,
             validity_period: true,
             regions: {
@@ -142,6 +144,7 @@ export class OrderService {
           },
           tariff: {
             id: sim?.tariff?.id,
+            name: sim?.tariff?.[`name_${lang}`],
             usage: 1,
             day_left: 1,
             is_4g: sim?.tariff?.is_4g,
