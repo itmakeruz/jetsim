@@ -27,6 +27,7 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'Get orders public', description: 'Get orders public' })
+  @UseGuards(AuthGuard('jwt'))
   @Get('static')
   async findStaticOrders(
     @Query() query: GetOrderDto,
@@ -42,9 +43,9 @@ export class OrderController {
     return this.orderService.findOne(+id);
   }
 
+  @ApiOperation({ summary: 'create order', description: 'create order' })
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'create order', description: 'create order' })
   @Post('esim')
   async create(@Req() request: IRequest) {
     return this.orderService.create(request?.user?.id);

@@ -334,6 +334,20 @@ model StaticTypes {
   @@map("static_type")
 }
 
+model Faq {
+  id          Int     @id @default(autoincrement())
+  question_ru String?
+  question_en String?
+  answer_ru   String?
+  answer_en   String?
+  status      Status? @default(ACTIVE)
+
+  created_at DateTime @default(now()) @db.Timestamptz(5)
+  updated_at DateTime @updatedAt @db.Timestamptz(5)
+
+  @@map("faqs")
+}
+
 model Error {
   id      Int  @id @default(autoincrement())
   code    Int

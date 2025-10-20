@@ -468,3 +468,33 @@ export const region_category_not_found = {
   en: 'Region category not found!',
   uz: 'Hudud kategoriyasi topilmadi!',
 };
+
+export const faq_created = {
+  ru: 'FAQ успешно создан!',
+  en: 'FAQ created successfully!',
+  uz: 'FAQ muvaffaqiyatli yaratildi!',
+};
+
+export const faq_updated = {
+  ru: 'FAQ успешно обновлён!',
+  en: 'FAQ updated successfully!',
+  uz: 'FAQ muvaffaqiyatli yangilandi!',
+};
+
+export const faq_deleted = {
+  ru: 'FAQ успешно удалён!',
+  en: 'FAQ deleted successfully!',
+  uz: 'FAQ muvaffaqiyatli oʻchirildi!',
+};
+
+export const faq_get = {
+  ru: 'Список FAQ успешно получен!',
+  en: 'FAQ list retrieved successfully!',
+  uz: 'FAQ roʻyxati muvaffaqiyatli olindi!',
+};
+
+export const faq_not_found = {
+  ru: 'FAQ не найден!',
+  en: 'FAQ not found!',
+  uz: 'FAQ topilmadi!',
+};

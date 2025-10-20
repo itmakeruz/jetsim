@@ -23,6 +23,8 @@ import {
 // import { PaymentModule } from './modules/payment/payment.module';
 import { HttpModule } from '@http';
 import { StaffModule } from './modules/staff/staff.module';
+import { FaqsModule } from './modules/faqs/faqs.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import * as path from 'path';
 
 @Module({
@@ -52,6 +54,8 @@ import * as path from 'path';
     SupportModule,
     StaticsModule,
     StaffModule,
+    FaqsModule,
+    DashboardModule,
     // PaymentModule,
   ],
   controllers: [],
