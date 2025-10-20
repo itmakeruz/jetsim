@@ -129,6 +129,7 @@ export class OrderService {
     return {
       success: true,
       message: 'success',
+      ...sims,
       data: sims?.data?.map((sim: any) => {
         return {
           id: sim?.id,
@@ -159,7 +160,6 @@ export class OrderService {
           created_at: sim?.created_at,
         };
       }),
-      ...sims,
     };
   }
 

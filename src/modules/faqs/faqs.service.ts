@@ -77,8 +77,14 @@ export class FaqsService {
     };
   }
 
-  async create(createFaqDto: CreateFaqDto) {
-    return 'This action adds a new faq';
+  async create(data: CreateFaqDto) {
+    await this.prisma.faq.create({
+      data: {
+        ...data,
+      },
+    });
+
+    return {};
   }
 
   update(id: number, updateFaqDto: UpdateFaqDto) {
