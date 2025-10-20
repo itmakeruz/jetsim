@@ -145,11 +145,11 @@ export class OrderService {
             day_left: 1,
             is_4g: sim?.tariff?.is_4g,
             is_5g: sim?.tariff?.is_5g,
-            qrcode: `${FilePath.QR_CODE_IMAGES}/`,
+            qrcode: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
             regions: sim?.regions?.map((region: any) => ({
               id: region?.id,
               name: region?.[`name_${lang}`],
-              image: `${FilePath.REGION_ICON}/${region?.image}/qr_content_${sim?.id}`,
+              image: `${FilePath.REGION_ICON}/${region?.image}`,
               status: region?.status,
               created_at: region?.created_at,
             })),
