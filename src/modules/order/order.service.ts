@@ -145,8 +145,8 @@ export class OrderService {
           tariff: {
             id: sim?.tariff?.id,
             name: sim?.tariff?.[`name_${lang}`],
-            usage: 1,
-            day_left: 1,
+            usage: 300,
+            day_left: 10,
             is_4g: sim?.tariff?.is_4g,
             is_5g: sim?.tariff?.is_5g,
             quantity_internet: sim?.tariff?.quantity_internet,
