@@ -51,12 +51,13 @@ export class RegionService {
             },
           ],
         }),
-        categories: {
-          some: {
-            id: query.category_id,
+        ...(query?.category_id && {
+          categories: {
+            some: {
+              id: query.category_id,
+            },
           },
-        },
-
+        }),
         status: Status.ACTIVE,
       },
       select: {
