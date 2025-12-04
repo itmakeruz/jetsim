@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Prisma } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { Prisma, Status } from '@prisma/client';
+import { Transform, Type } from 'class-transformer';
 import { IsArray, IsEnum, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { OperatorTypes, PaginationOptionalDto } from '@enums';
 import { prisma } from '@helpers';
@@ -44,4 +44,13 @@ export class GetTarifftDto extends PaginationOptionalDto {
   @Type(() => TariffSort)
   @ApiProperty({ type: TariffSort, required: false })
   sort?: TariffSort;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: 'Filers by placeent global or regional MUST SEND popular | local | regional | global',
+  })
+  @IsOptional()
+  @IsString()
+  type?: string;
 }

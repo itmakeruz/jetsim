@@ -44,11 +44,11 @@ export class UpdateTariffDto {
   @IsNumber()
   partner_id: number;
 
-  @ApiProperty({ type: Array, required: false, example: [1, 2, 3, 4, 5] })
-  @IsArray()
-  @Type(() => Number)
-  @IsNumber({}, { each: true })
-  region_ids: number[];
+  // @ApiProperty({ type: Array, required: false, example: [1, 2, 3, 4, 5] })
+  // @IsArray()
+  // @Type(() => Number)
+  // @IsNumber({}, { each: true })
+  // region_ids: number[];
 
   @ApiProperty({ type: Boolean, required: false, example: true, description: 'gets existed value' })
   @IsOptional()

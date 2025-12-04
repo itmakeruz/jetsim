@@ -9,6 +9,19 @@ import { tariff_not_found, tariff_create_success, tariff_update_success, tariff_
 export class TariffService {
   constructor(private readonly prisma: PrismaService) {}
   async findAll(query: GetTarifftDto, lang: string) {
+    const where: any = {};
+    if (query?.type && query?.type === 'popular') {
+      where.is_popular = true;
+    }
+    if (query?.type && query?.type === 'local') {
+      where.is_local = true;
+    }
+    if (query?.type && query?.type === 'regional') {
+      where.is_regional = true;
+    }
+    if (query?.type && query?.type === 'global') {
+      where.is_global = true;
+    }
     const { data, ...meta } = await paginate('tariff', {
       page: query?.page,
       size: query?.size,
@@ -16,6 +29,7 @@ export class TariffService {
       sort: query?.sort,
       where: {
         status: Status.ACTIVE,
+        ...where,
         deleted_at: {
           equals: null,
         },

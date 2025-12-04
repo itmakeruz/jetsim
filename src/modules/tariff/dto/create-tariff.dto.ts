@@ -69,11 +69,11 @@ export class CreateTariffDto {
   @IsNumber()
   partner_id: number;
 
-  @ApiProperty({ type: Array, required: true, example: [1, 2, 3, 4, 5] })
-  @IsArray()
-  @Type(() => Number)
-  @IsNumber({}, { each: true })
-  region_ids: number[];
+  // @ApiProperty({ type: Array, required: true, example: [1, 2, 3, 4, 5] })
+  // @IsArray()
+  // @Type(() => Number)
+  // @IsNumber({}, { each: true })
+  // region_ids: number[];
 
   @ApiProperty({ type: Boolean, required: false, example: true, default: false })
   @IsOptional()
