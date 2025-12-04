@@ -12,16 +12,10 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { RegionService } from './region.service';
-import {
-  CreateRegionCategoryDto,
-  CreateRegionDto,
-  GetRegionDto,
-  UpdateRegionCategoryDto,
-  UpdateRegionDto,
-} from './dto';
+import { CreateRegionDto, CreateRegionGroupDto, GetRegionDto, UpdateRegionDto, UpdateRegionGroupDto } from './dto';
 import { DeviceHeadersDto, ParamId } from '@enums';
 import { HeadersValidation } from '@decorators';
-import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOperation, ApiProperty } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
@@ -42,16 +36,16 @@ export class RegionController {
     return await this.regionService.findAllAdmin(query);
   }
 
-  @ApiOperation({ summary: 'Get Region categories for public', description: 'Get Region categories for public' })
-  @Get('category')
-  async getRegionCategory(@Query() query: GetRegionDto, @HeadersValidation() headers: DeviceHeadersDto) {
-    return this.regionService.getRegionCategoryPublic(query, headers.lang);
+  @ApiOperation({ summary: 'Get all region groups', description: 'Get all region groups' })
+  @Get('region-group')
+  async getRegionGroups(@Query() query: GetRegionDto, @HeadersValidation() headers: DeviceHeadersDto) {
+    return this.regionService.findRegionGroups(query, headers.lang);
   }
 
-  @ApiOperation({ summary: 'Get Region categories for admin', description: 'Get Region categories for admin' })
-  @Get('admin/category')
-  async getRegionCategoryAdmin(@Query() query: GetRegionDto) {
-    return this.regionService.getRegionCategoryAdmin(query);
+  @ApiOperation({ summary: 'Get all region groups admin', description: 'Get all region groups admin' })
+  @Get('region-group/admin')
+  async getRegionGroupsAdmin(@Query() query: GetRegionDto) {
+    return this.regionService.findRegionGroupsAdmin(query);
   }
 
   @ApiOperation({ summary: 'Get region by id public', description: 'Get region by id public' })
@@ -64,6 +58,12 @@ export class RegionController {
   @Get('admin/:id')
   async findOneAdmin(@Param() param: ParamId) {
     return this.regionService.findOneAdmin(param.id);
+  }
+
+  @ApiOperation({ summary: 'Get region group by id admin', description: 'Get region group by id admin' })
+  @Get('region-group/admin/:id')
+  async getRegionGroupByIdAdmin(@Param('id') id: string) {
+    return this.regionService.findRegionOneRegionGroup(+id);
   }
 
   @ApiOperation({ summary: 'Create region admin', description: 'Create region admin' })
@@ -123,22 +123,19 @@ export class RegionController {
    *
    *
    *
-   * REGION CATEGORIES
+   * REGION GROUPS
    *
    */
 
-  @ApiOperation({ summary: 'Create region category admin', description: 'Create region category admin' })
+  @ApiOperation({ summary: 'Create region group', description: 'Create region group' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: CreateRegionCategoryDto })
-  @Post('category')
+  @ApiBody({ type: CreateRegionGroupDto })
+  @Post('region-group')
   @UseInterceptors(
-    FileInterceptor('icon', {
+    FileInterceptor('image', {
       storage: diskStorage({
-        destination: './uploads/region_category_icons',
+        destination: './uploads/region_group_icons',
         filename: (req, file, cb) => {
-          if (!file) {
-            throw new BadRequestException('Требуется изображение!');
-          }
           const name = file.originalname.replace(/\s+/g, '');
           const uniqueName = uuidv4() + '-' + name;
           cb(null, uniqueName);
@@ -146,22 +143,20 @@ export class RegionController {
       }),
     }),
   )
-  async createRegionCategory(@Body() data: CreateRegionCategoryDto, @UploadedFile() file: Express.Multer.File) {
-    return this.regionService.createRegionCategory(data, file?.filename);
+  async createRegionGroup(@Body() data: CreateRegionGroupDto, @UploadedFile() file: Express.Multer.File) {
+    console.log(data);
+    return this.regionService.createRegionGroup(data, file?.filename);
   }
 
-  @ApiOperation({ summary: 'Create region category admin', description: 'Create region category admin' })
+  @ApiOperation({ summary: 'Create region group', description: 'Create region group' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: CreateRegionCategoryDto })
-  @Patch('category/:id')
+  @ApiBody({ type: CreateRegionGroupDto })
+  @Patch('region-group/:id')
   @UseInterceptors(
-    FileInterceptor('icon', {
+    FileInterceptor('image', {
       storage: diskStorage({
-        destination: './uploads/region_category_icons',
+        destination: './uploads/region_group_icons',
         filename: (req, file, cb) => {
-          if (!file) {
-            throw new BadRequestException('Требуется изображение!');
-          }
           const name = file.originalname.replace(/\s+/g, '');
           const uniqueName = uuidv4() + '-' + name;
           cb(null, uniqueName);
@@ -169,17 +164,19 @@ export class RegionController {
       }),
     }),
   )
-  async updateRegionCategory(
-    @Param() param: ParamId,
-    @Body() data: UpdateRegionCategoryDto,
+  async updateRegionGroup(
+    @Param('id') id: string,
+    @Body() data: UpdateRegionGroupDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.regionService.updateRegionCategory(param.id, data, file?.filename);
+    console.log(data);
+
+    return this.regionService.updateRegionGroup(+id, data, file?.filename);
   }
 
-  @ApiOperation({ summary: 'Delete region category', description: 'Delete region category' })
-  @Delete('category/:id')
-  async removeRegionCategory(@Param('id') id: string) {
-    return this.regionService.removeRegionCategory(+id);
+  @ApiOperation({ summary: 'Delete region group', description: 'Delete region group' })
+  @Delete('region-group/:id')
+  async deleteRegionGroup(@Param('id') id: string) {
+    return this.regionService.removeRegionGroup(+id);
   }
 }

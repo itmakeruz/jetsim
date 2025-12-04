@@ -1,17 +1,32 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Status } from '@prisma/client';
 import { Transform } from 'class-transformer';
-import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export class CreateRegionCategoryDto {
-  @ApiProperty({ type: String, required: true, example: 'Америка' })
+export class CreateRegionGroupDto {
+  @ApiProperty({ type: String, required: true, example: 'Avstraliya & Novaya Zelandiya' })
   @IsNotEmpty()
   @IsString()
   name_ru: string;
 
-  @ApiProperty({ type: String, required: true, example: 'USA' })
+  @ApiProperty({ type: String, required: true, example: 'Australia & New Zealand' })
   @IsNotEmpty()
   @IsString()
   name_en: string;
+
+  @ApiProperty({
+    description: 'Region Group Image',
+    example: 'icon.png',
+    required: true,
+    type: String,
+    format: 'binary',
+  })
+  image: string;
+
+  @ApiProperty({ type: String, required: false, enum: Status, default: Status.ACTIVE })
+  @IsOptional()
+  @IsEnum(Status)
+  status: Status;
 
   @ApiProperty({
     type: [Number],
@@ -31,37 +46,33 @@ export class CreateRegionCategoryDto {
     }
     return Array.isArray(value) ? value.map(Number) : [];
   })
-  regions: number[];
-
-  @ApiProperty({
-    description: 'Region Category icon',
-    example: 'icon.png',
-    required: true,
-    type: String,
-    format: 'binary',
-  })
-  icon: string;
+  region_ids: number[];
 }
 
-export class UpdateRegionCategoryDto {
-  @ApiProperty({ type: String, required: false, example: 'Америка' })
-  @IsNotEmpty()
+export class UpdateRegionGroupDto {
+  @ApiProperty({ type: String, required: false, example: 'Avstraliya & Novaya Zelandiya' })
+  @IsOptional()
   @IsString()
   name_ru: string;
 
-  @ApiProperty({ type: String, required: false, example: 'USA' })
-  @IsNotEmpty()
+  @ApiProperty({ type: String, required: false, example: 'Australia & New Zealand' })
+  @IsOptional()
   @IsString()
   name_en: string;
 
   @ApiProperty({
-    description: 'Region Category icon',
+    description: 'Region Group Image',
     example: 'icon.png',
-    required: true,
+    required: false,
     type: String,
     format: 'binary',
   })
-  icon: string;
+  image: string;
+
+  @ApiProperty({ type: String, required: false, enum: Status, default: Status.ACTIVE })
+  @IsOptional()
+  @IsEnum(Status)
+  status: Status;
 
   @ApiProperty({
     type: [Number],
@@ -81,5 +92,5 @@ export class UpdateRegionCategoryDto {
     }
     return Array.isArray(value) ? value.map(Number) : [];
   })
-  regions: number[];
+  region_ids: number[];
 }

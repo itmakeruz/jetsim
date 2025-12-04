@@ -12,26 +12,26 @@ export class StaticsController {
    */
   @Get('tariff-type')
   async findAllTariffType() {
-    return this.staticsService.findAllTariffTypes();
+    return 'statics';
   }
 
   @Get('tariff-type/:id')
   async findOneTariffType(@Param() param: ParamId) {
-    return this.staticsService.findOneTariffTypes(param.id);
+    return 'statics';
   }
 
   @Post('tariff-type')
   async createTariffType(@Body() data: CreateTariffType) {
-    return this.staticsService.createTariffType(data);
+    return 'statics';
   }
 
   @Patch('tariff-type/:id')
   async updateTariffType(@Param() param: ParamId, @Body() data: UpdateTariffType) {
-    return this.staticsService.updateTariffType(param.id, data);
+    return 'statics';
   }
 
   @Delete('tariff-type/:id')
   async deleteTariffType(@Param() param: ParamId) {
-    return this.staticsService.deleteTariffType(param.id);
+    return 'statics';
   }
 }

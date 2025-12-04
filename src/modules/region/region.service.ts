@@ -1,11 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import {
-  CreateRegionCategoryDto,
-  CreateRegionDto,
-  GetRegionDto,
-  UpdateRegionCategoryDto,
-  UpdateRegionDto,
-} from './dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateRegionDto, CreateRegionGroupDto, GetRegionDto, UpdateRegionDto, UpdateRegionGroupDto } from './dto';
 import { paginate } from '@helpers';
 import {
   FilePath,
@@ -13,12 +7,13 @@ import {
   region_create_success,
   region_update_success,
   region_delete_success,
-  TariffType,
-  region_category_find,
-  region_category_create,
-  region_category_update,
-  region_category_not_found,
-  region_category_delete,
+  region_find_success,
+  region_group_find,
+  region_group_find_one,
+  region_group_create,
+  region_group_update,
+  region_group_delete,
+  region_group_not_found,
 } from '@constants';
 import { PrismaService } from '@prisma';
 import { Status } from '@prisma/client';
@@ -51,97 +46,27 @@ export class RegionService {
             },
           ],
         }),
-        ...(query?.category_id && {
-          categories: {
-            some: {
-              id: query.category_id,
-            },
-          },
-        }),
         status: Status.ACTIVE,
       },
       select: {
         id: true,
-        [`name_${lan}`]: true,
+        name_ru: true,
+        name_en: true,
         image: true,
         status: true,
-        tariffs: {
-          where: {
-            deleted_at: {
-              equals: null,
-            },
-          },
-          select: {
-            id: true,
-            status: true,
-            type: true,
-            quantity_sms: true,
-            quantity_minute: true,
-            quantity_internet: true,
-            validity_period: true,
-            price_sell: true,
-            is_4g: true,
-            is_5g: true,
-            tariff_type: {
-              select: {
-                id: true,
-                name_ru: true,
-                name_en: true,
-              },
-            },
-            regions: {
-              select: {
-                id: true,
-                [`name_${lan}`]: true,
-                image: true,
-                status: true,
-                created_at: true,
-              },
-            },
-          },
-        },
         created_at: true,
       },
     });
 
     return {
       success: true,
-      message: '',
+      message: region_find_success[lan],
       ...regions,
-      data: regions.data.map((region: any) => ({
+      data: regions.data.map((region) => ({
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
-        tariffs: region?.tariffs?.map((tariff: any) => ({
-          id: tariff?.id,
-          status: tariff?.status,
-          type: {
-            id: tariff?.tariff_type?.id,
-            name: tariff?.tariff_type?.[`name_${lan}`],
-          },
-          quantity_sms: tariff?.quantity_sms,
-          quantity_minute: tariff?.quantity_minute,
-          quantity_internet: tariff?.quantity_internet,
-          validity_period: tariff?.validity_period,
-          is_4g: tariff?.is_4g,
-          is_5g: tariff?.is_5g,
-          price_sell: tariff?.price_sell,
-          regions: tariff?.regions?.map((region: any) => ({
-            id: region?.id,
-            name: region?.[`name_${lan}`],
-            image: `${FilePath.REGION_ICON}/${region?.image}`,
-            status: region?.status,
-            created_at: region?.created_at,
-          })),
-        })),
-        // category: region?.categories?.map((category) => ({
-        //   id: category?.id,
-        //   name_ru: category?.name_ru,
-        //   name_en: category?.name_en,
-        //   icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
-        //   created_at: category?.created_at,
-        // })),
         created_at: region?.created_at,
       })),
     };
@@ -177,31 +102,14 @@ export class RegionService {
         name_en: true,
         image: true,
         status: true,
-        categories: true,
         created_at: true,
       },
     });
 
     return {
       success: true,
-      message: '',
+      message: region_find_success['ru'],
       ...regions,
-      data: regions.data.map((region: any) => ({
-        id: region?.id,
-        name_ru: region?.name_ru,
-        name_en: region?.name_en,
-        image: `${FilePath.REGION_ICON}/${region?.image}`,
-        status: region?.status,
-        category: region?.categories?.map((category) => ({
-          id: category?.id,
-          status: category?.status,
-          name_ru: category?.name_ru,
-          name_en: category?.name_en,
-          icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
-          created_at: category?.created_at,
-        })),
-        created_at: region?.created_at,
-      })),
     };
   }
 
@@ -217,31 +125,22 @@ export class RegionService {
         name_en: true,
         image: true,
         status: true,
-        categories: true,
         created_at: true,
       },
     });
 
     if (!region) {
-      throw new NotFoundException(region_not_found['ru']);
+      throw new NotFoundException(region_not_found[lan]);
     }
 
     return {
       success: true,
-      message: null,
+      message: region_find_success[lan],
       data: {
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
-        category: region?.categories?.map((category) => ({
-          id: category?.id,
-          status: category?.status,
-          name_ru: category?.name_ru,
-          name_en: category?.name_en,
-          icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
-          created_at: category?.created_at,
-        })),
         created_at: region?.created_at,
       },
     };
@@ -257,7 +156,6 @@ export class RegionService {
         name_ru: true,
         name_en: true,
         image: true,
-        categories: true,
         status: true,
         created_at: true,
       },
@@ -269,7 +167,7 @@ export class RegionService {
 
     return {
       success: true,
-      message: '',
+      message: region_find_success['ru'],
       data: {
         id: region?.id,
         name_ru: region?.name_ru,
@@ -277,30 +175,17 @@ export class RegionService {
         image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
         created_at: region?.created_at,
-        category: region?.categories?.map((category) => ({
-          id: category?.id,
-          status: category?.status,
-          name_ru: category?.name_ru,
-          name_en: category?.name_en,
-          icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
-          created_at: category?.created_at,
-        })),
       },
     };
   }
 
   async create(data: CreateRegionDto, fileName: string) {
-    console.log(data);
-
     await this.prisma.region.create({
       data: {
         name_ru: data.name_ru,
         name_en: data.name_en,
         image: fileName,
         status: data.status,
-        // categories: {
-        //   connect: data.region_category?.map((id) => ({ id })) || [],
-        // },
       },
     });
     return {
@@ -338,9 +223,6 @@ export class RegionService {
         name_en: data?.name_en ?? existRegion.name_en,
         image: fileName ?? existRegion.image,
         status: data?.status ?? existRegion.status,
-        // categories: {
-        //   connect: data.region_category?.map((id) => ({ id })) || [],
-        // },
       },
     });
 
@@ -358,7 +240,7 @@ export class RegionService {
       },
       select: {
         id: true,
-        cities: true,
+        image: true,
       },
     });
 
@@ -366,15 +248,19 @@ export class RegionService {
       throw new NotFoundException(region_not_found['ru']);
     }
 
-    if (existRegion.cities.length > 0) {
-      throw new BadRequestException('Регион не может быть удален, так как есть города в нем!');
-    }
-
     await this.prisma.region.delete({
       where: {
         id: existRegion.id,
       },
     });
+
+    if (existRegion?.image) {
+      const imagePath = path.join(process.cwd(), 'uploads', 'region_icons', existRegion.image);
+
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
 
     return {
       success: true,
@@ -385,70 +271,12 @@ export class RegionService {
 
   /**
    *
+   * REGION GROUPS
    *
-   * REGION CATEGORIES
-   */
+   **/
 
-  async getRegionCategoryPublic(query: GetRegionDto, lang: string) {
-    // const regionCategories = await this.prisma.regionCategory.findMany({
-    //   where: {
-    //     status: Status.ACTIVE,
-    //   },
-    //   select: {
-    //     id: true,
-    //     [`name_${lang}`]: true,
-    //     icon: true,
-    //     created_at: true,
-    //   },
-    // });
-
-    const regionCategories = await paginate('regionCategory', {
-      page: query?.page,
-      size: query?.size,
-      filter: query?.filters,
-      sort: query?.sort,
-      where: {
-        status: Status.ACTIVE,
-      },
-      select: {
-        id: true,
-        [`name_${lang}`]: true,
-        icon: true,
-        regions: {
-          select: {
-            id: true,
-            [`name_${lang}`]: true,
-            image: true,
-            status: true,
-            created_at: true,
-          },
-        },
-        created_at: true,
-      },
-    });
-
-    return {
-      success: true,
-      message: region_category_find['ru'],
-      ...regionCategories,
-      data: regionCategories?.data?.map((category: any) => ({
-        id: category?.id,
-        name: category?.[`name_${lang}`],
-        icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
-        regions: category?.regions?.map((region: any) => ({
-          id: region?.id,
-          name: region?.[`name_${lang}`],
-          image: `${FilePath.REGION_ICON}/${region?.icon}`,
-          status: region?.status,
-          created_at: region?.created_at,
-        })),
-        created_at: category?.created_at,
-      })),
-    };
-  }
-
-  async getRegionCategoryAdmin(query: GetRegionDto) {
-    const regionCategories = await paginate('regionCategory', {
+  async findRegionGroups(query: any, lan: string) {
+    const regionGroups = await paginate('regionGroup', {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
@@ -457,128 +285,185 @@ export class RegionService {
         id: true,
         name_ru: true,
         name_en: true,
-        icon: true,
-        regions: {
-          select: {
-            id: true,
-            name_ru: true,
-            name_en: true,
-            image: true,
-            status: true,
-            created_at: true,
-          },
-        },
+        image: true,
+        status: true,
+        regions: true,
         created_at: true,
       },
     });
 
     return {
       success: true,
-      message: region_category_find['ru'],
-      ...regionCategories,
-      data: regionCategories?.data?.map((category: any) => ({
-        id: category?.id,
-        name_ru: category?.name_ru,
-        name_en: category?.name_en,
-        icon: `${FilePath.REGION_CATEGORY_ICON}/${category?.icon}`,
-        regions: category?.regions?.map((region) => ({
-          id: region?.id,
-          name_ru: region?.name_ru,
-          name_en: region?.name_en,
-          image: `${FilePath.REGION_ICON}/${region?.image}`,
-          status: region?.status,
-          created_at: region?.created_at,
+      message: region_group_find['ru'],
+      ...regionGroups,
+      data: regionGroups.data.map((region: any) => ({
+        id: region?.id,
+        name: region?.[`name_${lan}`],
+        image: `${FilePath.REGION_GROUP_ICON}/${region?.image}`,
+        status: region?.status,
+        regions: region?.regions.map((reg) => ({
+          id: reg.id,
+          name: reg?.[`name_${lan}`],
+          image: `${FilePath.REGION_ICON}/${reg?.image}`,
+          status: reg.status,
+          created_at: reg.created_at,
         })),
-        created_at: category?.created_at,
+        created_at: region?.created_at,
       })),
     };
   }
 
-  async createRegionCategory(data: CreateRegionCategoryDto, fileName: string) {
-    await this.prisma.regionCategory.create({
+  async findRegionGroupsAdmin(query: any) {
+    const regionGroups = await paginate('regionGroup', {
+      page: query?.page,
+      size: query?.size,
+      filter: query?.filters,
+      sort: query?.sort,
+      select: {
+        id: true,
+        name_ru: true,
+        name_en: true,
+        image: true,
+        status: true,
+        regions: true,
+        created_at: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: region_group_find['ru'],
+      ...regionGroups,
+      data: regionGroups.data.map((region: any) => ({
+        id: region?.id,
+        name_ru: region?.name_ru,
+        name_en: region?.name_en,
+        image: `${FilePath.REGION_GROUP_ICON}/${region?.image}`,
+        status: region?.status,
+        regions: region?.regions.map((reg) => ({
+          id: reg.id,
+          name_ru: reg?.name_ru,
+          name_en: reg?.name_en,
+          image: `${FilePath.REGION_ICON}/${reg?.image}`,
+          status: reg.status,
+          created_at: reg.created_at,
+        })),
+        created_at: region?.created_at,
+      })),
+    };
+  }
+
+  async findRegionOneRegionGroup(id: number) {
+    const regionGroup = await this.prisma.regionGroup.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!regionGroup) {
+      throw new NotFoundException(region_group_not_found['ru']);
+    }
+
+    return {
+      success: true,
+      message: region_group_find_one['ru'],
+      data: regionGroup,
+    };
+  }
+
+  async createRegionGroup(data: CreateRegionGroupDto, fileName: string) {
+    await this.prisma.regionGroup.create({
       data: {
         name_ru: data.name_ru,
         name_en: data.name_en,
-        icon: fileName,
+        image: fileName,
+        status: data?.status,
         regions: {
-          connect: data.regions?.map((id) => ({ id })) || [],
+          connect: data?.region_ids?.map((id) => ({ id })) || [],
         },
       },
     });
 
     return {
       success: true,
-      message: region_category_create['ru'],
+      message: region_group_create['ru'],
       data: null,
     };
   }
 
-  async updateRegionCategory(id: number, data: UpdateRegionCategoryDto, fileName: string) {
-    const existCategoryRegion = await this.prisma.regionCategory.findUnique({
+  async updateRegionGroup(id: number, data: UpdateRegionGroupDto, fileName: string) {
+    const regionGroup = await this.prisma.regionGroup.findUnique({
       where: {
         id: id,
       },
-      select: {
-        id: true,
-        icon: true,
-        name_ru: true,
-        name_en: true,
-      },
     });
 
-    if (!existCategoryRegion) {
+    if (!regionGroup) {
       throw new NotFoundException(region_not_found['ru']);
     }
 
     if (fileName) {
-      const imagePath = path.join(process.cwd(), 'uploads', 'region_icons', existCategoryRegion.icon);
+      const imagePath = path.join(process.cwd(), 'uploads', 'region_group_icons', regionGroup.image);
 
       if (fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
       }
     }
 
-    await this.prisma.regionCategory.update({
+    await this.prisma.regionGroup.update({
       where: {
-        id: existCategoryRegion.id,
+        id: id,
       },
       data: {
-        name_ru: data.name_ru ?? existCategoryRegion.name_ru,
-        name_en: data.name_en ?? existCategoryRegion.name_en,
-        icon: fileName ?? existCategoryRegion.icon,
+        name_ru: data.name_ru ?? regionGroup.name_ru,
+        name_en: data.name_en ?? regionGroup.name_en,
+        status: data.status ?? regionGroup.status,
+        image: data.image ?? regionGroup.image,
         regions: {
-          set: data.regions?.map((id) => ({ id })) || [],
+          set: data.region_ids?.map((id) => ({ id })) || [],
         },
-        updated_at: new Date(),
       },
     });
 
     return {
       success: true,
-      message: region_category_update['ru'],
+      message: region_group_update['ru'],
       data: null,
     };
   }
 
-  async removeRegionCategory(id: number) {
-    const regionCategory = await this.prisma.regionCategory.findUnique({
+  async removeRegionGroup(id: number) {
+    const regionGroup = await this.prisma.regionGroup.findUnique({
       where: {
         id: id,
       },
+      select: {
+        id: true,
+        image: true,
+      },
     });
-    if (!regionCategory) {
-      throw new NotFoundException(region_category_not_found['ru']);
+
+    if (!regionGroup) {
+      throw new NotFoundException(region_not_found['ru']);
     }
 
-    await this.prisma.regionCategory.delete({
+    await this.prisma.regionGroup.delete({
       where: {
         id: id,
       },
     });
+
+    if (regionGroup?.image) {
+      const imagePath = path.join(process.cwd(), 'uploads', 'region_group_icons', regionGroup.image);
+
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
 
     return {
       success: true,
-      message: region_category_delete['ru'],
+      message: region_group_delete['ru'],
       data: null,
     };
   }

@@ -6,25 +6,22 @@ import { LoggingInterceptor } from '@interceptors';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import {
   AuthModule,
+  FaqsModule,
+  JobsModule,
+  SimsModule,
+  OrderModule,
+  UsersModule,
+  StaffModule,
   RegionModule,
   PrismaModule,
   TariffModule,
-  CityModule,
-  // PackageModule,
-  JobsModule,
-  OrderModule,
   GatewayModule,
   PartnerModule,
-  UsersModule,
-  SimsModule,
   SupportModule,
   StaticsModule,
+  DashboardModule,
 } from '@modules';
-// import { PaymentModule } from './modules/payment/payment.module';
 import { HttpModule } from '@http';
-import { StaffModule } from './modules/staff/staff.module';
-import { FaqsModule } from './modules/faqs/faqs.module';
-import { DashboardModule } from './modules/dashboard/dashboard.module';
 import * as path from 'path';
 
 @Module({
@@ -39,24 +36,20 @@ import * as path from 'path';
       serveRoot: '/uploads',
     }),
     AuthModule,
-    RegionModule,
-    TariffModule,
-    PrismaModule,
-    // CityModule,
-    // PackageModule,
-    OrderModule,
+    FaqsModule,
     JobsModule,
+    SimsModule,
+    OrderModule,
+    UsersModule,
+    StaffModule,
+    RegionModule,
+    PrismaModule,
+    TariffModule,
     GatewayModule,
     PartnerModule,
-    UsersModule,
-    HttpModule,
-    SimsModule,
     SupportModule,
     StaticsModule,
-    StaffModule,
-    FaqsModule,
     DashboardModule,
-    // PaymentModule,
   ],
   controllers: [],
   providers: [WinstonLoggerService, LoggingInterceptor],

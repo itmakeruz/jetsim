@@ -34,7 +34,6 @@ export class TariffService {
         validity_period: true,
         price_sell: true,
         partner_id: true,
-        tariff_type: true,
         regions: {
           select: {
             id: true,
@@ -63,10 +62,6 @@ export class TariffService {
         quantity_internet: tariff?.quantity_internet,
         validity_period: tariff?.validity_period,
         price_sell: tariff?.price_sell,
-        type: {
-          id: tariff?.tariff_type?.id,
-          name: tariff?.tariff_type?.[`name_${lang}`],
-        },
         regions: tariff?.regions?.map((region) => ({
           id: region?.id,
           name: region?.[`name_${lang}`],
@@ -107,13 +102,6 @@ export class TariffService {
         price_arrival: true,
         sku_id: true,
         cashback_percent: true,
-        tariff_type: {
-          select: {
-            id: true,
-            name_ru: true,
-            name_en: true,
-          },
-        },
         regions: {
           select: {
             id: true,
@@ -169,7 +157,6 @@ export class TariffService {
         quantity_internet: true,
         validity_period: true,
         price_sell: true,
-        tariff_type: true,
         created_at: true,
         regions: {
           select: {
@@ -201,10 +188,6 @@ export class TariffService {
         quantity_internet: tariffs?.quantity_internet,
         validity_period: tariffs?.validity_period,
         price_sell: tariffs?.price_sell,
-        type: {
-          id: tariffs?.tariff_type?.id,
-          name: tariffs?.tariff_type?.[`name_${lang}`],
-        },
         regions: tariffs?.regions?.map((region) => ({
           id: region?.id,
           name: region?.[`name_${lang}`],
@@ -239,13 +222,6 @@ export class TariffService {
         price_arrival: true,
         sku_id: true,
         cashback_percent: true,
-        tariff_type: {
-          select: {
-            id: true,
-            name_ru: true,
-            name_en: true,
-          },
-        },
         regions: {
           select: {
             id: true,
@@ -305,7 +281,6 @@ export class TariffService {
               id: region,
             })) ?? [],
         },
-        type: data?.type,
       },
     });
 

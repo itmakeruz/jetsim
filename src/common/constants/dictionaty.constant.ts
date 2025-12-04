@@ -121,6 +121,12 @@ export const city_delete_success = {
 };
 
 // Region Module Error Messages
+export const region_find_success = {
+  ru: 'Успешно найден!',
+  en: 'Successfully found!',
+  uz: 'Muvaffaqiyatli topildi!',
+};
+
 export const region_not_found = {
   ru: 'Регион не найден!',
   en: 'Region not found!',
@@ -436,37 +442,40 @@ export const data_deleted_success = {
   uz: "Ma'lumotlar muvaffaqiyatli o'chirildi!",
 };
 
-export const region_category_create = {
-  ru: 'Категория региона успешно создана!',
-  en: 'Region category created successfully!',
-  uz: 'Hudud kategoriyasi muvaffaqiyatli yaratildi!',
+export const region_group_create = {
+  ru: 'Группа регионов успешно создана!',
+  en: 'Region group created successfully!',
+  uz: 'Hudud guruhi muvaffaqiyatli yaratildi!',
 };
 
-export const region_category_update = {
-  ru: 'Категория региона успешно обновлена!',
-  en: 'Region category updated successfully!',
-  uz: 'Hudud kategoriyasi muvaffaqiyatli yangilandi!',
-};
-export const region_category_delete = {
-  ru: 'Категория региона успешно удалена!',
-  en: 'Region category deleted successfully!',
-  uz: 'Hudud kategoriyasi muvaffaqiyatli o‘chirildi!',
+export const region_group_update = {
+  ru: 'Группа регионов успешно обновлена!',
+  en: 'Region group updated successfully!',
+  uz: 'Hudud guruhi muvaffaqiyatli yangilandi!',
 };
 
-export const region_category_find = {
-  ru: 'Категории регионов успешно получены!',
-  en: 'Region categories retrieved successfully!',
-  uz: 'Hudud kategoriyalari muvaffaqiyatli olindi!',
+export const region_group_delete = {
+  ru: 'Группа регионов успешно удалена!',
+  en: 'Region group deleted successfully!',
+  uz: 'Hudud guruhi muvaffaqiyatli o‘chirildi!',
 };
-export const region_category_find_one = {
-  ru: 'Категория региона успешно получена!',
-  en: 'Region category retrieved successfully!',
-  uz: 'Hudud kategoriyasi muvaffaqiyatli olindi!',
+
+export const region_group_find = {
+  ru: 'Группы регионов успешно получены!',
+  en: 'Region groups retrieved successfully!',
+  uz: 'Hudud guruhlari muvaffaqiyatli olindi!',
 };
-export const region_category_not_found = {
-  ru: 'Категория региона не найдена!',
-  en: 'Region category not found!',
-  uz: 'Hudud kategoriyasi topilmadi!',
+
+export const region_group_find_one = {
+  ru: 'Группа регионов успешно получена!',
+  en: 'Region group retrieved successfully!',
+  uz: 'Hudud guruhi muvaffaqiyatli olindi!',
+};
+
+export const region_group_not_found = {
+  ru: 'Группа регионов не найдена!',
+  en: 'Region group not found!',
+  uz: 'Hudud guruhi topilmadi!',
 };
 
 export const faq_created = {

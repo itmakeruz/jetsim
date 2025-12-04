@@ -49,9 +49,4 @@ export class GetRegionDto extends PaginationOptionalDto {
   @IsOptional()
   @IsString()
   search: string;
-
-  @ApiProperty({ type: Number, required: false, example: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  category_id: number;
 }

@@ -415,7 +415,6 @@ export class OrderService {
                 is_4g: true,
                 is_5g: true,
                 price_sell: true,
-                tariff_type: true,
                 regions: {
                   select: {
                     id: true,
@@ -460,10 +459,6 @@ export class OrderService {
           tariff: item.tariff
             ? {
                 id: item.tariff.id,
-                type: {
-                  id: item?.tariff?.tariff_type?.id,
-                  name: item?.tariff?.tariff_type?.[`name_${lang}`],
-                },
                 quantity_sms: item.tariff.quantity_sms,
                 quantity_minute: item.tariff.quantity_minute,
                 quantity_internet: item.tariff.quantity_internet,

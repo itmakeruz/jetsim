@@ -69,12 +69,10 @@ model Region {
   image   String?
   status  Status
 
-  cities       City[]
-  tariffs      Tariff[]     @relation("tariff_regions")
-  bascet_items BasketItem[] @relation("basketitem_to_region")
-  sims         Sims[]
-
-  categories RegionCategory[] @relation("region_to_category")
+  sims          Sims[]
+  tariffs       Tariff[]      @relation("tariff_regions")
+  bascet_items  BasketItem[]  @relation("basketitem_to_region")
+  region_groups RegionGroup[] @relation("region_to_regiongroup")
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -82,34 +80,19 @@ model Region {
   @@map("region")
 }
 
-model RegionCategory {
+model RegionGroup {
   id      Int     @id @default(autoincrement())
   name_ru String?
   name_en String?
-  icon    String?
   status  Status  @default(ACTIVE)
+  image   String?
 
-  regions Region[] @relation("region_to_category")
-
-  created_at DateTime  @default(now()) @db.Timestamptz(5)
-  updated_at DateTime? @updatedAt @db.Timestamptz(5)
-
-  @@map("region_category")
-}
-
-model City {
-  id      Int    @id @default(autoincrement())
-  name_ru String
-  name_en String
-  status  Status
-
-  region_id Int
-  region    Region @relation(fields: [region_id], references: [id])
+  regions Region[] @relation("region_to_regiongroup")
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
 
-  @@map("city")
+  @@map("region_group")
 }
 
 model Transaction {
@@ -152,37 +135,12 @@ model Tariff {
   partner     Partner      @relation(fields: [partner_id], references: [id])
   bascet_item BasketItem[]
   sims        Sims[]
-  tariff_type StaticTypes? @relation(fields: [type], references: [id])
-
-  // packages Package[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
   deleted_at DateTime? @db.Timestamptz(5)
 
   @@map("tariff")
-}
-
-model Package {
-  id            Int    @id @default(autoincrement())
-  sms_count     Int?
-  minutes_count Int?
-  mb_count      Int?
-  sku_id        String
-  status        Status
-  cost          Int?
-  comission     Int?
-
-  tariff_id Int
-  // tariff      Tariff       @relation(fields: [tariff_id], references: [id])
-  // orders    Order[]
-  // bascet_item BasketItem[]
-  // sims      Sims[]
-
-  created_at DateTime  @default(now()) @db.Timestamptz(5)
-  updated_at DateTime? @updatedAt @db.Timestamptz(5)
-
-  @@map("package")
 }
 
 model Sims {
@@ -258,45 +216,27 @@ model Order {
   id      Int         @id @default(autoincrement())
   status  OrderStatus
   user_id Int
-  // package_id Int?
 
-  user User @relation(fields: [user_id], references: [id])
-  // package Package? @relation(fields: [package_id], references: [id])
-
+  user User   @relation(fields: [user_id], references: [id])
   sims Sims[]
-
-  request  Json?
-  response Json?
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
-  // Package    Package?  @relation(fields: [packageId], references: [id])
-  // packageId  Int?
 
   @@map("order")
 }
 
-model OrderJob {
-  id       Int @id @default(autoincrement())
-  order_id Int
-
-  created_at DateTime  @default(now()) @db.Timestamptz(5)
-  updated_at DateTime? @updatedAt @db.Timestamptz(5)
-
-  @@map("order_job")
-}
-
 model Basket {
-  id         Int          @id @default(autoincrement()) // UUID foydalidir session uchun
-  user_id    Int? // optional, ro‘yxatdan o‘tmaganlar uchun null bo‘lishi mumkin
-  session_id String? // cookie orqali saqlanadigan identifikator
-  status     BasketStatus @default(ACTIVE) // ACTIVE, CHECKED_OUT, EXPIRED
+  id         Int          @id @default(autoincrement())
+  user_id    Int?
+  session_id String?
+  status     BasketStatus @default(ACTIVE)
+  user       User?        @relation(fields: [user_id], references: [id])
 
   items BasketItem[]
 
   created_at DateTime @default(now()) @db.Timestamptz(5)
   updated_at DateTime @updatedAt @db.Timestamptz(5)
-  user       User?    @relation(fields: [user_id], references: [id])
 
   @@map("basket")
 }
@@ -304,7 +244,6 @@ model Basket {
 model BasketItem {
   id        Int    @id @default(autoincrement())
   basket_id Int
-  // package_id Int
   tariff_id Int?
   region_id Int?
   quantity  Int    @default(1)
@@ -320,20 +259,6 @@ model BasketItem {
   @@map("basket_item")
 }
 
-model StaticTypes {
-  id                    Int     @id @default(autoincrement())
-  identification_number Int?
-  name_ru               String?
-  name_en               String?
-
-  created_at DateTime @default(now()) @db.Timestamptz(5)
-  updated_at DateTime @updatedAt @db.Timestamptz(5)
-
-  tariffs Tariff[]
-
-  @@map("static_type")
-}
-
 model Faq {
   id          Int     @id @default(autoincrement())
   question_ru String?
@@ -346,17 +271,6 @@ model Faq {
   updated_at DateTime @updatedAt @db.Timestamptz(5)
 
   @@map("faqs")
-}
-
-model Error {
-  id      Int  @id @default(autoincrement())
-  code    Int
-  message Json
-
-  created_at DateTime  @default(now()) @db.Timestamptz(5)
-  updated_at DateTime? @updatedAt @db.Timestamptz(5)
-
-  @@map("error")
 }
 
 enum Status {

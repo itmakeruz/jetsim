@@ -1,7 +1,6 @@
 import { Status } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateRegionDto {
   @ApiProperty({ type: String, required: true, example: 'Ташкент' })
@@ -23,7 +22,7 @@ export class CreateRegionDto {
   })
   image: string;
 
-  @ApiProperty({ type: String, required: false, enum: Status })
+  @ApiProperty({ type: String, required: false, enum: Status, default: Status.ACTIVE })
   @IsOptional()
   @IsEnum(Status)
   status: Status;
