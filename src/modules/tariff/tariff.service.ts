@@ -3,7 +3,14 @@ import { CreateTariffDto, GetTarifftDto, UpdateTariffDto } from './dto';
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
 import { Status } from '@prisma/client';
-import { tariff_not_found, tariff_create_success, tariff_update_success, tariff_delete_success } from '@constants';
+import {
+  tariff_not_found,
+  tariff_create_success,
+  tariff_update_success,
+  tariff_delete_success,
+  FilePath,
+} from '@constants';
+import { stat } from 'fs';
 
 @Injectable()
 export class TariffService {
@@ -42,6 +49,9 @@ export class TariffService {
         is_popular: true,
         is_4g: true,
         is_5g: true,
+        is_local: true,
+        is_global: true,
+        is_regional: true,
         quantity_sms: true,
         quantity_minute: true,
         quantity_internet: true,
@@ -52,6 +62,8 @@ export class TariffService {
           select: {
             id: true,
             [`name_${lang}`]: true,
+            image: true,
+            status: true,
             created_at: true,
           },
         },
@@ -71,6 +83,9 @@ export class TariffService {
         is_popular: tariff?.is_popular,
         is_4g: tariff?.is_4g,
         is_5g: tariff?.is_5g,
+        is_local: tariff?.is_local,
+        is_global: tariff?.is_global,
+        is_regional: tariff?.is_regional,
         quantity_sms: tariff?.quantity_sms,
         quantity_minute: tariff?.quantity_minute,
         quantity_internet: tariff?.quantity_internet,
@@ -79,6 +94,8 @@ export class TariffService {
         regions: tariff?.regions?.map((region) => ({
           id: region?.id,
           name: region?.[`name_${lang}`],
+          image: `${FilePath.REGION_ICON}/${region?.image}`,
+          status: region?.status,
           created_at: region?.created_at,
         })),
         created_at: tariff?.created_at,
@@ -108,6 +125,9 @@ export class TariffService {
         is_popular: true,
         is_4g: true,
         is_5g: true,
+        is_local: true,
+        is_global: true,
+        is_regional: true,
         quantity_sms: true,
         quantity_minute: true,
         quantity_internet: true,
@@ -122,6 +142,7 @@ export class TariffService {
             name_ru: true,
             name_en: true,
             status: true,
+            image: true,
             created_at: true,
           },
         },
@@ -141,11 +162,34 @@ export class TariffService {
     return {
       success: true,
       message: 'Тарифы успешно найдены!',
-      data: tariffs?.data?.map((tariff: any) => ({
-        ...tariff,
-        // package_count: tariff?._count?.package,
-      })),
       ...tariffs,
+      data: tariffs?.data?.map((tariff: any) => ({
+        id: tariff?.id,
+        name_ru: tariff?.name_ru,
+        name_en: tariff?.name_en,
+        title_ru: tariff?.title_ru,
+        title_en: tariff?.title_en,
+        status: tariff?.status,
+        is_popular: tariff?.is_popular,
+        is_4g: tariff?.is_4g,
+        is_5g: tariff?.is_5g,
+        is_local: tariff?.is_local,
+        is_global: tariff?.is_global,
+        is_regional: tariff?.is_regional,
+        quantity_sms: tariff?.quantity_sms,
+        quantity_minute: tariff?.quantity_minute,
+        quantity_internet: tariff?.quantity_internet,
+        validity_period: tariff?.validity_period,
+        price_sell: tariff?.price_sell,
+        regions: tariff?.regions?.map((region) => ({
+          id: region?.id,
+          name: region?.[`name_${'ru'}`],
+          image: `${FilePath.REGION_ICON}/${region?.image}`,
+          status: region?.status,
+          created_at: region?.created_at,
+        })),
+        created_at: tariff?.created_at,
+      })),
     };
   }
 

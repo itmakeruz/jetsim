@@ -18,6 +18,19 @@ import * as fs from 'fs';
 export class RegionService {
   constructor(private readonly prisma: PrismaService) {}
   async findAll(query: GetRegionDto, lan: string) {
+    const where: any = {};
+    if (query?.type && query?.type === 'popular') {
+      where.is_popular = true;
+    }
+    if (query?.type && query?.type === 'local') {
+      where.is_local = true;
+    }
+    if (query?.type && query?.type === 'regional') {
+      where.is_regional = true;
+    }
+    if (query?.type && query?.type === 'global') {
+      where.is_global = true;
+    }
     const regions = await paginate('region', {
       page: query?.page,
       size: query?.size,
@@ -40,6 +53,9 @@ export class RegionService {
             },
           ],
         }),
+        tariffs: {
+          ...where,
+        },
         status: Status.ACTIVE,
       },
       select: {

@@ -49,4 +49,13 @@ export class GetRegionDto extends PaginationOptionalDto {
   @IsOptional()
   @IsString()
   search: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: 'Filers by placeent global or regional MUST SEND popular | local | regional | global',
+  })
+  @IsOptional()
+  @IsString()
+  type?: string;
 }
