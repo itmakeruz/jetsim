@@ -20,6 +20,7 @@ import {
   SupportModule,
   StaticsModule,
   DashboardModule,
+  RegionGroupModule,
 } from '@modules';
 import { HttpModule } from '@http';
 import * as path from 'path';
@@ -50,6 +51,7 @@ import * as path from 'path';
     SupportModule,
     StaticsModule,
     DashboardModule,
+    RegionGroupModule,
   ],
   controllers: [],
   providers: [WinstonLoggerService, LoggingInterceptor],
