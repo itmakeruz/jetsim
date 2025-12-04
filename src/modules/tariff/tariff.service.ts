@@ -256,6 +256,24 @@ export class TariffService {
   }
 
   async create(data: CreateTariffDto) {
+    const regionGroups = await this.prisma.regionGroup.findMany({
+      where: {
+        id: data.region_group_id,
+      },
+      select: {
+        id: true,
+        regions: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    if (regionGroups.length === 0 || !regionGroups) {
+      throw new NotFoundException('Группа регионов не найдена!');
+    }
+
     await this.prisma.tariff.create({
       data: {
         name_ru: data.name_ru,
@@ -275,10 +293,13 @@ export class TariffService {
         price_arrival: data?.price_arrival,
         sku_id: data?.sku_id,
         cashback_percent: data?.cashback_percent,
+        is_global: data?.is_global,
+        is_local: data?.is_local,
+        is_regional: data?.is_regional,
         regions: {
           connect:
-            data.region_ids.map((region) => ({
-              id: region,
+            regionGroups.map((region) => ({
+              id: region.id,
             })) ?? [],
         },
       },
@@ -299,11 +320,33 @@ export class TariffService {
           equals: null,
         },
       },
-      include: { regions: true },
+      include: {
+        regions: true,
+      },
     });
 
     if (!tariff) {
       throw new NotFoundException(tariff_not_found['ru']);
+    }
+    let regionGroups;
+    if (data?.region_group_id) {
+      regionGroups = await this.prisma.regionGroup.findMany({
+        where: {
+          id: data.region_group_id,
+        },
+        select: {
+          id: true,
+          regions: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+      if (regionGroups.length === 0 || !regionGroups) {
+        throw new NotFoundException('Группа регионов не найдена!');
+      }
     }
 
     await this.prisma.tariff.update({
@@ -326,14 +369,14 @@ export class TariffService {
         price_arrival: data.price_arrival ?? tariff.price_arrival,
         sku_id: data.sku_id ?? tariff.sku_id,
         cashback_percent: data.cashback_percent ?? tariff.cashback_percent,
-        regions: data.region_ids
-          ? {
-              set: data.region_ids.map((regionId) => ({ id: regionId })),
-            }
-          : undefined,
+        regions: {
+          set:
+            regionGroups.map((region) => ({
+              id: region.id,
+            })) ?? [],
+        },
 
         updated_at: new Date(),
-        type: data?.type ?? tariff?.type,
       },
     });
 

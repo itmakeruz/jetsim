@@ -105,8 +105,28 @@ export class UpdateTariffDto {
   @IsNumber()
   cashback_percent: number;
 
-  @ApiProperty({ type: Number, required: false, example: 1 })
+  @ApiProperty({ type: Boolean, required: false, example: true, default: false })
+  @IsOptional()
+  @IsBoolean()
+  is_global: boolean;
+
+  @ApiProperty({ type: Boolean, required: false, example: true, default: false })
+  @IsOptional()
+  @IsBoolean()
+  is_local: boolean;
+
+  @ApiProperty({ type: Boolean, required: false, example: true, default: false })
+  @IsOptional()
+  @IsBoolean()
+  is_regional: boolean;
+
+  @ApiProperty({ type: Number, required: true, example: 1 })
   @IsOptional()
   @IsNumber()
-  type: number;
+  region_group_id: number;
+
+  // @ApiProperty({ type: Number, required: false, example: 1 })
+  // @IsOptional()
+  // @IsNumber()
+  // type: number;
 }

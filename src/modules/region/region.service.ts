@@ -106,7 +106,8 @@ export class RegionService {
       ...regions,
       data: regions.data.map((region) => ({
         id: region?.id,
-        name: region?.[`name_${'ru'}`],
+        name_ru: region?.name_ru,
+        name_en: region?.name_en,
         image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
         created_at: region?.created_at,

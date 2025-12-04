@@ -116,7 +116,7 @@ model Tariff {
   title_ru          String?
   title_en          String?
   status            Status
-  is_popular        Boolean @default(false)
+  partner_id        Int
   is_4g             Boolean @default(false)
   is_5g             Boolean @default(false)
   quantity_sms      Int?
@@ -128,8 +128,10 @@ model Tariff {
   sku_id            String
   cashback_percent  Int?
   type              Int?
-
-  partner_id Int
+  is_global         Boolean @default(false)
+  is_popular        Boolean @default(false)
+  is_local          Boolean @default(false)
+  is_regional       Boolean @default(false)
 
   regions     Region[]     @relation("tariff_regions")
   partner     Partner      @relation(fields: [partner_id], references: [id])
