@@ -183,7 +183,8 @@ export class TariffService {
         price_sell: tariff?.price_sell,
         regions: tariff?.regions?.map((region) => ({
           id: region?.id,
-          name: region?.[`name_${'ru'}`],
+          name_ru: region?.name_ru,
+          name_en: region?.name_en,
           image: `${FilePath.REGION_ICON}/${region?.image}`,
           status: region?.status,
           created_at: region?.created_at,
