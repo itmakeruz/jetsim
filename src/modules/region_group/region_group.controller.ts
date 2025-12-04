@@ -45,7 +45,7 @@ export class RegionGroupController {
   @ApiOperation({ summary: 'Create region group', description: 'Create region group' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionGroupDto })
-  @Post('region-group')
+  @Post()
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -65,7 +65,7 @@ export class RegionGroupController {
   @ApiOperation({ summary: 'Create region group', description: 'Create region group' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionGroupDto })
-  @Patch('region-group/:id')
+  @Patch(':id')
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -87,7 +87,7 @@ export class RegionGroupController {
   }
 
   @ApiOperation({ summary: 'Delete region group', description: 'Delete region group' })
-  @Delete('region-group/:id')
+  @Delete(':id')
   async deleteRegionGroup(@Param('id') id: string) {
     return this.regionGroupService.removeRegionGroup(+id);
   }
