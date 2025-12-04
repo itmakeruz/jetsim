@@ -288,6 +288,8 @@ export class TariffService {
       throw new NotFoundException('Группа регионов не найдена!');
     }
 
+    const regionIds = regionGroups.flatMap((group) => group.regions.map((region) => ({ id: region.id })));
+
     await this.prisma.tariff.create({
       data: {
         name_ru: data.name_ru,
@@ -311,10 +313,7 @@ export class TariffService {
         is_local: data?.is_local,
         is_regional: data?.is_regional,
         regions: {
-          connect:
-            regionGroups.map((region) => ({
-              id: region.id,
-            })) ?? [],
+          connect: regionIds,
         },
       },
     });
@@ -363,6 +362,8 @@ export class TariffService {
       }
     }
 
+    const regionIds = regionGroups.flatMap((group) => group.regions.map((region) => ({ id: region.id })));
+
     await this.prisma.tariff.update({
       where: { id },
       data: {
@@ -384,10 +385,7 @@ export class TariffService {
         sku_id: data.sku_id ?? tariff.sku_id,
         cashback_percent: data.cashback_percent ?? tariff.cashback_percent,
         regions: {
-          set:
-            regionGroups.map((region) => ({
-              id: region.id,
-            })) ?? [],
+          connect: regionIds,
         },
 
         updated_at: new Date(),
