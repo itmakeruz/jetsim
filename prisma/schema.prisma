@@ -87,6 +87,7 @@ model RegionGroup {
   status  Status  @default(ACTIVE)
   image   String?
 
+  tariffs Tariff[]
   regions Region[] @relation("region_to_regiongroup")
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
@@ -132,11 +133,13 @@ model Tariff {
   is_popular        Boolean @default(false)
   is_local          Boolean @default(false)
   is_regional       Boolean @default(false)
+  region_group_id   Int?
 
-  regions     Region[]     @relation("tariff_regions")
-  partner     Partner      @relation(fields: [partner_id], references: [id])
-  bascet_item BasketItem[]
-  sims        Sims[]
+  regions      Region[]     @relation("tariff_regions")
+  region_group RegionGroup? @relation(fields: [region_group_id], references: [id])
+  partner      Partner      @relation(fields: [partner_id], references: [id])
+  bascet_item  BasketItem[]
+  sims         Sims[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)

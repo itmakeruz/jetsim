@@ -8,6 +8,7 @@ import {
   region_update_success,
   region_delete_success,
   region_find_success,
+  tariffs_loaded,
 } from '@constants';
 import { PrismaService } from '@prisma';
 import { Status } from '@prisma/client';
@@ -66,25 +67,24 @@ export class RegionService {
             ...where,
           },
           orderBy: {
-            price_sell: 'asc'
+            price_sell: 'asc',
           },
           take: 1,
           select: {
             id: true,
-            price_sell: true
-          }
+            price_sell: true,
+          },
         },
         created_at: true,
       },
     });
     console.log(regions.data[0]);
-    
 
     return {
       success: true,
       message: region_find_success[lan],
       ...regions,
-      data: regions.data.map((region:any) => ({
+      data: regions.data.map((region: any) => ({
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
@@ -92,6 +92,67 @@ export class RegionService {
         min_price: region?.tariffs[0]?.price_sell,
         created_at: region?.created_at,
       })),
+    };
+  }
+
+  async getRegionPlans(regionId: number, lang: string) {
+    const regionPlans = await this.prisma.tariff.findMany({
+      where: {
+        regions: {
+          some: { id: regionId },
+        },
+      },
+      select: {
+        id: true,
+        price_sell: true,
+        quantity_internet: true,
+        validity_period: true,
+        type: true,
+        is_local: true,
+        is_regional: true,
+        is_global: true,
+        region_group: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+            image: true,
+            created_at: true,
+          },
+        },
+        regions: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+            image: true,
+            created_at: true,
+          },
+        },
+        created_at: true,
+      },
+    });
+    console.log(regionPlans[0].regions);
+
+    // Guruhlash logikasi
+    const groupedPlans = {
+      local: [] as typeof regionPlans,
+      regional: [] as typeof regionPlans,
+      global: [] as typeof regionPlans,
+    };
+
+    for (const plan of regionPlans) {
+      if (plan.is_local) groupedPlans.local.push(plan);
+      else if (plan.is_regional) groupedPlans.regional.push(plan);
+      else if (plan.is_global) groupedPlans.global.push(plan);
+    }
+
+    return {
+      success: true,
+      message: tariffs_loaded[lang],
+      data: {
+        ...groupedPlans,
+      },
     };
   }
 

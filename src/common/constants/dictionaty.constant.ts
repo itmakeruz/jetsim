@@ -177,6 +177,13 @@ export const package_delete_success = {
 };
 
 // Tariff Module Error Messages
+
+export const tariffs_loaded = {
+  ru: 'Тарифы успешно загружены',
+  en: 'Tariffs loaded successfully',
+  uz: 'Tariflar muvaffaqiyatli yuklandi',
+};
+
 export const tariff_not_found = {
   ru: 'Тариф не найден!',
   en: 'Tariff not found!',
