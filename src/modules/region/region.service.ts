@@ -145,6 +145,7 @@ export class RegionService {
     for (const plan of plans) {
       const formatted = {
         id: plan.id,
+        name: plan?.[`name_${lang}`],
         price_sell: plan.price_sell,
         quantity_internet: plan.quantity_internet,
         validity_period: plan.validity_period,
