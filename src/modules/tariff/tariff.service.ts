@@ -136,6 +136,8 @@ export class TariffService {
         price_arrival: true,
         sku_id: true,
         cashback_percent: true,
+        region_group_id: true,
+        partner_id: true,
         regions: {
           select: {
             id: true,
@@ -171,6 +173,7 @@ export class TariffService {
         title_en: tariff?.title_en,
         status: tariff?.status,
         is_popular: tariff?.is_popular,
+        partner_id: tariff?.partner_id,
         is_4g: tariff?.is_4g,
         is_5g: tariff?.is_5g,
         is_local: tariff?.is_local,
@@ -181,6 +184,9 @@ export class TariffService {
         quantity_internet: tariff?.quantity_internet,
         validity_period: tariff?.validity_period,
         price_sell: tariff?.price_sell,
+        price_arrival: tariff?.price_arrival,
+        cashback_percent: tariff?.cashback_percent,
+        sku_id: tariff?.sku_id,
         regions: tariff?.regions?.map((region) => ({
           id: region?.id,
           name_ru: region?.name_ru,
