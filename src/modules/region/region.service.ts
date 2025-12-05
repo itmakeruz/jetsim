@@ -152,13 +152,13 @@ export class RegionService {
           ? {
               id: plan.region_group.id,
               name: plan.region_group?.[`name_${lang}`],
-              image: plan.region_group.image,
+              image: `${FilePath.REGION_ICON}/${plan?.region_group?.image}`,
             }
           : null,
         regions: plan.regions.map((r) => ({
           id: r.id,
           name: r?.[`name_${lang}`],
-          image: r.image,
+          image: `${FilePath.REGION_GROUP_ICON}/${plan?.region_group?.image}`,
         })),
       };
 
