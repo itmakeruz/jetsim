@@ -98,9 +98,7 @@ export class RegionService {
   async getRegionPlans(regionId: number, lang: string) {
     const regionPlans = await this.prisma.tariff.findMany({
       where: {
-        regions: {
-          some: { id: regionId },
-        },
+        region_group_id: regionId,
       },
       select: {
         id: true,
@@ -134,7 +132,6 @@ export class RegionService {
     });
     console.log(regionPlans[0].regions);
 
-    // Guruhlash logikasi
     const groupedPlans = {
       local: [] as typeof regionPlans,
       regional: [] as typeof regionPlans,
