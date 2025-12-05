@@ -96,13 +96,19 @@ export class RegionService {
   }
 
   async getRegionPlans(regionId: number, lang: string) {
+    const region = await this.prisma.region.findUnique({
+      where: {
+        id: regionId,
+      },
+    });
+
     const plans = await this.prisma.tariff.findMany({
       where: {
         OR: [
           {
             regions: {
               some: {
-                id: regionId,
+                id: region.id,
               },
             },
           },
@@ -187,6 +193,8 @@ export class RegionService {
       success: true,
       message: tariffs_loaded[lang],
       data: {
+        id: region.id,
+        name: region?.[`name_${lang}`],
         local: grouped.local,
         regional: Object.values(groupedRegionals),
         global: grouped.global,
