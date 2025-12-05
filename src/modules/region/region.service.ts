@@ -165,7 +165,7 @@ export class RegionService {
         regions: plan.regions.map((r) => ({
           id: r.id,
           name: r?.[`name_${lang}`],
-          image: `${FilePath.REGION_ICON}/${region?.image}`,
+          image: `${FilePath.REGION_ICON}/${r?.image}`,
         })),
       };
 
