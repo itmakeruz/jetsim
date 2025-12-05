@@ -96,32 +96,30 @@ export class RegionService {
   }
 
   async getRegionPlans(regionId: number, lang: string) {
-    const regionPlans = await this.prisma.tariff.findMany({
+    const plans = await this.prisma.tariff.findMany({
       where: {
-        region_group: {
-          regions: {
-            some: {
-              id: regionId,
+        OR: [
+          {
+            regions: {
+              some: {
+                id: regionId,
+              },
             },
           },
-        },
+          {
+            is_global: true,
+          },
+        ],
+        deleted_at: null,
+        status: 'ACTIVE',
       },
-      select: {
-        id: true,
-        price_sell: true,
-        quantity_internet: true,
-        validity_period: true,
-        type: true,
-        is_local: true,
-        is_regional: true,
-        is_global: true,
+      include: {
         region_group: {
           select: {
             id: true,
             name_ru: true,
             name_en: true,
             image: true,
-            created_at: true,
           },
         },
         regions: {
@@ -130,30 +128,69 @@ export class RegionService {
             name_ru: true,
             name_en: true,
             image: true,
-            created_at: true,
           },
         },
-        created_at: true,
+      },
+      orderBy: {
+        created_at: 'desc',
       },
     });
 
-    const groupedPlans = {
-      local: [] as typeof regionPlans,
-      regional: [] as typeof regionPlans,
-      global: [] as typeof regionPlans,
+    const grouped = {
+      local: [],
+      regional: [],
+      global: [],
     };
 
-    for (const plan of regionPlans) {
-      if (plan.is_local) groupedPlans.local.push(plan);
-      else if (plan.is_regional) groupedPlans.regional.push(plan);
-      else if (plan.is_global) groupedPlans.global.push(plan);
+    for (const plan of plans) {
+      const formatted = {
+        id: plan.id,
+        name: lang === 'ru' ? plan.name_ru : plan.name_en,
+        price: plan.price_sell,
+        data: plan.quantity_internet,
+        days: plan.validity_period,
+        region_group: plan.region_group
+          ? {
+              id: plan.region_group.id,
+              name: lang === 'ru' ? plan.region_group.name_ru : plan.region_group.name_en,
+              image: plan.region_group.image,
+            }
+          : null,
+        regions: plan.regions.map((r) => ({
+          id: r.id,
+          name: lang === 'ru' ? r.name_ru : r.name_en,
+          image: r.image,
+        })),
+      };
+
+      if (plan.is_local) grouped.local.push(formatted);
+      else if (plan.is_regional) grouped.regional.push(formatted);
+      else if (plan.is_global) grouped.global.push(formatted);
+    }
+
+    // regional ichida guruhlash (Asia 4, Asia 13 kabi)
+    const groupedRegionals = {};
+
+    for (const plan of grouped.regional) {
+      const key = plan.region_group?.id;
+
+      if (!groupedRegionals[key]) {
+        groupedRegionals[key] = {
+          ...plan.region_group,
+          tariffs: [],
+        };
+      }
+
+      groupedRegionals[key].tariffs.push(plan);
     }
 
     return {
       success: true,
       message: tariffs_loaded[lang],
       data: {
-        ...groupedPlans,
+        local: grouped.local,
+        regional: Object.values(groupedRegionals),
+        global: grouped.global,
       },
     };
   }
