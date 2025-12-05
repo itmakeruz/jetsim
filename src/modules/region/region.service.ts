@@ -174,20 +174,20 @@ export class RegionService {
       else if (plan.is_global) grouped.global.push(formatted);
     }
 
-    const groupedRegionals = {};
+    // const groupedRegionals = {};
 
-    for (const plan of grouped.regional) {
-      const key = plan.region_group?.id;
+    // for (const plan of grouped.regional) {
+    //   const key = plan.region_group?.id;
 
-      if (!groupedRegionals[key]) {
-        groupedRegionals[key] = {
-          ...plan.region_group,
-          tariffs: [],
-        };
-      }
+    //   if (!groupedRegionals[key]) {
+    //     groupedRegionals[key] = {
+    //       ...plan.region_group,
+    //       tariffs: [],
+    //     };
+    //   }
 
-      groupedRegionals[key].tariffs.push(plan);
-    }
+    //   groupedRegionals[key].tariffs.push(plan);
+    // }
 
     return {
       success: true,
@@ -197,7 +197,7 @@ export class RegionService {
         name: region?.[`name_${lang}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
         local: grouped.local,
-        regional: Object.values(groupedRegionals),
+        regional: grouped.regional,
         global: grouped.global,
       },
     };
