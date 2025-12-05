@@ -54,7 +54,9 @@ export class RegionService {
           ],
         }),
         tariffs: {
-          ...where,
+          some: {
+            ...where
+          }
         },
         status: Status.ACTIVE,
       },
