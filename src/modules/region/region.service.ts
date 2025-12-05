@@ -98,7 +98,13 @@ export class RegionService {
   async getRegionPlans(regionId: number, lang: string) {
     const regionPlans = await this.prisma.tariff.findMany({
       where: {
-        region_group_id: regionId,
+        region_group: {
+          regions: {
+            every: {
+              id: regionId,
+            },
+          },
+        },
       },
       select: {
         id: true,
