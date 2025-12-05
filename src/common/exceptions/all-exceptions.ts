@@ -8,7 +8,7 @@ export class AllExceptionFilter implements ExceptionFilter {
 
   catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const request = ctx.getRequest<IRequest>();
+    // const request = ctx.getRequest<IRequest>();
     this.logger.error(exception);
     const response = ctx.getResponse<Response>();
     let status = exception?.getStatus() ?? 500;
