@@ -145,20 +145,19 @@ export class RegionService {
     for (const plan of plans) {
       const formatted = {
         id: plan.id,
-        name: lang === 'ru' ? plan.name_ru : plan.name_en,
-        price: plan.price_sell,
-        data: plan.quantity_internet,
-        days: plan.validity_period,
+        price_sell: plan.price_sell,
+        quantity_internet: plan.quantity_internet,
+        validity_period: plan.validity_period,
         region_group: plan.region_group
           ? {
               id: plan.region_group.id,
-              name: lang === 'ru' ? plan.region_group.name_ru : plan.region_group.name_en,
+              name: plan.region_group?.[`name_${lang}`],
               image: plan.region_group.image,
             }
           : null,
         regions: plan.regions.map((r) => ({
           id: r.id,
-          name: lang === 'ru' ? r.name_ru : r.name_en,
+          name: r?.[`name_${lang}`],
           image: r.image,
         })),
       };
@@ -168,7 +167,6 @@ export class RegionService {
       else if (plan.is_global) grouped.global.push(formatted);
     }
 
-    // regional ichida guruhlash (Asia 4, Asia 13 kabi)
     const groupedRegionals = {};
 
     for (const plan of grouped.regional) {
