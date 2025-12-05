@@ -431,6 +431,9 @@ export class TariffService {
         sku_id: data.sku_id ?? tariff.sku_id,
         cashback_percent: data.cashback_percent ?? tariff.cashback_percent,
         region_group_id: data?.region_group_id ?? tariff.region_group_id,
+        is_global: data?.is_global ?? tariff.is_global,
+        is_regional: data?.is_regional ?? tariff.is_regional,
+        is_local: data?.is_local ?? tariff.is_local,
         regions: {
           connect: regionIds,
         },
