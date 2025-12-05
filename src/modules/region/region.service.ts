@@ -53,11 +53,6 @@ export class RegionService {
             },
           ],
         }),
-        tariffs: {
-          some: {
-            ...where
-          }
-        },
         status: Status.ACTIVE,
       },
       select: {
@@ -66,19 +61,35 @@ export class RegionService {
         name_en: true,
         image: true,
         status: true,
+        tariffs: {
+          where: {
+            ...where,
+          },
+          orderBy: {
+            price_sell: 'asc'
+          },
+          take: 1,
+          select: {
+            id: true,
+            price_sell: true
+          }
+        },
         created_at: true,
       },
     });
+    console.log(regions.data[0]);
+    
 
     return {
       success: true,
       message: region_find_success[lan],
       ...regions,
-      data: regions.data.map((region) => ({
+      data: regions.data.map((region:any) => ({
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
+        min_price: region?.tariffs[0]?.price_sell,
         created_at: region?.created_at,
       })),
     };
