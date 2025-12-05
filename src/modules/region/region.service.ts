@@ -100,7 +100,7 @@ export class RegionService {
       where: {
         region_group: {
           regions: {
-            every: {
+            some: {
               id: regionId,
             },
           },
