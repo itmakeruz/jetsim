@@ -2,13 +2,11 @@ import { AuthService } from './auth.service';
 import { Controller, Get, Post, Body, Patch, Req, UseGuards } from '@nestjs/common';
 import {
   LoginDto,
-  RegisterDto,
   ConfirmEmailDto,
   DeviceFcmTokenUpdateDto,
   ChangePassword,
   ConfirmChangePasswordOtp,
   PrepareChangePasswordDto,
-  VerifyOtpDto,
   AuthDto,
   ChangePasswordDto,
 } from './dto';

@@ -1,6 +1,6 @@
 // src/integrations/billion-connect.service.ts
 import { GetUsageRequest } from '@interfaces';
-import { HttpException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
 

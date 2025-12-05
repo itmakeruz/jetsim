@@ -22,7 +22,6 @@ import {
   DashboardModule,
   RegionGroupModule,
 } from '@modules';
-import { HttpModule } from '@http';
 import * as path from 'path';
 
 @Module({

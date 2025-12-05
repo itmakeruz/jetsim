@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  HttpStatus,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -9,7 +8,6 @@ import {
 import { PrismaService } from '@prisma';
 import * as bcrypt from 'bcrypt';
 import {
-  RegisterDto,
   DeviceFcmTokenUpdateDto,
   LoginDto,
   PrepareChangePasswordDto,
@@ -21,17 +19,13 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { RedisService, generateOtp, sendMailHelper, otpEmailTemplate } from '@helpers';
 import {
-  register_error,
   change_password_not_equal,
   change_password_not_equal_new_password,
-  invalid_login,
   invalid_password,
   user_not_found,
-  user_already_verified,
   invalid_otp,
   otp_expired,
   password_change_success,
-  register_success,
   otp_successfully_sent,
   invalid_reset_token,
   otp_sent,
@@ -39,7 +33,6 @@ import {
   FilePath,
 } from '@constants';
 import { JWT_RESET_TOKEN, JWT_RESET_EXPIRE_TIME, JWT_ACCESS_SECRET } from '@config';
-import { access } from 'fs';
 
 @Injectable()
 export class AuthService {
