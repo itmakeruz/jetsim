@@ -187,6 +187,7 @@ export class TariffService {
         price_arrival: tariff?.price_arrival,
         cashback_percent: tariff?.cashback_percent,
         sku_id: tariff?.sku_id,
+        region_group_id: tariff?.region_group_id,
         regions: tariff?.regions?.map((region) => ({
           id: region?.id,
           name_ru: region?.name_ru,
