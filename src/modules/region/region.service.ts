@@ -136,7 +136,6 @@ export class RegionService {
         created_at: true,
       },
     });
-    console.log(regionPlans[0].regions);
 
     const groupedPlans = {
       local: [] as typeof regionPlans,
