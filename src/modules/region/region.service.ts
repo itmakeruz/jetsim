@@ -152,7 +152,6 @@ export class RegionService {
       const formatted = {
         id: plan.id,
         name: plan?.[`name_${lang}`],
-        image: `${FilePath.REGION_ICON}/${region?.image}`,
         price_sell: plan.price_sell,
         quantity_internet: plan.quantity_internet,
         validity_period: plan.validity_period,
@@ -196,6 +195,7 @@ export class RegionService {
       data: {
         id: region.id,
         name: region?.[`name_${lang}`],
+        image: `${FilePath.REGION_ICON}/${region?.image}`,
         local: grouped.local,
         regional: Object.values(groupedRegionals),
         global: grouped.global,
