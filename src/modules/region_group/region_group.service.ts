@@ -5,6 +5,7 @@ import { PrismaService } from '@prisma';
 import { paginate } from '@helpers';
 import {
   FilePath,
+  region_find_success,
   region_group_create,
   region_group_delete,
   region_group_find,
@@ -16,41 +17,60 @@ import {
 } from '@constants';
 import * as path from 'path';
 import * as fs from 'fs';
+import { GetRegionDto } from '../region/dto';
+import { Status } from '@prisma/client';
 
 @Injectable()
 export class RegionGroupService {
   constructor(private readonly prisma: PrismaService) {}
-  async findRegionGroups(query: any, lan: string) {
-    const where: any = {};
-    if (query?.type && query?.type === 'regional') {
-      where.is_regional = true;
+  async findAll(query: GetRegionDto, lan: string) {
+    // Tarif filterlari
+    const tariffWhere: any = { deleted_at: null };
+
+    if (query?.type === 'popular') tariffWhere.is_popular = true;
+    else if (query?.type === 'local') tariffWhere.is_local = true;
+    else if (query?.type === 'regional') tariffWhere.is_regional = true;
+    else if (query?.type === 'global') tariffWhere.is_global = true;
+
+    // Region filterlari
+    const regionWhere: any = {
+      status: Status.ACTIVE,
+      tariffs: { some: tariffWhere }, // regionni faqat tarif mavjud bo‘lsa chiqaradi
+    };
+
+    if (query?.search) {
+      regionWhere.OR = [
+        { name_ru: { contains: query.search, mode: 'insensitive' } },
+        { name_en: { contains: query.search, mode: 'insensitive' } },
+      ];
     }
-    if (query?.type && query?.type === 'global') {
-      where.is_global = true;
-    }
+
+    // RegionGroup query
     const regionGroups = await paginate('regionGroup', {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
       sort: query?.sort,
+      where: {}, // agar regionGroup uchun alohida filter bo‘lsa shu yerda qo‘shish mumkin
       select: {
         id: true,
         name_ru: true,
         name_en: true,
-        image: true,
-        status: true,
-        regions: true,
-        tariffs: {
-          where: {
-            ...where,
-          },
-          orderBy: {
-            price_sell: 'asc',
-          },
-          take: 1,
+        regions: {
+          where: regionWhere,
           select: {
             id: true,
-            price_sell: true,
+            name_ru: true,
+            name_en: true,
+            image: true,
+            status: true,
+            created_at: true,
+            tariffs: {
+              where: tariffWhere,
+              orderBy: { price_sell: 'asc' },
+              take: 1,
+              select: { id: true, price_sell: true },
+            },
           },
         },
         created_at: true,
@@ -59,22 +79,20 @@ export class RegionGroupService {
 
     return {
       success: true,
-      message: region_group_find['ru'],
+      message: region_find_success[lan],
       ...regionGroups,
-      data: regionGroups.data.map((region: any) => ({
-        id: region?.id,
-        name: region?.[`name_${lan}`],
-        image: `${FilePath.REGION_GROUP_ICON}/${region?.image}`,
-        status: region?.status,
-        min_price: region?.tariffs[0]?.price_sell,
-        regions: region?.regions.map((reg) => ({
-          id: reg.id,
-          name: reg?.[`name_${lan}`],
-          image: `${FilePath.REGION_ICON}/${reg?.image}`,
-          status: reg.status,
-          created_at: reg.created_at,
+      data: regionGroups.data.map((group: any) => ({
+        id: group.id,
+        name: group[`name_${lan}`],
+        created_at: group.created_at,
+        regions: group.regions.map((region: any) => ({
+          id: region.id,
+          name: region[`name_${lan}`],
+          image: `${FilePath.REGION_ICON}/${region.image}`,
+          status: region.status,
+          min_price: region.tariffs[0]?.price_sell ?? 0,
+          created_at: region.created_at,
         })),
-        created_at: region?.created_at,
       })),
     };
   }

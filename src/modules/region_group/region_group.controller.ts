@@ -27,7 +27,7 @@ export class RegionGroupController {
   @ApiOperation({ summary: 'Get all region groups', description: 'Get all region groups' })
   @Get()
   async getRegionGroups(@Query() query: GetRegionDto, @HeadersValidation() headers: DeviceHeadersDto) {
-    return this.regionGroupService.findRegionGroups(query, headers.lang);
+    return this.regionGroupService.findAll(query, headers.lang);
   }
 
   @ApiOperation({ summary: 'Get all region groups admin', description: 'Get all region groups admin' })
