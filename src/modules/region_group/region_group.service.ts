@@ -136,37 +136,53 @@ export class RegionGroupService {
     };
   }
 
-  async getRegionPlansByRegion(regionId: number, lang: string) {
-    const region = await this.prisma.region.findUnique({
-      where: { id: regionId },
-      select: {
-        id: true,
-        name_ru: true,
-        name_en: true,
-        image: true,
-      },
-    });
+  async getPlansUniversal(groupId: number | null, regionIds: string | null, lang: string) {
+    const ids = regionIds
+      ? regionIds
+          .split('-')
+          .map((i) => Number(i))
+          .filter(Boolean)
+      : [];
 
-    if (!region) {
-      return {
-        success: true,
-        data: {
-          id: null,
-          name: null,
-          image: null,
-          local: [],
-          regional: [],
-          global: [],
-        },
-      };
+    let groups = [];
+    let regions = [];
+
+    if (groupId) {
+      const group = await this.prisma.regionGroup.findUnique({
+        where: { id: groupId },
+        include: { regions: true },
+      });
+
+      if (group) {
+        groups = [group];
+        regions = group.regions.map((r) => r.id);
+      }
+    }
+
+    if (ids.length) {
+      regions = ids;
+
+      groups = await this.prisma.regionGroup.findMany({
+        where: { regions: { some: { id: { in: ids } } } },
+        include: { regions: true },
+      });
+    }
+
+    const where: any = {
+      deleted_at: null,
+      status: Status.ACTIVE,
+    };
+
+    if (groups.length) {
+      where.OR = [{ region_group_id: { in: groups.map((g) => g.id) } }, { is_global: true }];
+    } else if (regions.length) {
+      where.OR = [{ regions: { some: { id: { in: regions } } } }, { is_global: true }];
+    } else {
+      where.is_global = true;
     }
 
     const tariffs = await this.prisma.tariff.findMany({
-      where: {
-        deleted_at: null,
-        status: Status.ACTIVE,
-        OR: [{ regions: { some: { id: regionId } } }, { is_global: true }],
-      },
+      where,
       include: {
         region_group: true,
         regions: true,
@@ -197,26 +213,46 @@ export class RegionGroupService {
         regions: plan.regions.map((r) => ({
           id: r.id,
           name: r[`name_${lang}`],
+          image: `${FilePath.REGION_ICON}/${r.image}`,
         })),
       };
 
-      if (plan.is_local) result.local.push(formatted);
+      if (plan.is_global) result.global.push(formatted);
       else if (plan.is_regional) {
         const key = plan.region_group?.id ?? 'no_group';
         if (!result.regional[key]) result.regional[key] = [];
         result.regional[key].push(formatted);
-      } else if (plan.is_global) result.global.push(formatted);
+      } else if (plan.is_local) result.local.push(formatted);
     }
 
     return {
       success: true,
       data: {
-        id: region.id,
-        name: region[`name_${lang}`],
-        image: `${FilePath.REGION_ICON}/${region.image}`,
-        local: result.local,
-        regional: Object.values(result.regional),
-        global: result.global,
+        regions: regions.length
+          ? await this.prisma.region
+              .findMany({
+                where: { id: { in: regions } },
+                select: {
+                  id: true,
+                  name_ru: true,
+                  name_en: true,
+                  image: true,
+                },
+              })
+              .then((rs) =>
+                rs.map((r) => ({
+                  id: r.id,
+                  name: r[`name_${lang}`],
+                  image: `${FilePath.REGION_ICON}/${r.image}`,
+                })),
+              )
+          : [],
+
+        tariffs: {
+          local: result.local,
+          regional: Object.values(result.regional),
+          global: result.global,
+        },
       },
     };
   }
