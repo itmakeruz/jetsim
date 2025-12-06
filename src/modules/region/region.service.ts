@@ -90,7 +90,7 @@ export class RegionService {
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
-        min_price: region?.tariffs[0]?.price_sell,
+        min_price: region?.tariffs[0]?.price_sell ?? 0,
         created_at: region?.created_at,
       })),
     };
