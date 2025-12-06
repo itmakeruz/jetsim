@@ -19,20 +19,18 @@ import * as fs from 'fs';
 export class RegionService {
   constructor(private readonly prisma: PrismaService) {}
   async findAll(query: GetRegionDto, lan: string) {
-    // Tarif filterlari
+    // 1️⃣ Tarif filterlari (type + deleted_at)
     const tariffWhere: any = { deleted_at: null };
-
     if (query?.type === 'popular') tariffWhere.is_popular = true;
     else if (query?.type === 'local') tariffWhere.is_local = true;
     else if (query?.type === 'regional') tariffWhere.is_regional = true;
     else if (query?.type === 'global') tariffWhere.is_global = true;
 
-    // Region filterlari
+    // 2️⃣ Region filterlari (status + search + tarifga mos bo‘lish)
     const regionWhere: any = {
       status: Status.ACTIVE,
-      tariffs: { some: tariffWhere }, // regionni faqat tarif mavjud bo‘lsa chiqaradi
+      tariffs: { some: tariffWhere }, // region faqat tarif mavjud bo‘lsa
     };
-
     if (query?.search) {
       regionWhere.OR = [
         { name_ru: { contains: query.search, mode: 'insensitive' } },
@@ -40,18 +38,18 @@ export class RegionService {
       ];
     }
 
-    // RegionGroup query
+    // 3️⃣ RegionGroup query
     const regionGroups = await paginate('regionGroup', {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
       sort: query?.sort,
-      where: {}, // agar regionGroup uchun alohida filter bo‘lsa shu yerda qo‘shish mumkin
+      where: {}, // regionGroup filter bo‘lsa shu yerda
       select: {
         id: true,
         name_ru: true,
         name_en: true,
-        image: true,
+        created_at: true,
         regions: {
           where: regionWhere,
           select: {
@@ -63,34 +61,32 @@ export class RegionService {
             created_at: true,
             tariffs: {
               where: tariffWhere,
-              orderBy: { price_sell: 'asc' },
+              orderBy: { price_sell: 'asc' }, // eng arzon tarif
               take: 1,
               select: { id: true, price_sell: true },
             },
           },
         },
-        created_at: true,
       },
     });
+
+    // 4️⃣ Natijani hozirgi formatga transform qilish
+    const data = regionGroups.data.flatMap((group: any) =>
+      group.regions.map((region: any) => ({
+        id: region.id,
+        name: region[`name_${lan}`],
+        image: `${FilePath.REGION_ICON}/${region.image}`,
+        status: region.status,
+        min_price: region.tariffs[0]?.price_sell ?? 0,
+        created_at: region.created_at,
+      })),
+    );
 
     return {
       success: true,
       message: region_find_success[lan],
       ...regionGroups,
-      data: regionGroups.data.map((group: any) => ({
-        id: group.id,
-        name: group[`name_${lan}`],
-        image: `${FilePath.REGION_GROUP_ICON}/${group.image}`,
-        created_at: group.created_at,
-        regions: group.regions.map((region: any) => ({
-          id: region.id,
-          name: region[`name_${lan}`],
-          image: `${FilePath.REGION_ICON}/${region.image}`,
-          status: region.status,
-          min_price: region.tariffs[0]?.price_sell ?? 0,
-          created_at: region.created_at,
-        })),
-      })),
+      data,
     };
   }
 
