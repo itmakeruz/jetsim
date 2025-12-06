@@ -24,6 +24,8 @@ export class RegionGroupService {
   async findRegionGroups(query: any, lan: string) {
     const tariffFilter: any = {};
 
+    if (query?.type === 'popular') tariffFilter.is_popular = true;
+    if (query?.type === 'local') tariffFilter.is_local = true;
     if (query?.type === 'regional') tariffFilter.is_regional = true;
     if (query?.type === 'global') tariffFilter.is_global = true;
 
@@ -33,10 +35,13 @@ export class RegionGroupService {
       filter: query?.filters,
       sort: query?.sort,
 
+      // ✅ faqat tegishli tarifga ega group chiqadi
       where: {
+        status: Status.ACTIVE,
         tariffs: {
           some: {
             status: Status.ACTIVE,
+            deleted_at: null,
             ...tariffFilter,
           },
         },
@@ -47,7 +52,6 @@ export class RegionGroupService {
         name_ru: true,
         name_en: true,
         image: true,
-        status: true,
         created_at: true,
 
         regions: {
@@ -56,42 +60,40 @@ export class RegionGroupService {
             name_ru: true,
             name_en: true,
             image: true,
-            status: true,
-            created_at: true,
           },
         },
 
         tariffs: {
           where: {
             status: Status.ACTIVE,
-            ...tariffFilter, // 🔥 MUHIM
+            deleted_at: null,
+            ...tariffFilter,
           },
           orderBy: { price_sell: 'asc' },
           take: 1,
-          select: { id: true, price_sell: true },
+          select: {
+            id: true,
+            price_sell: true,
+          },
         },
       },
     });
 
     return {
       success: true,
-      message: region_group_find[lan],
-      ...regionGroups,
       data: regionGroups.data.map((group: any) => ({
         id: group.id,
         name: group[`name_${lan}`],
         image: `${FilePath.REGION_GROUP_ICON}/${group.image}`,
-        status: group.status,
         min_price: group.tariffs[0]?.price_sell ?? 0,
-        regions: group.regions.map((reg) => ({
-          id: reg.id,
-          name: reg[`name_${lan}`],
-          image: `${FilePath.REGION_ICON}/${reg.image}`,
-          status: reg.status,
-          created_at: reg.created_at,
+        regions: group.regions.map((r) => ({
+          id: r.id,
+          name: r[`name_${lan}`],
+          image: `${FilePath.REGION_ICON}/${r.image}`,
         })),
         created_at: group.created_at,
       })),
+      meta: regionGroups.meta,
     };
   }
 
