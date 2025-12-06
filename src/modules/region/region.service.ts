@@ -56,9 +56,7 @@ export class RegionService {
         status: Status.ACTIVE,
         tariffs: {
           some: {
-            deleted_at: {
-              equals: null,
-            },
+            status: Status.ACTIVE,
             ...where,
           },
         },
