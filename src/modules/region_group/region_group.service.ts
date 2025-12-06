@@ -183,9 +183,35 @@ export class RegionGroupService {
 
     const tariffs = await this.prisma.tariff.findMany({
       where,
-      include: {
-        region_group: true,
-        regions: true,
+      select: {
+        id: true,
+        price_sell: true,
+        quantity_internet: true,
+        validity_period: true,
+        is_global: true,
+        is_regional: true,
+        is_local: true,
+
+        name_ru: true, // Qo'shildi
+        name_en: true, // Qo'shildi
+        // agar boshqa tillar bo'lsa, ularni ham qo'shing (name_uz, name_tr va h.k)
+
+        region_group: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+            image: true,
+          },
+        },
+        regions: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+            image: true,
+          },
+        },
       },
       orderBy: { price_sell: 'asc' },
     });
