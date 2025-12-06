@@ -22,16 +22,15 @@ export class RegionService {
     const where: any = {};
     if (query?.type && query?.type === 'popular') {
       where.is_popular = true;
-    }
-    if (query?.type && query?.type === 'local') {
+    } else if (query?.type && query?.type === 'local') {
       where.is_local = true;
-    }
-    if (query?.type && query?.type === 'regional') {
+    } else if (query?.type && query?.type === 'regional') {
       where.is_regional = true;
-    }
-    if (query?.type && query?.type === 'global') {
+    } else if (query?.type && query?.type === 'global') {
       where.is_global = true;
     }
+    console.log(where);
+
     const regions = await paginate('region', {
       page: query?.page,
       size: query?.size,
