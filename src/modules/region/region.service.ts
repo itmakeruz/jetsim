@@ -61,7 +61,9 @@ export class RegionService {
         image: true,
         status: true,
         tariffs: {
-          ...where,
+          where: {
+            ...where,
+          },
           orderBy: {
             price_sell: 'asc',
           },
