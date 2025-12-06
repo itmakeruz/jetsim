@@ -30,7 +30,7 @@ export class RegionService {
       where.is_global = true;
     }
 
-    const regions = await paginate('region', {
+    const regions = await paginate('regionGroup', {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
