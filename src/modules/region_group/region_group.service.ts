@@ -12,6 +12,7 @@ import {
   region_group_not_found,
   region_group_update,
   region_not_found,
+  tariffs_loaded,
 } from '@constants';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -20,6 +21,13 @@ import * as fs from 'fs';
 export class RegionGroupService {
   constructor(private readonly prisma: PrismaService) {}
   async findRegionGroups(query: any, lan: string) {
+    const where: any = {};
+    if (query?.type && query?.type === 'regional') {
+      where.is_regional = true;
+    }
+    if (query?.type && query?.type === 'global') {
+      where.is_global = true;
+    }
     const regionGroups = await paginate('regionGroup', {
       page: query?.page,
       size: query?.size,
@@ -32,6 +40,19 @@ export class RegionGroupService {
         image: true,
         status: true,
         regions: true,
+        tariffs: {
+          where: {
+            ...where,
+          },
+          orderBy: {
+            price_sell: 'asc',
+          },
+          take: 1,
+          select: {
+            id: true,
+            price_sell: true,
+          },
+        },
         created_at: true,
       },
     });
@@ -45,6 +66,7 @@ export class RegionGroupService {
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_GROUP_ICON}/${region?.image}`,
         status: region?.status,
+        min_price: region?.tariffs[0]?.price_sell,
         regions: region?.regions.map((reg) => ({
           id: reg.id,
           name: reg?.[`name_${lan}`],
@@ -94,6 +116,111 @@ export class RegionGroupService {
         })),
         created_at: region?.created_at,
       })),
+    };
+  }
+
+  async getRegionGroupPlans(regionGroupId: number, lang: string) {
+    const regionGroup = await this.prisma.regionGroup.findUnique({
+      where: {
+        id: regionGroupId,
+      },
+    });
+
+    const plans = await this.prisma.tariff.findMany({
+      where: {
+        OR: [
+          {
+            regions: {
+              some: {
+                id: regionGroup.id,
+              },
+            },
+          },
+          {
+            is_global: true,
+          },
+        ],
+        deleted_at: null,
+        status: 'ACTIVE',
+      },
+      include: {
+        region_group: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+            image: true,
+          },
+        },
+        regions: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    const grouped = {
+      regional: [],
+      global: [],
+    };
+
+    for (const plan of plans) {
+      const formatted = {
+        id: plan.id,
+        name: plan?.[`name_${lang}`],
+        price_sell: plan.price_sell,
+        quantity_internet: plan.quantity_internet,
+        validity_period: plan.validity_period,
+        region_group: plan.region_group
+          ? {
+              id: plan.region_group.id,
+              name: plan.region_group?.[`name_${lang}`],
+              image: `${FilePath.REGION_GROUP_ICON}/${plan?.region_group?.image}`,
+            }
+          : null,
+        regions: plan.regions.map((r) => ({
+          id: r.id,
+          name: r?.[`name_${lang}`],
+          image: `${FilePath.REGION_ICON}/${r?.image}`,
+        })),
+      };
+
+      if (plan.is_regional) grouped.regional.push(formatted);
+      else if (plan.is_global) grouped.global.push(formatted);
+    }
+
+    // const groupedRegionals = {};
+
+    // for (const plan of grouped.regional) {
+    //   const key = plan.region_group?.id;
+
+    //   if (!groupedRegionals[key]) {
+    //     groupedRegionals[key] = {
+    //       ...plan.region_group,
+    //       tariffs: [],
+    //     };
+    //   }
+
+    //   groupedRegionals[key].tariffs.push(plan);
+    // }
+
+    return {
+      success: true,
+      message: tariffs_loaded[lang],
+      data: {
+        id: regionGroup.id,
+        name: regionGroup?.[`name_${lang}`],
+        image: `${FilePath.REGION_ICON}/${regionGroup?.image}`,
+        regional: grouped.regional,
+        global: grouped.global,
+      },
     };
   }
 

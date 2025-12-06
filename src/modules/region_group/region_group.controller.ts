@@ -15,7 +15,7 @@ import { CreateRegionGroupDto, UpdateRegionGroupDto } from './dto';
 import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import { GetRegionDto } from '../region/dto';
 import { HeadersValidation } from '@decorators';
-import { DeviceHeadersDto } from '@enums';
+import { DeviceHeadersDto, ParamId } from '@enums';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
@@ -34,6 +34,12 @@ export class RegionGroupController {
   @Get('admin')
   async getRegionGroupsAdmin(@Query() query: GetRegionDto) {
     return this.regionGroupService.findRegionGroupsAdmin(query);
+  }
+
+  @ApiOperation({ summary: 'Get all plans of regions public', description: 'Get all plans of regions public' })
+  @Get('plans/:id')
+  async findPlans(@Param() param: ParamId, @HeadersValidation() headers: DeviceHeadersDto) {
+    return await this.regionGroupService.getRegionGroupPlans(param.id, headers.lang);
   }
 
   @ApiOperation({ summary: 'Get region group by id admin', description: 'Get region group by id admin' })
