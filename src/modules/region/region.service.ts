@@ -42,7 +42,7 @@ export class RegionService {
 
         tariffs: {
           some: {
-            status: Status.ACTIVE, // majburiy
+            status: Status.ACTIVE,
             ...tariffFilter,
           },
         },
@@ -59,7 +59,7 @@ export class RegionService {
         tariffs: {
           where: {
             status: Status.ACTIVE,
-            ...tariffFilter, // <-- eng muhim joy
+            ...tariffFilter,
           },
           orderBy: {
             price_sell: 'asc',

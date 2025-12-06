@@ -35,7 +35,6 @@ export class RegionGroupService {
       filter: query?.filters,
       sort: query?.sort,
 
-      // ✅ faqat tegishli tarifga ega group chiqadi
       where: {
         status: Status.ACTIVE,
         tariffs: {
@@ -166,10 +165,7 @@ export class RegionGroupService {
       where: {
         deleted_at: null,
         status: Status.ACTIVE,
-        OR: [
-          { regions: { some: { id: regionId } } }, // ✅ regionga biriktirilgan
-          { is_global: true }, // ✅ global har doim
-        ],
+        OR: [{ regions: { some: { id: regionId } } }, { is_global: true }],
       },
       include: {
         region_group: true,
