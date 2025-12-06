@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { RegionGroupService } from './region_group.service';
 import { CreateRegionGroupDto, UpdateRegionGroupDto } from './dto';
-import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { GetRegionDto } from '../region/dto';
 import { HeadersValidation } from '@decorators';
 import { DeviceHeadersDto, ParamId } from '@enums';
@@ -37,6 +37,7 @@ export class RegionGroupController {
   }
 
   @ApiOperation({ summary: 'Get all plans of regions public', description: 'Get all plans of regions public' })
+  @ApiQuery({ required: false })
   @Get('plans/:id')
   async findPlans(@Param() param: ParamId, @Query('ids') ids: string, @HeadersValidation() headers: DeviceHeadersDto) {
     return await this.regionGroupService.getPlansUniversal(param.id, ids, headers.lang);
