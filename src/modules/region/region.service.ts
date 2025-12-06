@@ -56,7 +56,6 @@ export class RegionService {
         tariffs: {
           some: {
             ...where,
-            deleted_at: null,
           },
         },
       },
