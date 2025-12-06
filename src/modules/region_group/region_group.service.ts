@@ -16,65 +16,81 @@ import {
 } from '@constants';
 import * as path from 'path';
 import * as fs from 'fs';
+import { Status } from '@prisma/client';
 
 @Injectable()
 export class RegionGroupService {
   constructor(private readonly prisma: PrismaService) {}
   async findRegionGroups(query: any, lan: string) {
-    const where: any = {};
-    if (query?.type && query?.type === 'regional') {
-      where.is_regional = true;
-    }
-    if (query?.type && query?.type === 'global') {
-      where.is_global = true;
-    }
+    const tariffFilter: any = {};
+
+    if (query?.type === 'regional') tariffFilter.is_regional = true;
+    if (query?.type === 'global') tariffFilter.is_global = true;
+
     const regionGroups = await paginate('regionGroup', {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
       sort: query?.sort,
+
+      where: {
+        tariffs: {
+          some: {
+            status: Status.ACTIVE,
+            ...tariffFilter,
+          },
+        },
+      },
+
       select: {
         id: true,
         name_ru: true,
         name_en: true,
         image: true,
         status: true,
-        regions: true,
-        tariffs: {
-          where: {
-            ...where,
-          },
-          orderBy: {
-            price_sell: 'asc',
-          },
-          take: 1,
+        created_at: true,
+
+        regions: {
           select: {
             id: true,
-            price_sell: true,
+            name_ru: true,
+            name_en: true,
+            image: true,
+            status: true,
+            created_at: true,
           },
         },
-        created_at: true,
+
+        tariffs: {
+          where: {
+            status: Status.ACTIVE,
+            ...tariffFilter, // 🔥 MUHIM
+          },
+          orderBy: { price_sell: 'asc' },
+          take: 1,
+          select: { id: true, price_sell: true },
+        },
       },
     });
 
     return {
       success: true,
-      message: region_group_find['ru'],
+      message: region_group_find[lan],
       ...regionGroups,
-      data: regionGroups.data.map((region: any) => ({
-        id: region?.id,
-        name: region?.[`name_${lan}`],
-        image: `${FilePath.REGION_GROUP_ICON}/${region?.image}`,
-        status: region?.status,
-        min_price: region?.tariffs[0]?.price_sell,
-        regions: region?.regions.map((reg) => ({
+      data: regionGroups.data.map((group: any) => ({
+        id: group.id,
+        name: group[`name_${lan}`],
+        image: `${FilePath.REGION_GROUP_ICON}/${group.image}`,
+        status: group.status,
+        min_price: group.tariffs[0]?.price_sell ?? 0,
+        regions: group.regions.map((reg) => ({
           id: reg.id,
-          name: reg?.[`name_${lan}`],
-          image: `${FilePath.REGION_ICON}/${reg?.image}`,
+          name: reg[`name_${lan}`],
+          image: `${FilePath.REGION_ICON}/${reg.image}`,
           status: reg.status,
           created_at: reg.created_at,
         })),
-        created_at: region?.created_at,
+        created_at: group.created_at,
       })),
     };
   }
