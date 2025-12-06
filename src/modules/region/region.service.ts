@@ -55,6 +55,14 @@ export class RegionService {
           ],
         }),
         status: Status.ACTIVE,
+        tariffs: {
+          some: {
+            ...where,
+            deleted_at: {
+              equals: null,
+            },
+          },
+        },
       },
       select: {
         id: true,
@@ -63,9 +71,6 @@ export class RegionService {
         image: true,
         status: true,
         tariffs: {
-          where: {
-            ...where,
-          },
           orderBy: {
             price_sell: 'asc',
           },
