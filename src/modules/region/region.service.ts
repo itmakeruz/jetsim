@@ -53,6 +53,12 @@ export class RegionService {
           ],
         }),
         status: Status.ACTIVE,
+        tariffs: {
+          some: {
+            ...where,
+            deleted_at: null,
+          },
+        },
       },
       select: {
         id: true,
