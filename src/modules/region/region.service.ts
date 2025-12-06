@@ -88,27 +88,24 @@ export class RegionService {
     };
   }
 
-  async getGroupPlans(ids: string, lang: string) {
-    const groupIds = ids
+  async getRegionPlansByIds(ids: string, lang: string) {
+    const regionIds = ids
       ? ids
           .split(',')
           .map((id) => Number(id))
           .filter(Boolean)
       : [];
 
-    const groups = await this.prisma.regionGroup.findMany({
+    const regions = await this.prisma.region.findMany({
       where: {
-        ...(groupIds.length && { id: { in: groupIds } }),
+        ...(regionIds.length && { id: { in: regionIds } }),
+        status: Status.ACTIVE,
       },
-      include: {
-        regions: {
-          select: {
-            id: true,
-            name_ru: true,
-            name_en: true,
-            image: true,
-          },
-        },
+      select: {
+        id: true,
+        name_ru: true,
+        name_en: true,
+        image: true,
       },
     });
 
@@ -116,13 +113,11 @@ export class RegionService {
       where: {
         deleted_at: null,
         status: Status.ACTIVE,
-        ...(groups.length && {
-          OR: [{ region_group_id: { in: groups.map((g) => g.id) } }, { is_global: true }],
-        }),
-        ...(groupIds.length &&
-          !groups.length && {
-            is_global: true,
-          }),
+        OR: [{ regions: { some: { id: { in: regions.map((r) => r.id) } } } }, { is_global: true }],
+      },
+      include: {
+        region_group: true,
+        regions: true,
       },
       orderBy: { price_sell: 'asc' },
     });
@@ -140,42 +135,40 @@ export class RegionService {
         price_sell: plan.price_sell,
         quantity_internet: plan.quantity_internet,
         validity_period: plan.validity_period,
-        region_group_id: plan.region_group_id,
+        region_group: plan.region_group
+          ? {
+              id: plan.region_group.id,
+              name: plan.region_group[`name_${lang}`],
+              image: `${FilePath.REGION_GROUP_ICON}/${plan.region_group.image}`,
+            }
+          : null,
+        regions: plan.regions.map((r) => ({
+          id: r.id,
+          name: r[`name_${lang}`],
+          image: `${FilePath.REGION_ICON}/${r.image}`,
+        })),
       };
 
-      if (plan.is_global) grouped.global.push(formatted);
+      if (plan.is_local) grouped.local.push(formatted);
+      else if (plan.is_global) grouped.global.push(formatted);
       else if (plan.is_regional) {
-        const key = plan.region_group_id;
+        const key = plan.region_group?.id ?? 'no_group';
         if (!grouped.regional[key]) grouped.regional[key] = [];
         grouped.regional[key].push(formatted);
-      } else if (plan.is_local) grouped.local.push(formatted);
+      }
     }
 
     return {
       success: true,
       data: {
-        groups: groups.map((g) => ({
-          id: g.id,
-          name: g[`name_${lang}`],
-          image: `${FilePath.REGION_GROUP_ICON}/${g.image}`,
-          regions: g.regions.map((r) => ({
-            id: r.id,
-            name: r[`name_${lang}`],
-            image: `${FilePath.REGION_ICON}/${r.image}`,
-          })),
+        regions: regions.map((r) => ({
+          id: r.id,
+          name: r[`name_${lang}`],
+          image: `${FilePath.REGION_ICON}/${r.image}`,
         })),
-
         tariffs: {
           local: grouped.local,
-          regional: Object.entries(grouped.regional).map(([groupId, plans]) => {
-            const group = groups.find((g) => g.id === Number(groupId));
-            return {
-              id: group?.id ?? null,
-              name: group ? group[`name_${lang}`] : null,
-              image: group ? `${FilePath.REGION_GROUP_ICON}/${group.image}` : null,
-              tariffs: plans,
-            };
-          }),
+          regional: Object.values(grouped.regional),
           global: grouped.global,
         },
       },

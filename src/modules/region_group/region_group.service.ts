@@ -137,46 +137,48 @@ export class RegionGroupService {
     };
   }
 
-  async getGroupPlans(ids: string, lang: string) {
-    const groupIds = ids
-      ? ids
-          .split(',')
-          .map((id) => Number(id))
-          .filter(Boolean)
-      : [];
-
-    const groups = await this.prisma.regionGroup.findMany({
-      where: {
-        ...(groupIds.length && { id: { in: groupIds } }),
-      },
-      include: {
-        regions: {
-          select: {
-            id: true,
-            name_ru: true,
-            name_en: true,
-            image: true,
-          },
-        },
+  async getRegionPlansByRegion(regionId: number, lang: string) {
+    const region = await this.prisma.region.findUnique({
+      where: { id: regionId },
+      select: {
+        id: true,
+        name_ru: true,
+        name_en: true,
+        image: true,
       },
     });
+
+    if (!region) {
+      return {
+        success: true,
+        data: {
+          id: null,
+          name: null,
+          image: null,
+          local: [],
+          regional: [],
+          global: [],
+        },
+      };
+    }
 
     const tariffs = await this.prisma.tariff.findMany({
       where: {
         deleted_at: null,
         status: Status.ACTIVE,
-        ...(groups.length && {
-          OR: [{ region_group_id: { in: groups.map((g) => g.id) } }, { is_global: true }],
-        }),
-        ...(groupIds.length &&
-          !groups.length && {
-            is_global: true,
-          }),
+        OR: [
+          { regions: { some: { id: regionId } } }, // ✅ regionga biriktirilgan
+          { is_global: true }, // ✅ global har doim
+        ],
+      },
+      include: {
+        region_group: true,
+        regions: true,
       },
       orderBy: { price_sell: 'asc' },
     });
 
-    const grouped = {
+    const result = {
       local: [],
       regional: {},
       global: [],
@@ -189,44 +191,36 @@ export class RegionGroupService {
         price_sell: plan.price_sell,
         quantity_internet: plan.quantity_internet,
         validity_period: plan.validity_period,
-        region_group_id: plan.region_group_id,
+        region_group: plan.region_group
+          ? {
+              id: plan.region_group.id,
+              name: plan.region_group[`name_${lang}`],
+              image: `${FilePath.REGION_GROUP_ICON}/${plan.region_group.image}`,
+            }
+          : null,
+        regions: plan.regions.map((r) => ({
+          id: r.id,
+          name: r[`name_${lang}`],
+        })),
       };
 
-      if (plan.is_global) grouped.global.push(formatted);
+      if (plan.is_local) result.local.push(formatted);
       else if (plan.is_regional) {
-        const key = plan.region_group_id;
-        if (!grouped.regional[key]) grouped.regional[key] = [];
-        grouped.regional[key].push(formatted);
-      } else if (plan.is_local) grouped.local.push(formatted);
+        const key = plan.region_group?.id ?? 'no_group';
+        if (!result.regional[key]) result.regional[key] = [];
+        result.regional[key].push(formatted);
+      } else if (plan.is_global) result.global.push(formatted);
     }
 
     return {
       success: true,
       data: {
-        groups: groups.map((g) => ({
-          id: g.id,
-          name: g[`name_${lang}`],
-          image: `${FilePath.REGION_GROUP_ICON}/${g.image}`,
-          regions: g.regions.map((r) => ({
-            id: r.id,
-            name: r[`name_${lang}`],
-            image: `${FilePath.REGION_ICON}/${r.image}`,
-          })),
-        })),
-
-        tariffs: {
-          local: grouped.local,
-          regional: Object.entries(grouped.regional).map(([groupId, plans]) => {
-            const group = groups.find((g) => g.id === Number(groupId));
-            return {
-              id: group?.id ?? null,
-              name: group ? group[`name_${lang}`] : null,
-              image: group ? `${FilePath.REGION_GROUP_ICON}/${group.image}` : null,
-              tariffs: plans,
-            };
-          }),
-          global: grouped.global,
-        },
+        id: region.id,
+        name: region[`name_${lang}`],
+        image: `${FilePath.REGION_ICON}/${region.image}`,
+        local: result.local,
+        regional: Object.values(result.regional),
+        global: result.global,
       },
     };
   }
