@@ -185,12 +185,8 @@ export class RegionGroupService {
         is_global: true,
         is_regional: true,
         is_local: true,
-
-        // Faqat mavjud tillar
         name_ru: true,
         name_en: true,
-
-        // Relationlarni to'g'ri select qilamiz
         region_group: {
           select: {
             id: true,
@@ -224,7 +220,6 @@ export class RegionGroupService {
         price_sell: plan.price_sell,
         quantity_internet: plan.quantity_internet,
         validity_period: plan.validity_period,
-
         region_group: plan.region_group
           ? {
               id: plan.region_group.id,
@@ -276,7 +271,7 @@ export class RegionGroupService {
         regions: formattedRegions,
         tariffs: {
           local: result.local,
-          regional: Object.values(result.regional),
+          regional: result.regional,
           global: result.global,
         },
       },
