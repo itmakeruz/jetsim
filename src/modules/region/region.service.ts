@@ -65,6 +65,9 @@ export class RegionService {
         tariffs: {
           where: {
             ...where,
+            deleted_at: {
+              equals: null,
+            },
           },
           orderBy: {
             price_sell: 'asc',
