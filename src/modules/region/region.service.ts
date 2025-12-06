@@ -54,6 +54,14 @@ export class RegionService {
           ],
         }),
         status: Status.ACTIVE,
+        tariffs: {
+          some: {
+            deleted_at: {
+              equals: null,
+            },
+            ...where,
+          },
+        },
       },
       select: {
         id: true,
@@ -62,9 +70,6 @@ export class RegionService {
         image: true,
         status: true,
         tariffs: {
-          where: {
-            ...where,
-          },
           orderBy: {
             price_sell: 'asc',
           },
@@ -77,8 +82,6 @@ export class RegionService {
         created_at: true,
       },
     });
-    console.log(regions.data[0]);
-    console.log(regions?.data);
 
     return {
       success: true,
