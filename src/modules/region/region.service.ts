@@ -30,7 +30,7 @@ export class RegionService {
       where.is_global = true;
     }
 
-    const regions = await paginate('regionGroup', {
+    const regions = await paginate('region', {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
@@ -89,7 +89,7 @@ export class RegionService {
       data: regions.data.map((region: any) => ({
         id: region?.id,
         name: region?.[`name_${lan}`],
-        image: `${FilePath.REGION_GROUP_ICON}/${region?.image}`,
+        image: `${FilePath.REGION_ICON}/${region?.image}`,
         status: region?.status,
         min_price: region?.tariffs[0]?.price_sell ?? 0,
         created_at: region?.created_at,
