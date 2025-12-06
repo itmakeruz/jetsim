@@ -16,33 +16,17 @@ import {
 } from '@constants';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Status } from '@prisma/client';
 
 @Injectable()
 export class RegionGroupService {
   constructor(private readonly prisma: PrismaService) {}
   async findRegionGroups(query: any, lan: string) {
-    const tariffWhere: any = { deleted_at: null };
-    if (query?.type === 'popular') tariffWhere.is_popular = true;
-    else if (query?.type === 'local') tariffWhere.is_local = true;
-    else if (query?.type === 'regional') tariffWhere.is_regional = true;
-    else if (query?.type === 'global') tariffWhere.is_global = true;
-
-    const regionWhere: any = {
-      status: Status.ACTIVE,
-      tariffs: { some: tariffWhere },
-    };
-    if (query?.search) {
-      regionWhere.OR = [
-        { name_ru: { contains: query.search, mode: 'insensitive' } },
-        { name_en: { contains: query.search, mode: 'insensitive' } },
-      ];
-    }
+    const where: any = {};
     if (query?.type && query?.type === 'regional') {
-      tariffWhere.is_regional = true;
+      where.is_regional = true;
     }
     if (query?.type && query?.type === 'global') {
-      tariffWhere.is_global = true;
+      where.is_global = true;
     }
     const regionGroups = await paginate('regionGroup', {
       page: query?.page,
@@ -58,7 +42,7 @@ export class RegionGroupService {
         regions: true,
         tariffs: {
           where: {
-            ...tariffWhere,
+            ...where,
           },
           orderBy: {
             price_sell: 'asc',
