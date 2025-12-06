@@ -32,8 +32,8 @@ export class RegionController {
 
   @ApiOperation({ summary: 'Get all plans of regions public', description: 'Get all plans of regions public' })
   @Get('plans/:id')
-  async findPlans(@Param() param: ParamId, @HeadersValidation() headers: DeviceHeadersDto) {
-    return await this.regionService.getRegionPlans(param.id, headers.lang);
+  async findPlans(@Param('ids') ids: string, @HeadersValidation() headers: DeviceHeadersDto) {
+    return await this.regionService.getGroupPlans(ids, headers.lang);
   }
 
   @ApiOperation({ summary: 'Get all regions admin', description: 'Get all regions admin' })

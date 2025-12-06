@@ -137,39 +137,19 @@ export class RegionGroupService {
     };
   }
 
-  async getRegionGroupPlans(regionGroupId: number, lang: string) {
-    const regionGroup = await this.prisma.regionGroup.findUnique({
-      where: {
-        id: regionGroupId,
-      },
-    });
+  async getGroupPlans(ids: string, lang: string) {
+    const groupIds = ids
+      ? ids
+          .split(',')
+          .map((id) => Number(id))
+          .filter(Boolean)
+      : [];
 
-    const plans = await this.prisma.tariff.findMany({
+    const groups = await this.prisma.regionGroup.findMany({
       where: {
-        OR: [
-          {
-            regions: {
-              some: {
-                id: regionGroup.id,
-              },
-            },
-          },
-          {
-            is_global: true,
-          },
-        ],
-        deleted_at: null,
-        status: 'ACTIVE',
+        ...(groupIds.length && { id: { in: groupIds } }),
       },
       include: {
-        region_group: {
-          select: {
-            id: true,
-            name_ru: true,
-            name_en: true,
-            image: true,
-          },
-        },
         regions: {
           select: {
             id: true,
@@ -179,65 +159,74 @@ export class RegionGroupService {
           },
         },
       },
-      orderBy: {
-        created_at: 'desc',
+    });
+
+    const tariffs = await this.prisma.tariff.findMany({
+      where: {
+        deleted_at: null,
+        status: Status.ACTIVE,
+        ...(groups.length && {
+          OR: [{ region_group_id: { in: groups.map((g) => g.id) } }, { is_global: true }],
+        }),
+        ...(groupIds.length &&
+          !groups.length && {
+            is_global: true,
+          }),
       },
+      orderBy: { price_sell: 'asc' },
     });
 
     const grouped = {
-      regional: [],
+      local: [],
+      regional: {},
       global: [],
     };
 
-    for (const plan of plans) {
+    for (const plan of tariffs) {
       const formatted = {
         id: plan.id,
-        name: plan?.[`name_${lang}`],
+        name: plan[`name_${lang}`],
         price_sell: plan.price_sell,
         quantity_internet: plan.quantity_internet,
         validity_period: plan.validity_period,
-        region_group: plan.region_group
-          ? {
-              id: plan.region_group.id,
-              name: plan.region_group?.[`name_${lang}`],
-              image: `${FilePath.REGION_GROUP_ICON}/${plan?.region_group?.image}`,
-            }
-          : null,
-        regions: plan.regions.map((r) => ({
-          id: r.id,
-          name: r?.[`name_${lang}`],
-          image: `${FilePath.REGION_ICON}/${r?.image}`,
-        })),
+        region_group_id: plan.region_group_id,
       };
 
-      if (plan.is_regional) grouped.regional.push(formatted);
-      else if (plan.is_global) grouped.global.push(formatted);
+      if (plan.is_global) grouped.global.push(formatted);
+      else if (plan.is_regional) {
+        const key = plan.region_group_id;
+        if (!grouped.regional[key]) grouped.regional[key] = [];
+        grouped.regional[key].push(formatted);
+      } else if (plan.is_local) grouped.local.push(formatted);
     }
-
-    // const groupedRegionals = {};
-
-    // for (const plan of grouped.regional) {
-    //   const key = plan.region_group?.id;
-
-    //   if (!groupedRegionals[key]) {
-    //     groupedRegionals[key] = {
-    //       ...plan.region_group,
-    //       tariffs: [],
-    //     };
-    //   }
-
-    //   groupedRegionals[key].tariffs.push(plan);
-    // }
 
     return {
       success: true,
-      message: tariffs_loaded[lang],
       data: {
-        id: regionGroup.id,
-        name: regionGroup?.[`name_${lang}`],
-        image: `${FilePath.REGION_ICON}/${regionGroup?.image}`,
-        regional: grouped.regional,
-        global: grouped.global,
+        groups: groups.map((g) => ({
+          id: g.id,
+          name: g[`name_${lang}`],
+          image: `${FilePath.REGION_GROUP_ICON}/${g.image}`,
+          regions: g.regions.map((r) => ({
+            id: r.id,
+            name: r[`name_${lang}`],
+            image: `${FilePath.REGION_ICON}/${r.image}`,
+          })),
+        })),
+
+        tariffs: {
+          local: grouped.local,
+          regional: Object.entries(grouped.regional).map(([groupId, plans]) => {
+            const group = groups.find((g) => g.id === Number(groupId));
+            return {
+              id: group?.id ?? null,
+              name: group ? group[`name_${lang}`] : null,
+              image: group ? `${FilePath.REGION_GROUP_ICON}/${group.image}` : null,
+              tariffs: plans,
+            };
+          }),
+          global: grouped.global,
+        },
       },
     };
   }
