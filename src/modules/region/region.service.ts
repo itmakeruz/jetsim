@@ -29,7 +29,6 @@ export class RegionService {
     } else if (query?.type && query?.type === 'global') {
       where.is_global = true;
     }
-    console.log(where);
 
     const regions = await paginate('region', {
       page: query?.page,
@@ -54,11 +53,6 @@ export class RegionService {
           ],
         }),
         status: Status.ACTIVE,
-        tariffs: {
-          some: {
-            ...where,
-          },
-        },
       },
       select: {
         id: true,
@@ -67,6 +61,7 @@ export class RegionService {
         image: true,
         status: true,
         tariffs: {
+          ...where,
           orderBy: {
             price_sell: 'asc',
           },
