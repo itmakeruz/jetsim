@@ -442,7 +442,7 @@ export class TariffService {
         is_regional: data?.is_regional ?? tariff.is_regional,
         is_local: data?.is_local ?? tariff.is_local,
         regions: {
-          connect: regionIds,
+          set: regionIds,
         },
 
         updated_at: new Date(),
