@@ -79,6 +79,7 @@ export class RegionService {
       },
     });
     console.log(regions.data[0]);
+    console.log(regions?.data);
 
     return {
       success: true,
