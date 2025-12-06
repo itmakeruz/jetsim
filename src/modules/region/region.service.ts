@@ -79,6 +79,8 @@ export class RegionService {
         created_at: true,
       },
     });
+    console.log(regions);
+    console.log(regions?.data?.map((el: any) => console.log(el?.tariffs)));
 
     return {
       success: true,
