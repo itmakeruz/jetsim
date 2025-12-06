@@ -209,7 +209,7 @@ export class RegionGroupService {
 
     const result = {
       local: [] as any[],
-      regional: {} as Record<string, any[]>,
+      regional: [], //{} as Record<string, any[]>,
       global: [] as any[],
     };
 
@@ -238,9 +238,10 @@ export class RegionGroupService {
       if (plan.is_global) {
         result.global.push(formatted);
       } else if (plan.is_regional) {
-        const key = plan.region_group?.id?.toString() ?? 'no_group';
-        if (!result.regional[key]) result.regional[key] = [];
-        result.regional[key].push(formatted);
+        // const key = plan.region_group?.id?.toString() ?? 'no_group';
+        // if (!result.regional[key]) result.regional[key] = [];
+        // result.regional[key].push(formatted);
+        result.regional.push(formatted);
       } else if (plan.is_local) {
         result.local.push(formatted);
       }
