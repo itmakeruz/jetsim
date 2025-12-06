@@ -19,15 +19,27 @@ import * as fs from 'fs';
 export class RegionService {
   constructor(private readonly prisma: PrismaService) {}
   async findAll(query: GetRegionDto, lan: string) {
-    const where: any = {};
-    if (query?.type && query?.type === 'popular') {
-      where.is_popular = true;
-    } else if (query?.type && query?.type === 'local') {
-      where.is_local = true;
-    } else if (query?.type && query?.type === 'regional') {
-      where.is_regional = true;
-    } else if (query?.type && query?.type === 'global') {
-      where.is_global = true;
+    // Tarif filterlari
+    const tariffWhere: any = {
+      deleted_at: null, // o'chirilgan tariflar olinmasin
+    };
+
+    if (query?.type === 'popular') tariffWhere.is_popular = true;
+    else if (query?.type === 'local') tariffWhere.is_local = true;
+    else if (query?.type === 'regional') tariffWhere.is_regional = true;
+    else if (query?.type === 'global') tariffWhere.is_global = true;
+
+    // Region filterlari
+    const regionWhere: any = {
+      status: Status.ACTIVE,
+      tariffs: { some: tariffWhere }, // regionni faqat tarifga mos bo‘lsa chiqarish
+    };
+
+    if (query?.search) {
+      regionWhere.OR = [
+        { name_ru: { contains: query.search, mode: 'insensitive' } },
+        { name_en: { contains: query.search, mode: 'insensitive' } },
+      ];
     }
 
     const regions = await paginate('region', {
@@ -35,44 +47,19 @@ export class RegionService {
       size: query?.size,
       filter: query?.filters,
       sort: query?.sort,
-      where: {
-        ...(query?.search && {
-          OR: [
-            {
-              name_ru: {
-                contains: query.search,
-                mode: 'insensitive',
-              },
-            },
-            {
-              name_en: {
-                contains: query.search,
-                mode: 'insensitive',
-              },
-            },
-          ],
-        }),
-        status: Status.ACTIVE,
-      },
+      where: regionWhere,
       select: {
         id: true,
         name_ru: true,
         name_en: true,
         image: true,
         status: true,
+        // Eng arzon tarifni olish
         tariffs: {
-          where: {
-            ...where,
-          },
-          orderBy: {
-            price_sell: 'asc',
-          },
+          where: tariffWhere, // shu filter bilan
+          orderBy: { price_sell: 'asc' },
           take: 1,
-          select: {
-            id: true,
-            price_sell: true,
-            deleted_at: true,
-          },
+          select: { id: true, price_sell: true },
         },
         created_at: true,
       },
@@ -83,12 +70,12 @@ export class RegionService {
       message: region_find_success[lan],
       ...regions,
       data: regions.data.map((region: any) => ({
-        id: region?.id,
-        name: region?.[`name_${lan}`],
-        image: `${FilePath.REGION_ICON}/${region?.image}`,
-        status: region?.status,
-        min_price: region?.tariffs[0]?.price_sell ?? 0,
-        created_at: region?.created_at,
+        id: region.id,
+        name: region[`name_${lan}`],
+        image: `${FilePath.REGION_ICON}/${region.image}`,
+        status: region.status,
+        min_price: region.tariffs[0]?.price_sell ?? 0, // eng arzon tarif
+        created_at: region.created_at,
       })),
     };
   }
