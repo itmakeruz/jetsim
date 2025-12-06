@@ -136,7 +136,7 @@ export class RegionGroupService {
     };
   }
 
-  async getPlansUniversal(groupId: number | null, lang: string, regionIds: string | null) {
+  async getPlansUniversal(groupId: number | null, regionIds: string | null, lang: string) {
     const ids = regionIds
       ? regionIds
           .split('-')
