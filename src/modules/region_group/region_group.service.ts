@@ -84,6 +84,7 @@ export class RegionGroupService {
       data: regionGroups.data.map((group: any) => ({
         id: group.id,
         name: group[`name_${lan}`],
+        image: `${FilePath.REGION_ICON}/${group.image}`,
         created_at: group.created_at,
         regions: group.regions.map((region: any) => ({
           id: region.id,

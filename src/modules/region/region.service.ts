@@ -51,6 +51,7 @@ export class RegionService {
         id: true,
         name_ru: true,
         name_en: true,
+        image: true,
         regions: {
           where: regionWhere,
           select: {
@@ -79,6 +80,7 @@ export class RegionService {
       data: regionGroups.data.map((group: any) => ({
         id: group.id,
         name: group[`name_${lan}`],
+        image: `${FilePath.REGION_GROUP_ICON}/${group.image}`,
         created_at: group.created_at,
         regions: group.regions.map((region: any) => ({
           id: region.id,
