@@ -11,9 +11,4 @@ export class AddToBasket {
   @IsNumber()
   @IsNotEmpty()
   quantity: number;
-
-  @ApiProperty({ type: Number, required: true, example: 1 })
-  @IsNumber()
-  @IsNotEmpty()
-  region_id: number;
 }

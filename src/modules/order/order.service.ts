@@ -493,14 +493,6 @@ export class OrderService {
     }
 
     for (const item of data) {
-      const region = await this.prisma.region.findUnique({
-        where: { id: item.region_id },
-      });
-
-      if (!region) {
-        throw new NotFoundException('Region not found');
-      }
-
       const tariff = await this.prisma.tariff.findUnique({
         where: { id: item.tariff_id },
       });
@@ -512,8 +504,7 @@ export class OrderService {
       const existingItem = await this.prisma.basketItem.findFirst({
         where: {
           basket_id: basket.id,
-          region_id: item.region_id,
-          tariff_id: item.tariff_id,
+          tariff_id: item.tariff_id, // ❗ region olib tashlandi
         },
       });
 
@@ -526,10 +517,9 @@ export class OrderService {
         await this.prisma.basketItem.create({
           data: {
             basket_id: basket.id,
-            region_id: item.region_id,
             tariff_id: item.tariff_id,
             quantity: item.quantity,
-            price: tariff?.price_sell?.toString() ?? '0',
+            price: tariff?.price_sell?.toString() ?? '0', // ❗ region emas, faqat tariff dan narx
           },
         });
       }
@@ -549,13 +539,13 @@ export class OrderService {
       });
     }
 
-    const region = await this.prisma.region.findUnique({
-      where: { id: data.region_id },
-    });
+    // const region = await this.prisma.region.findUnique({
+    //   where: { id: data.region_id },
+    // });
 
-    if (!region) {
-      throw new NotFoundException('Region not found');
-    }
+    // if (!region) {
+    //   throw new NotFoundException('Region not found');
+    // }
 
     const tariff = await this.prisma.tariff.findUnique({
       where: { id: data.tariff_id },
@@ -568,7 +558,7 @@ export class OrderService {
     const existingItem = await this.prisma.basketItem.findFirst({
       where: {
         basket_id: basket.id,
-        region_id: data.region_id,
+        // region_id: data.region_id,
         tariff_id: data.tariff_id,
       },
     });
@@ -582,7 +572,7 @@ export class OrderService {
       await this.prisma.basketItem.create({
         data: {
           basket_id: basket.id,
-          region_id: data.region_id,
+          // region_id: data.region_id,
           tariff_id: data.tariff_id,
           quantity: data.quantity,
           price: tariff?.price_sell?.toString() ?? '0',
@@ -593,7 +583,7 @@ export class OrderService {
     return this.getBasket(userId, lang);
   }
 
-  async removeFromBasket(data: { tariff_id: number; region_id: number }, userId: number, lang: string) {
+  async removeFromBasket(data: { tariff_id: number }, userId: number, lang: string) {
     const basket = await this.prisma.basket.findFirst({
       where: { user_id: userId, status: 'ACTIVE' },
     });
@@ -604,7 +594,7 @@ export class OrderService {
       where: {
         basket_id: basket.id,
         tariff_id: data.tariff_id,
-        region_id: data.region_id,
+        // region_id: data.region_id,
       },
     });
 
@@ -615,7 +605,7 @@ export class OrderService {
     return this.getBasket(userId, lang);
   }
 
-  async decreaseQuantity(data: { tariff_id: number; region_id: number }, userId: number, lang: string) {
+  async decreaseQuantity(data: { tariff_id: number }, userId: number, lang: string) {
     const basket = await this.prisma.basket.findFirst({
       where: { user_id: userId, status: 'ACTIVE' },
     });
@@ -626,7 +616,7 @@ export class OrderService {
       where: {
         basket_id: basket.id,
         tariff_id: data.tariff_id,
-        region_id: data.region_id,
+        // region_id: data.region_id,
       },
     });
 
