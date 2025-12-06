@@ -56,7 +56,6 @@ export class RegionService {
         status: Status.ACTIVE,
         tariffs: {
           some: {
-            status: Status.ACTIVE,
             ...where,
           },
         },
