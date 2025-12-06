@@ -77,6 +77,7 @@ export class RegionService {
           select: {
             id: true,
             price_sell: true,
+            deleted_at: true,
           },
         },
         created_at: true,
