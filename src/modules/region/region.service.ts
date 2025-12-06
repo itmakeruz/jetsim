@@ -89,7 +89,7 @@ export class RegionService {
       data: regions.data.map((region: any) => ({
         id: region?.id,
         name: region?.[`name_${lan}`],
-        image: `${FilePath.REGION_ICON}/${region?.image}`,
+        image: `${FilePath.REGION_GROUP_ICON}/${region?.image}`,
         status: region?.status,
         min_price: region?.tariffs[0]?.price_sell ?? 0,
         created_at: region?.created_at,
