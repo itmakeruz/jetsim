@@ -137,31 +137,24 @@ export class RegionGroupService {
   }
 
   async getPlansUniversal(groupId: number | null, lang: string, regionIds: string | null) {
-    const ids = regionIds
-      ? regionIds
-          .split('-')
-          .map((i) => Number(i))
-          .filter(Boolean)
-      : [];
+    const ids = regionIds ? regionIds.split('-').map(Number).filter(Boolean) : [];
 
-    let groups = [];
-    let regions = [];
+    let regions: number[] = [];
+    let groups: any[] = [];
 
     if (groupId) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
         include: { regions: true },
       });
-
       if (group) {
         groups = [group];
         regions = group.regions.map((r) => r.id);
       }
     }
 
-    if (ids.length) {
+    if (ids.length > 0) {
       regions = ids;
-
       groups = await this.prisma.regionGroup.findMany({
         where: { regions: { some: { id: { in: ids } } } },
         include: { regions: true },
@@ -170,17 +163,18 @@ export class RegionGroupService {
 
     const where: any = {
       deleted_at: null,
-      status: Status.ACTIVE,
+      status: 'ACTIVE',
     };
 
-    if (groups.length) {
+    if (groups.length > 0) {
       where.OR = [{ region_group_id: { in: groups.map((g) => g.id) } }, { is_global: true }];
-    } else if (regions.length) {
+    } else if (regions.length > 0) {
       where.OR = [{ regions: { some: { id: { in: regions } } } }, { is_global: true }];
     } else {
       where.is_global = true;
     }
 
+    // TO'G'RI SELECT — faqat mavjud maydonlar + relationlar
     const tariffs = await this.prisma.tariff.findMany({
       where,
       select: {
@@ -192,10 +186,11 @@ export class RegionGroupService {
         is_regional: true,
         is_local: true,
 
-        name_ru: true, // Qo'shildi
-        name_en: true, // Qo'shildi
-        // agar boshqa tillar bo'lsa, ularni ham qo'shing (name_uz, name_tr va h.k)
+        // Faqat mavjud tillar
+        name_ru: true,
+        name_en: true,
 
+        // Relationlarni to'g'ri select qilamiz
         region_group: {
           select: {
             id: true,
@@ -217,63 +212,68 @@ export class RegionGroupService {
     });
 
     const result = {
-      local: [],
-      regional: {},
-      global: [],
+      local: [] as any[],
+      regional: {} as Record<string, any[]>,
+      global: [] as any[],
     };
 
     for (const plan of tariffs) {
       const formatted = {
         id: plan.id,
-        name: plan[`name_${lang}`],
+        name: (plan as any)[`name_${lang}`] || plan.name_ru || 'Без названия',
         price_sell: plan.price_sell,
         quantity_internet: plan.quantity_internet,
         validity_period: plan.validity_period,
+
         region_group: plan.region_group
           ? {
               id: plan.region_group.id,
-              name: plan.region_group[`name_${lang}`],
-              image: `${FilePath.REGION_GROUP_ICON}/${plan.region_group.image}`,
+              name: (plan.region_group as any)[`name_${lang}`] || plan.region_group.name_ru || 'Группа',
+              image: plan.region_group.image ? `${FilePath.REGION_GROUP_ICON}/${plan.region_group.image}` : null,
             }
           : null,
-        regions: plan.regions.map((r) => ({
+
+        regions: plan.regions.map((r: any) => ({
           id: r.id,
-          name: r[`name_${lang}`],
-          image: `${FilePath.REGION_ICON}/${r.image}`,
+          name: r[`name_${lang}`] || r.name_ru || 'Регион',
+          image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
         })),
       };
 
-      if (plan.is_global) result.global.push(formatted);
-      else if (plan.is_regional) {
-        const key = plan.region_group?.id ?? 'no_group';
+      if (plan.is_global) {
+        result.global.push(formatted);
+      } else if (plan.is_regional) {
+        const key = plan.region_group?.id?.toString() ?? 'no_group';
         if (!result.regional[key]) result.regional[key] = [];
         result.regional[key].push(formatted);
-      } else if (plan.is_local) result.local.push(formatted);
+      } else if (plan.is_local) {
+        result.local.push(formatted);
+      }
     }
+
+    // Tanlangan regionlar (faqat regionIds bo'lsa)
+    const selectedRegions = regions.length
+      ? await this.prisma.region.findMany({
+          where: { id: { in: regions } },
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+            image: true,
+          },
+        })
+      : [];
+
+    const formattedRegions = selectedRegions.map((r: any) => ({
+      id: r.id,
+      name: r[`name_${lang}`] || r.name_ru || 'Регион',
+      image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
+    }));
 
     return {
       success: true,
       data: {
-        regions: regions.length
-          ? await this.prisma.region
-              .findMany({
-                where: { id: { in: regions } },
-                select: {
-                  id: true,
-                  name_ru: true,
-                  name_en: true,
-                  image: true,
-                },
-              })
-              .then((rs) =>
-                rs.map((r) => ({
-                  id: r.id,
-                  name: r[`name_${lang}`],
-                  image: `${FilePath.REGION_ICON}/${r.image}`,
-                })),
-              )
-          : [],
-
+        regions: formattedRegions,
         tariffs: {
           local: result.local,
           regional: Object.values(result.regional),
