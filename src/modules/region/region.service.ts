@@ -19,16 +19,12 @@ import * as fs from 'fs';
 export class RegionService {
   constructor(private readonly prisma: PrismaService) {}
   async findAll(query: GetRegionDto, lan: string) {
-    const where: any = {};
-    if (query?.type && query?.type === 'popular') {
-      where.is_popular = true;
-    } else if (query?.type && query?.type === 'local') {
-      where.is_local = true;
-    } else if (query?.type && query?.type === 'regional') {
-      where.is_regional = true;
-    } else if (query?.type && query?.type === 'global') {
-      where.is_global = true;
-    }
+    const tariffFilter: any = {};
+
+    if (query?.type === 'popular') tariffFilter.is_popular = true;
+    if (query?.type === 'local') tariffFilter.is_local = true;
+    if (query?.type === 'regional') tariffFilter.is_regional = true;
+    if (query?.type === 'global') tariffFilter.is_global = true;
 
     const regions = await paginate('region', {
       page: query?.page,
@@ -38,34 +34,33 @@ export class RegionService {
       where: {
         ...(query?.search && {
           OR: [
-            {
-              name_ru: {
-                contains: query.search,
-                mode: 'insensitive',
-              },
-            },
-            {
-              name_en: {
-                contains: query.search,
-                mode: 'insensitive',
-              },
-            },
+            { name_ru: { contains: query.search, mode: 'insensitive' } },
+            { name_en: { contains: query.search, mode: 'insensitive' } },
           ],
         }),
         status: Status.ACTIVE,
+
         tariffs: {
           some: {
-            ...where,
+            status: Status.ACTIVE, // majburiy
+            ...tariffFilter,
           },
         },
       },
+
       select: {
         id: true,
         name_ru: true,
         name_en: true,
         image: true,
         status: true,
+        created_at: true,
+
         tariffs: {
+          where: {
+            status: Status.ACTIVE,
+            ...tariffFilter, // <-- eng muhim joy
+          },
           orderBy: {
             price_sell: 'asc',
           },
@@ -75,23 +70,20 @@ export class RegionService {
             price_sell: true,
           },
         },
-        created_at: true,
       },
     });
-    console.log(regions);
-    console.log(regions?.data?.map((el: any) => console.log(el?.tariffs)));
 
     return {
       success: true,
       message: region_find_success[lan],
       ...regions,
       data: regions.data.map((region: any) => ({
-        id: region?.id,
-        name: region?.[`name_${lan}`],
-        image: `${FilePath.REGION_ICON}/${region?.image}`,
-        status: region?.status,
-        min_price: region?.tariffs[0]?.price_sell ?? 0,
-        created_at: region?.created_at,
+        id: region.id,
+        name: region[`name_${lan}`],
+        image: `${FilePath.REGION_ICON}/${region.image}`,
+        status: region.status,
+        min_price: region.tariffs[0]?.price_sell ?? 0,
+        created_at: region.created_at,
       })),
     };
   }
