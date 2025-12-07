@@ -215,6 +215,10 @@ export class RegionGroupService {
         name_en: true,
         price_sell: true,
         quantity_internet: true,
+        quantity_sms: true,
+        quantity_minute: true,
+        is_4g: true,
+        is_5g: true,
         validity_period: true,
         is_global: true,
         is_regional: true,
@@ -251,8 +255,14 @@ export class RegionGroupService {
         name: plan[`name_${lang}`] || plan.name_ru || 'Без названия',
         price_sell: plan.price_sell,
         quantity_internet: plan.quantity_internet,
+        quantity_sms: plan?.quantity_sms,
+        quantity_minute: plan?.quantity_minute,
+        has_minutes: plan?.quantity_minute > 0,
+        has_sms: plan?.quantity_sms > 0,
+        has_internet: plan?.quantity_internet > 0,
+        is_4g: plan?.is_4g,
+        is_5g: plan?.is_5g,
         validity_period: plan.validity_period,
-
         region_group: plan.region_group
           ? {
               id: plan.region_group.id,
