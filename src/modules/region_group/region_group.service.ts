@@ -143,7 +143,6 @@ export class RegionGroupService {
     let groups: any[] = [];
     let regionFilterIds: number[] = [];
 
-    // =================== AGAR IDS KELSA ===================
     if (ids.length > 0) {
       regionFilterIds = ids;
 
@@ -171,7 +170,6 @@ export class RegionGroupService {
       });
     }
 
-    // =================== AGAR GROUP KELSA ===================
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
@@ -196,7 +194,6 @@ export class RegionGroupService {
       groups = group ? [group] : [];
     }
 
-    // =================== TARIF FILTER ===================
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
@@ -210,7 +207,6 @@ export class RegionGroupService {
       where.is_global = true;
     }
 
-    // =================== TARIFLAR ===================
     const tariffs = await this.prisma.tariff.findMany({
       where,
       select: {
@@ -243,7 +239,6 @@ export class RegionGroupService {
       orderBy: { price_sell: 'asc' },
     });
 
-    // =================== FORMAT ===================
     const result = {
       local: [] as any[],
       regional: [] as any[],
@@ -278,11 +273,10 @@ export class RegionGroupService {
       else if (plan.is_local) result.local.push(formatted);
     }
 
-    // =================== FINAL ===================
     return {
       success: true,
       data: {
-        regions, // ✅ IDS → regionlar, GROUP → group obyekt
+        regions, // IDS → regionlar, GROUP → group obyekt
         tariffs: {
           local: result.local,
           regional: result.regional,
