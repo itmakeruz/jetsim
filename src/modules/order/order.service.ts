@@ -432,6 +432,9 @@ export class OrderService {
               },
             },
           },
+          orderBy: {
+            created_at: 'desc',
+          },
         },
       },
     });
