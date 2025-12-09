@@ -200,25 +200,29 @@ export class RegionGroupService {
 
     const where: any = { deleted_at: null, status: 'ACTIVE' };
 
-    if (groups.length > 0) {
-      where.OR = [{ region_group_id: { in: groups.map((g) => g.id) } }, { is_global: true }];
-    } else if (regionFilterIds.length > 0) {
-      // DBda mavjud regionlar bilan filtr
-      const dbRegionsExist = await this.prisma.region.findMany({
-        where: { id: { in: regionFilterIds } },
-        select: { id: true },
-      });
-
-      if (dbRegionsExist.length > 0) {
-        where.OR = [{ regions: { some: { id: { in: dbRegionsExist.map((r) => r.id) } } } }];
-      } else {
-        // Noto'g'ri region id bo'lsa hech narsa qaytmasin
+    // AGAR IDS BOR BO'LSA
+    if (ids.length > 0) {
+      if (groups.length === 0) {
         return {
           success: true,
           data: { regions: [], tariffs: { local: [], regional: [], global: [] } },
         };
       }
-    } else {
+
+      where.OR = [
+        { region_group_id: { in: groups.map((g) => g.id) } },
+        { regions: { some: { id: { in: regionFilterIds } } } },
+        { is_global: true },
+      ];
+    }
+
+    // AGAR GROUPID BOR BO‘LSA
+    else if (groupId) {
+      where.OR = [{ region_group_id: groupId }, { is_global: true }];
+    }
+
+    // AKS HOLDA — FAQAT GLOBAL
+    else {
       where.is_global = true;
     }
 
