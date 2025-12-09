@@ -162,6 +162,7 @@ export class RegionGroupService {
 
       // Tanlangan regionlar DBda bo‘lmasa → hech narsa qaytariladi (siz xohlagan shart)
       if (dbRegions.length !== ids.length) {
+        throw new NotFoundException(route_not_found[lang]);
         return { success: true, data: { regions: [], tariffs: { local: [], regional: [], global: [] } } };
       }
 
