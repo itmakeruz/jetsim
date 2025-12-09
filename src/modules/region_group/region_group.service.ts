@@ -365,8 +365,6 @@ export class RegionGroupService {
     });
 
     for (let tariff of findTariff) {
-      console.log(tariff);
-
       await this.prisma.tariff.update({
         where: {
           id: tariff?.id,
