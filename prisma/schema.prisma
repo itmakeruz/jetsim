@@ -182,6 +182,8 @@ model Sims {
   msisdn               String?
   apn                  String?
   main_region_id       Int?
+  partner_sim_status   Int?
+  sim_status           SimStatus?
 
   user        User    @relation(fields: [user_id], references: [id])
   partner     Partner @relation(fields: [partner_id], references: [id])
@@ -298,6 +300,11 @@ enum OrderStatus {
   COMPLETED
   PENDING
   FAILED
+}
+
+enum SimStatus {
+  ACTIVATED
+  EXPIRED
 }
 
 enum OrderJobStatus {

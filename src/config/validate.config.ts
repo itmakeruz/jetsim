@@ -122,6 +122,10 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   TBANK_PASSWORD: string;
+
+  @IsOptional()
+  @IsString()
+  TELEGRAM_BOT_TOKEN: string;
 }
 
 export function validate(config: Record<string, unknown>) {

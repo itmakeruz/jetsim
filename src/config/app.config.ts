@@ -42,11 +42,13 @@ const REDIS_OTP_PREFIX = config.get<string>('REDIS_OTP_PREFIX') ?? '';
 const ROLES_DECORATOR_KEY = config.get<string>('ROLES_DECORATOR_KEY') ?? '';
 
 // TBANK
-
 const TBANK_URL = config.get<string>('TBANK_URL') ?? '';
 const TBANK_TERMINAL_KEY = config.get<string>('TBANK_TERMINAL_KEY') ?? '';
 const TBANK_WEBHOOK_URL = config.get<string>('TBANK_WEBHOOK_URL') ?? '';
 const TBANK_PASSWORD = config.get<string>('TBANK_PASSWORD') ?? '';
+
+// TELEGRAM BOT
+const TELEGRAM_BOT_TOKEN = config.get<string>('TELEGRAM_BOT_TOKEN') ?? '';
 
 //export
 export {
@@ -79,4 +81,5 @@ export {
   TBANK_TERMINAL_KEY,
   TBANK_WEBHOOK_URL,
   TBANK_PASSWORD,
+  TELEGRAM_BOT_TOKEN,
 };

@@ -1,6 +1,7 @@
 export * from './bc.constants';
 export * from './jt.constants';
 export * from './statics.constant';
+export * from './sim-status.constant';
 export * from './dictionaty.constant';
 export * from './decorator-keys.constant';
 export * from './static-files-path.constant';

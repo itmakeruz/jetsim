@@ -725,6 +725,10 @@ export class OrderService {
       updatedOrder.tariff.quantity_internet,
       updatedOrder.tariff.quantity_minute,
       updatedOrder.tariff.quantity_sms,
+      updatedOrder?.pin_1,
+      updatedOrder?.pin_2,
+      updatedOrder?.puk_1,
+      updatedOrder?.puk_2,
     );
     await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
     saveQrCode(updatedOrder.id, qrBuffer);
@@ -789,6 +793,10 @@ export class OrderService {
       updatedSim.tariff.quantity_internet,
       updatedSim.tariff.quantity_minute,
       updatedSim.tariff.quantity_sms,
+      updatedSim?.pin_1,
+      updatedSim?.pin_2,
+      updatedSim?.puk_1,
+      updatedSim?.puk_2,
     );
     await sendMailHelper(updatedSim.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
     saveQrCode(updatedSim.id, qrBuffer);

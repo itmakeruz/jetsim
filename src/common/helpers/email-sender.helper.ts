@@ -45,6 +45,10 @@ export function newOrderMessage(
   dataMb: number,
   minutes: number,
   sms: number,
+  pin1: string,
+  pin2: string,
+  puk1: string,
+  puk2: string,
 ) {
   return `
   <!doctype html>
@@ -79,20 +83,32 @@ export function newOrderMessage(
             <td style="padding:10px 12px;border:1px solid #eee">SMS</td>
             <td style="padding:10px 12px;border:1px solid #eee"><b>${sms}</b></td>
           </tr>
+          <tr style="background:#f9fafc">
+            <td style="padding:10px 12px;border:1px solid #eee">PIN1</td>
+            <td style="padding:10px 12px;border:1px solid #eee"><b>${pin1}</b></td>
+          </tr>
+          <tr>
+            <td style="padding:10px 12px;border:1px solid #eee">PIN2</td>
+            <td style="padding:10px 12px;border:1px solid #eee"><b>${pin2}</b></td>
+          </tr>
+          <tr style="background:#f9fafc">
+            <td style="padding:10px 12px;border:1px solid #eee">PUK1</td>
+            <td style="padding:10px 12px;border:1px solid #eee"><b>${puk1}</b></td>
+          </tr>
+          <tr>
+            <td style="padding:10px 12px;border:1px solid #eee">PUK2</td>
+            <td style="padding:10px 12px;border:1px solid #eee"><b>${puk2}</b></td>
+          </tr>
         </table>
-
-        <!-- QR Code -->
-        <div style="text-align:center;margin:24px 0">
-          <p style="font-size:15px;margin-bottom:12px;color:#444">QR-код для активации:</p>
-          <img src="cid:qrimage" alt="QR-код" width="280" style="display:block;margin:0 auto;border:0;"/>
-        </div>
 
         <!-- Fast URL -->
         <div style="margin-top:28px;text-align:center">
-          <p style="margin-bottom:12px;font-size:15px;color:#444">Быстрая установка eSIM для Apple:</p>
-          <p style="margin-top:12px;font-size:14px;color:#666">${fasturl}</p>
+          <p style="margin-bottom:12px;font-size:15px;color:#444; text-align:center;">
+            <a href="${fasturl}" style="color:#1a73e8; text-decoration:none;" target="_blank">
+              Быстрая установка eSIM для Apple
+            </a>
+          </p>
         </div>
-
       </div>
     </body>
   </html>
