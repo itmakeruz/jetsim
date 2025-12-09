@@ -144,8 +144,12 @@ export class RegionGroupService {
 
     if (groupId) {
       const group = await this.prisma.regionGroup.findUnique({
-        where: { id: groupId },
-        include: { regions: true },
+        where: {
+          id: groupId,
+        },
+        include: {
+          regions: true,
+        },
       });
       if (group) {
         groups = [group];
@@ -174,7 +178,6 @@ export class RegionGroupService {
       where.is_global = true;
     }
 
-    // TO'G'RI SELECT — faqat mavjud maydonlar + relationlar
     const tariffs = await this.prisma.tariff.findMany({
       where,
       select: {
@@ -209,7 +212,7 @@ export class RegionGroupService {
 
     const result = {
       local: [] as any[],
-      regional: [], //{} as Record<string, any[]>,
+      regional: [],
       global: [] as any[],
     };
 
@@ -238,16 +241,12 @@ export class RegionGroupService {
       if (plan.is_global) {
         result.global.push(formatted);
       } else if (plan.is_regional) {
-        // const key = plan.region_group?.id?.toString() ?? 'no_group';
-        // if (!result.regional[key]) result.regional[key] = [];
-        // result.regional[key].push(formatted);
         result.regional.push(formatted);
       } else if (plan.is_local) {
         result.local.push(formatted);
       }
     }
 
-    // Tanlangan regionlar (faqat regionIds bo'lsa)
     const selectedRegions = regions.length
       ? await this.prisma.region.findMany({
           where: { id: { in: regions } },
