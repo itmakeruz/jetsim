@@ -397,16 +397,11 @@ export class OrderService {
             id: true,
             price: true,
             quantity: true,
-            region: {
-              select: {
-                id: true,
-                [`name_${lang}`]: true,
-                image: true,
-              },
-            },
             tariff: {
               select: {
                 id: true,
+                name_ru: true,
+                name_en: true,
                 type: true,
                 quantity_sms: true,
                 quantity_minute: true,
@@ -419,6 +414,16 @@ export class OrderService {
                   select: {
                     id: true,
                     [`name_${lang}`]: true,
+                    image: true,
+                    status: true,
+                    created_at: true,
+                  },
+                },
+                region_group: {
+                  select: {
+                    id: true,
+                    name_ru: true,
+                    name_en: true,
                     image: true,
                     status: true,
                     created_at: true,
@@ -446,35 +451,23 @@ export class OrderService {
       message: '',
       data: {
         items: basket.items.map((item) => ({
-          id: item.id,
-          name: item.tariff ? item.tariff.type : item.region?.[`name_${lang}`],
-          price: item.tariff?.price_sell ?? item.price,
-          quantity: item.quantity,
+          id: item?.tariff?.id,
+          name: item?.tariff?.[`name_${lang}`],
+          price_sell: item.tariff?.price_sell ?? item.price,
           total_amount: Number(item.price) * item.quantity,
-          region: {
-            id: item.region?.id,
-            name: item.region?.[`name_${lang}`],
-            image: `${FilePath.REGION_ICON}/${item.region?.image}`,
-          },
-          tariff: item.tariff
-            ? {
-                id: item.tariff.id,
-                quantity_sms: item.tariff.quantity_sms,
-                quantity_minute: item.tariff.quantity_minute,
-                quantity_internet: item.tariff.quantity_internet,
-                validity_period: item.tariff.validity_period,
-                is_4g: item.tariff.is_4g,
-                is_5g: item.tariff.is_5g,
-                price_sell: item.tariff.price_sell,
-                regions: item?.tariff?.regions?.map((region: any) => ({
-                  id: region?.id,
-                  name: region?.[`name_${lang}`],
-                  image: `${FilePath.REGION_ICON}/${region?.image}`,
-                  status: region?.status,
-                  created_at: region?.created_at,
-                })),
-              }
-            : null,
+          quantity_sms: item.tariff.quantity_sms,
+          quantity_minute: item.tariff.quantity_minute,
+          quantity_internet: item.tariff.quantity_internet,
+          validity_period: item.tariff.validity_period,
+          is_4g: item.tariff.is_4g,
+          is_5g: item.tariff.is_5g,
+          image: `${FilePath.REGION_GROUP_ICON}/${item.tariff?.region_group?.image}`,
+          quantity: item.quantity,
+          regions: item?.tariff?.regions?.map((region) => ({
+            id: region?.id,
+            name: region?.name?.[`name_${lang}`],
+            image: `${FilePath.REGION_ICON}/${region?.image}`,
+          })),
         })),
         total,
       },
@@ -607,20 +600,26 @@ export class OrderService {
 
   async decreaseQuantity(data: { tariff_id: number }, userId: number, lang: string) {
     const basket = await this.prisma.basket.findFirst({
-      where: { user_id: userId, status: 'ACTIVE' },
+      where: {
+        user_id: userId,
+        status: Status.ACTIVE,
+      },
     });
 
-    if (!basket) throw new NotFoundException('Basket not found');
+    if (!basket) {
+      throw new NotFoundException('Basket not found!');
+    }
 
     const item = await this.prisma.basketItem.findFirst({
       where: {
         basket_id: basket.id,
         tariff_id: data.tariff_id,
-        // region_id: data.region_id,
       },
     });
 
-    if (!item) throw new NotFoundException('Item not found');
+    if (!item) {
+      throw new NotFoundException('Item not found');
+    }
 
     if (item.quantity > 1) {
       await this.prisma.basketItem.update({
