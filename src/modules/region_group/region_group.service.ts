@@ -188,23 +188,38 @@ export class RegionGroupService {
     }
 
     // 3) WHERE
+    // 3) WHERE
     const where: any = { deleted_at: null, status: 'ACTIVE' };
 
-    // ✅ region bilan (barchasi mos bo‘lsin)
-    if (ids.length > 0) {
+    // ✅ 1ta REGION TANLANGAN
+    if (ids.length === 1) {
+      where.OR = [
+        // Local shu region uchun
+        { regions: { some: { id: ids[0] } }, is_local: true },
+
+        // Regional shu region group orqali
+        { regions: { some: { id: ids[0] } }, is_regional: true },
+
+        // Global doim chiqadi
+        { is_global: true },
+      ];
+    }
+
+    // ✅ 2 yoki undan ko‘p region bo‘lsa (EXACT MATCH)
+    else if (ids.length > 1) {
       where.regions = {
         every: { id: { in: ids } },
         some: { id: { in: ids } },
       };
     }
 
-    // ✅ group bilan
-    if (groupId && ids.length === 0) {
+    // ✅ faqat GROUP bilan
+    else if (groupId) {
       where.region_group_id = groupId;
     }
 
-    // ✅ aks holda global
-    if (!groupId && ids.length === 0) {
+    // ✅ hech narsa berilmasa
+    else {
       where.is_global = true;
     }
 
