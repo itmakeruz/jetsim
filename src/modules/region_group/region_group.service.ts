@@ -137,7 +137,13 @@ export class RegionGroupService {
   }
 
   async getPlansUniversal(groupId: number | null, lang: string, regionIds: string | null) {
-    const ids = regionIds ? regionIds.split('-').map(Number).filter(Boolean) : [];
+    // regionIds -> number array
+    const ids = regionIds
+      ? regionIds
+          .split('-')
+          .map((id) => Number(id))
+          .filter((id) => !isNaN(id) && id > 0)
+      : [];
 
     let regions: any[] = [];
     let groups: any[] = [];
@@ -146,15 +152,19 @@ export class RegionGroupService {
     if (ids.length > 0) {
       regionFilterIds = ids;
 
+      // DBda mavjud regionlarni olish
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
-        select: {
-          id: true,
-          name_ru: true,
-          name_en: true,
-          image: true,
-        },
+        select: { id: true, name_ru: true, name_en: true, image: true },
       });
+
+      if (dbRegions.length === 0) {
+        // Noto'g'ri region id yuborilgan bo'lsa, hech narsa qaytarmaymiz
+        return {
+          success: true,
+          data: { regions: [], tariffs: { local: [], regional: [], global: [] } },
+        };
+      }
 
       regions = dbRegions.map((r) => ({
         id: r.id,
@@ -163,22 +173,16 @@ export class RegionGroupService {
       }));
 
       groups = await this.prisma.regionGroup.findMany({
-        where: {
-          regions: { some: { id: { in: ids } } },
-        },
+        where: { regions: { some: { id: { in: ids } } } },
         include: { regions: true },
       });
     }
 
+    // groupId berilgan va ids bo'sh
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
-        select: {
-          id: true,
-          name_ru: true,
-          name_en: true,
-          image: true,
-        },
+        select: { id: true, name_ru: true, name_en: true, image: true },
       });
 
       if (group) {
@@ -189,20 +193,31 @@ export class RegionGroupService {
             image: group.image ? `${FilePath.REGION_GROUP_ICON}/${group.image}` : null,
           },
         ];
-      }
 
-      groups = group ? [group] : [];
+        groups = [group];
+      }
     }
 
-    const where: any = {
-      deleted_at: null,
-      status: 'ACTIVE',
-    };
+    const where: any = { deleted_at: null, status: 'ACTIVE' };
 
     if (groups.length > 0) {
       where.OR = [{ region_group_id: { in: groups.map((g) => g.id) } }, { is_global: true }];
     } else if (regionFilterIds.length > 0) {
-      where.OR = [{ regions: { some: { id: { in: regionFilterIds } } } }, { is_global: true }];
+      // DBda mavjud regionlar bilan filtr
+      const dbRegionsExist = await this.prisma.region.findMany({
+        where: { id: { in: regionFilterIds } },
+        select: { id: true },
+      });
+
+      if (dbRegionsExist.length > 0) {
+        where.OR = [{ regions: { some: { id: { in: dbRegionsExist.map((r) => r.id) } } } }];
+      } else {
+        // Noto'g'ri region id bo'lsa hech narsa qaytmasin
+        return {
+          success: true,
+          data: { regions: [], tariffs: { local: [], regional: [], global: [] } },
+        };
+      }
     } else {
       where.is_global = true;
     }
@@ -223,31 +238,13 @@ export class RegionGroupService {
         is_global: true,
         is_regional: true,
         is_local: true,
-        region_group: {
-          select: {
-            id: true,
-            name_ru: true,
-            name_en: true,
-            image: true,
-          },
-        },
-        regions: {
-          select: {
-            id: true,
-            name_ru: true,
-            name_en: true,
-            image: true,
-          },
-        },
+        region_group: { select: { id: true, name_ru: true, name_en: true, image: true } },
+        regions: { select: { id: true, name_ru: true, name_en: true, image: true } },
       },
       orderBy: { price_sell: 'asc' },
     });
 
-    const result = {
-      local: [] as any[],
-      regional: [] as any[],
-      global: [] as any[],
-    };
+    const result = { local: [], regional: [], global: [] };
 
     for (const plan of tariffs) {
       const formatted = {
@@ -270,7 +267,6 @@ export class RegionGroupService {
               image: plan.region_group.image ? `${FilePath.REGION_GROUP_ICON}/${plan.region_group.image}` : null,
             }
           : null,
-
         regions: plan.regions.map((r: any) => ({
           id: r.id,
           name: r[`name_${lang}`] || r.name_ru || 'Регион',
@@ -286,12 +282,8 @@ export class RegionGroupService {
     return {
       success: true,
       data: {
-        regions, // IDS → regionlar, GROUP → group obyekt
-        tariffs: {
-          local: result.local,
-          regional: result.regional,
-          global: result.global,
-        },
+        regions,
+        tariffs: result,
       },
     };
   }
