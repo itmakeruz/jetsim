@@ -355,6 +355,30 @@ export class RegionGroupService {
       },
     });
 
+    const findTariff = await this.prisma.tariff.findMany({
+      where: {
+        region_group_id: id,
+      },
+      select: {
+        id: true,
+        regions: true,
+        region_group: true,
+      },
+    });
+
+    for (let tariff of findTariff) {
+      await this.prisma.tariff.update({
+        where: {
+          id: tariff?.id,
+        },
+        data: {
+          regions: {
+            set: data.region_ids?.map((id) => ({ id })) || [],
+          },
+        },
+      });
+    }
+
     return {
       success: true,
       message: region_group_update['ru'],

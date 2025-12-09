@@ -418,7 +418,9 @@ export class TariffService {
     const regionIds = regionGroups.flatMap((group) => group.regions.map((region) => ({ id: region.id })));
 
     await this.prisma.tariff.update({
-      where: { id },
+      where: {
+        id: id,
+      },
       data: {
         name_ru: data.name_ru ?? tariff.name_ru,
         name_en: data.name_en ?? tariff.name_en,
