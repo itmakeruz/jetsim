@@ -237,10 +237,6 @@ export class RegionGroupService {
       orderBy: { price_sell: 'asc' },
     });
 
-    if (!tariffs || tariffs.length === 0) {
-      throw new NotFoundException(route_not_found[lang]);
-    }
-
     // 7️⃣ Formatlash
     const result = { local: [], regional: [], global: [] };
 
@@ -275,6 +271,9 @@ export class RegionGroupService {
       if (plan.is_global) result.global.push(formatted);
       else if (plan.is_regional) result.regional.push(formatted);
       else if (plan.is_local) result.local.push(formatted);
+    }
+    if (!tariffs || tariffs.length === 0) {
+      throw new NotFoundException(route_not_found[lang]);
     }
 
     return { success: true, data: { regions, tariffs: result } };
