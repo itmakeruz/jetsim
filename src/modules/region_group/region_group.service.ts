@@ -214,6 +214,7 @@ export class RegionGroupService {
         orArr.push({ region_group_id: { in: groups.map((g) => g.id) } });
       } else {
         // mos group bo'lmasa → hech narsa qaytarsin
+        throw new NotFoundException(route_not_found[lang]);
         return { success: true, data: { regions, tariffs: { local: [], regional: [], global: [] } } };
       }
     } else if (groupId) {
@@ -271,9 +272,6 @@ export class RegionGroupService {
       if (plan.is_global) result.global.push(formatted);
       else if (plan.is_regional) result.regional.push(formatted);
       else if (plan.is_local) result.local.push(formatted);
-    }
-    if (!tariffs || tariffs.length === 0) {
-      throw new NotFoundException(route_not_found[lang]);
     }
 
     return { success: true, data: { regions, tariffs: result } };
