@@ -139,30 +139,59 @@ export class RegionGroupService {
   async getPlansUniversal(groupId: number | null, lang: string, regionIds: string | null) {
     const ids = regionIds ? regionIds.split('-').map(Number).filter(Boolean) : [];
 
-    let regions: number[] = [];
+    let regions: any[] = [];
     let groups: any[] = [];
-
-    if (groupId) {
-      const group = await this.prisma.regionGroup.findUnique({
-        where: {
-          id: groupId,
-        },
-        include: {
-          regions: true,
-        },
-      });
-      if (group) {
-        groups = [group];
-        regions = group.regions.map((r) => r.id);
-      }
-    }
+    let regionFilterIds: number[] = [];
 
     if (ids.length > 0) {
-      regions = ids;
+      regionFilterIds = ids;
+
+      const dbRegions = await this.prisma.region.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          name_ru: true,
+          name_en: true,
+          image: true,
+        },
+      });
+
+      regions = dbRegions.map((r) => ({
+        id: r.id,
+        name: r[`name_${lang}`] || r.name_ru || 'Регион',
+        image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
+      }));
+
       groups = await this.prisma.regionGroup.findMany({
-        where: { regions: { some: { id: { in: ids } } } },
+        where: {
+          regions: { some: { id: { in: ids } } },
+        },
         include: { regions: true },
       });
+    }
+
+    if (groupId && ids.length === 0) {
+      const group = await this.prisma.regionGroup.findUnique({
+        where: { id: groupId },
+        select: {
+          id: true,
+          name_ru: true,
+          name_en: true,
+          image: true,
+        },
+      });
+
+      if (group) {
+        regions = [
+          {
+            id: group.id,
+            name: group[`name_${lang}`] || group.name_ru || 'Группа',
+            image: group.image ? `${FilePath.REGION_GROUP_ICON}/${group.image}` : null,
+          },
+        ];
+      }
+
+      groups = group ? [group] : [];
     }
 
     const where: any = {
@@ -172,8 +201,8 @@ export class RegionGroupService {
 
     if (groups.length > 0) {
       where.OR = [{ region_group_id: { in: groups.map((g) => g.id) } }, { is_global: true }];
-    } else if (regions.length > 0) {
-      where.OR = [{ regions: { some: { id: { in: regions } } } }, { is_global: true }];
+    } else if (regionFilterIds.length > 0) {
+      where.OR = [{ regions: { some: { id: { in: regionFilterIds } } } }, { is_global: true }];
     } else {
       where.is_global = true;
     }
@@ -182,14 +211,18 @@ export class RegionGroupService {
       where,
       select: {
         id: true,
+        name_ru: true,
+        name_en: true,
         price_sell: true,
         quantity_internet: true,
+        quantity_sms: true,
+        quantity_minute: true,
+        is_4g: true,
+        is_5g: true,
         validity_period: true,
         is_global: true,
         is_regional: true,
         is_local: true,
-        name_ru: true,
-        name_en: true,
         region_group: {
           select: {
             id: true,
@@ -212,16 +245,23 @@ export class RegionGroupService {
 
     const result = {
       local: [] as any[],
-      regional: [],
+      regional: [] as any[],
       global: [] as any[],
     };
 
     for (const plan of tariffs) {
       const formatted = {
         id: plan.id,
-        name: (plan as any)[`name_${lang}`] || plan.name_ru || 'Без названия',
+        name: plan[`name_${lang}`] || plan.name_ru || 'Без названия',
         price_sell: plan.price_sell,
         quantity_internet: plan.quantity_internet,
+        quantity_sms: plan?.quantity_sms,
+        quantity_minute: plan?.quantity_minute,
+        includes_minutes: plan?.quantity_minute > 0,
+        includes_sms: plan?.quantity_sms > 0,
+        includes_internet: plan?.quantity_internet > 0,
+        is_4g: plan?.is_4g,
+        is_5g: plan?.is_5g,
         validity_period: plan.validity_period,
         region_group: plan.region_group
           ? {
@@ -238,37 +278,15 @@ export class RegionGroupService {
         })),
       };
 
-      if (plan.is_global) {
-        result.global.push(formatted);
-      } else if (plan.is_regional) {
-        result.regional.push(formatted);
-      } else if (plan.is_local) {
-        result.local.push(formatted);
-      }
+      if (plan.is_global) result.global.push(formatted);
+      else if (plan.is_regional) result.regional.push(formatted);
+      else if (plan.is_local) result.local.push(formatted);
     }
-
-    const selectedRegions = regions.length
-      ? await this.prisma.region.findMany({
-          where: { id: { in: regions } },
-          select: {
-            id: true,
-            name_ru: true,
-            name_en: true,
-            image: true,
-          },
-        })
-      : [];
-
-    const formattedRegions = selectedRegions.map((r: any) => ({
-      id: r.id,
-      name: r[`name_${lang}`] || r.name_ru || 'Регион',
-      image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
-    }));
 
     return {
       success: true,
       data: {
-        regions: formattedRegions,
+        regions, // IDS → regionlar, GROUP → group obyekt
         tariffs: {
           local: result.local,
           regional: result.regional,
