@@ -137,7 +137,7 @@ export class RegionGroupService {
   }
 
   async getPlansUniversal(groupId: number | null, lang: string, regionIds: string | null) {
-    // regionIds -> number array
+    // regionIds -> number array (format: "1-2-3")
     const ids = regionIds
       ? regionIds
           .split('-')
@@ -145,44 +145,52 @@ export class RegionGroupService {
           .filter((id) => !isNaN(id) && id > 0)
       : [];
 
+    // Prepare holders
     let regions: any[] = [];
     let groups: any[] = [];
-    let regionFilterIds: number[] = [];
+    const regionFilterIds: number[] = ids.slice(); // keep parsed ids
 
+    // 1) Agar ids yuborilgan bo'lsa -> DBdan regionlarni oling
     if (ids.length > 0) {
-      regionFilterIds = ids;
-
-      // DBda mavjud regionlarni olish
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
         select: { id: true, name_ru: true, name_en: true, image: true },
       });
 
+      // Agar ids berilgan lekin DBda topilmasa -> bo'sh natija qaytirsin
       if (dbRegions.length === 0) {
-        // Noto'g'ri region id yuborilgan bo'lsa, hech narsa qaytarmaymiz
         return {
           success: true,
           data: { regions: [], tariffs: { local: [], regional: [], global: [] } },
         };
       }
 
+      // Agar topilgan bo'lsa -> regions massivini to'ldiramiz
       regions = dbRegions.map((r) => ({
         id: r.id,
         name: r[`name_${lang}`] || r.name_ru || 'Регион',
         image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
       }));
 
+      // Groups: ids asosida ulanishi mumkin bo'lgan grouplarni ham olish
       groups = await this.prisma.regionGroup.findMany({
-        where: { regions: { some: { id: { in: ids } } } },
+        where: { regions: { some: { id: { in: dbRegions.map((r) => r.id) } } } },
         include: { regions: true },
       });
     }
 
-    // groupId berilgan va ids bo'sh
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
-        where: { id: groupId },
-        select: { id: true, name_ru: true, name_en: true, image: true },
+        where: {
+          id: groupId,
+        },
+        select: {
+          id: true,
+          name_ru: true,
+          name_en: true,
+          image: true,
+          regions: true,
+        },
       });
 
       if (group) {
@@ -195,37 +203,45 @@ export class RegionGroupService {
         ];
 
         groups = [group];
-      }
-    }
-
-    const where: any = { deleted_at: null, status: 'ACTIVE' };
-
-    // AGAR IDS BOR BO'LSA
-    if (ids.length > 0) {
-      if (groups.length === 0) {
+      } else {
         return {
           success: true,
           data: { regions: [], tariffs: { local: [], regional: [], global: [] } },
         };
       }
-
-      where.OR = [
-        { region_group_id: { in: groups.map((g) => g.id) } },
-        { regions: { some: { id: { in: regionFilterIds } } } },
-        { is_global: true },
-      ];
     }
 
-    // AGAR GROUPID BOR BO‘LSA
-    else if (groupId) {
+    const where: any = { deleted_at: null, status: 'ACTIVE' };
+
+    if (groups.length > 0 || regionFilterIds.length > 0) {
+      // Agar grouplar yoki region idlar mavjud bo'lsa, barcha mos tariflarni oling:
+      // - groupga tegishli
+      // - yoki regions bilan bog'langan
+      // - + global (agar siz doimo globalni kiritishni istasangiz — agar xohlamasangiz olib tashlang)
+      const orArr: any[] = [];
+
+      if (groups.length > 0) {
+        orArr.push({ region_group_id: { in: groups.map((g) => g.id) } });
+      }
+
+      if (regionFilterIds.length > 0) {
+        orArr.push({ regions: { some: { id: { in: regionFilterIds } } } });
+      }
+
+      // Bu yerda globalni qo'shish: agar siz filtr qilsangiz ham globallarni qo'shmoqchi bo'lsangiz qoldiring.
+      // Agar filtrlangan faqat local/region/planning bo'lishi kerak bo'lsa, bu qatordan voz keching.
+      orArr.push({ is_global: true });
+
+      where.OR = orArr;
+    } else if (groupId) {
+      // faqat groupId bo'lsa (va ids bo'sh) -> group yoki global
       where.OR = [{ region_group_id: groupId }, { is_global: true }];
-    }
-
-    // AKS HOLDA — FAQAT GLOBAL
-    else {
+    } else {
+      // Hech qanday filtr berilmagan bo'lsa -> faqat global
       where.is_global = true;
     }
 
+    // 4) Tarifflarni olish
     const tariffs = await this.prisma.tariff.findMany({
       where,
       select: {
@@ -248,6 +264,7 @@ export class RegionGroupService {
       orderBy: { price_sell: 'asc' },
     });
 
+    // 5) Formatlash
     const result = { local: [], regional: [], global: [] };
 
     for (const plan of tariffs) {
