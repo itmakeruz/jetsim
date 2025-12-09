@@ -238,7 +238,7 @@ export class RegionGroupService {
     });
 
     if (!tariffs || tariffs.length === 0) {
-      throw new BadRequestException(route_not_found[lang]);
+      throw new NotFoundException(route_not_found[lang]);
     }
 
     // 7️⃣ Formatlash
