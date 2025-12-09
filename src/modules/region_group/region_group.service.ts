@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRegionGroupDto } from './dto/create-region_group.dto';
 import { UpdateRegionGroupDto } from './dto/update-region_group.dto';
 import { PrismaService } from '@prisma';
@@ -12,6 +12,7 @@ import {
   region_group_not_found,
   region_group_update,
   region_not_found,
+  route_not_found,
   tariffs_loaded,
 } from '@constants';
 import * as path from 'path';
@@ -235,6 +236,10 @@ export class RegionGroupService {
       },
       orderBy: { price_sell: 'asc' },
     });
+
+    if (!tariffs || tariffs.length === 0) {
+      throw new BadRequestException(route_not_found[lang]);
+    }
 
     // 7️⃣ Formatlash
     const result = { local: [], regional: [], global: [] };

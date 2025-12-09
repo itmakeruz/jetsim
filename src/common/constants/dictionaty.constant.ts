@@ -514,3 +514,8 @@ export const faq_not_found = {
   en: 'FAQ not found!',
   uz: 'FAQ topilmadi!',
 };
+
+export const route_not_found = {
+  ru: 'Тарифы по этому маршруту не найдены!',
+  en: 'No fares found for this route!',
+};
