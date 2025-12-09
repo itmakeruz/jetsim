@@ -357,16 +357,16 @@ export class RegionGroupService {
 
     const findTariff = await this.prisma.tariff.findMany({
       where: {
-        region_group_id: id,
+        region_group_id: regionGroup?.id,
       },
       select: {
         id: true,
-        regions: true,
-        region_group: true,
       },
     });
 
     for (let tariff of findTariff) {
+      console.log(tariff);
+
       await this.prisma.tariff.update({
         where: {
           id: tariff?.id,
