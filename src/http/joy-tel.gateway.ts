@@ -168,6 +168,7 @@ export class JoyTel {
 
     return response.data;
   }
+
   async getStatus(coupon: CouponRequest) {
     const headers = this.generateRspHeaders();
     const response = await this.httpService
@@ -178,6 +179,7 @@ export class JoyTel {
 
     return response.data;
   }
+
   async getProfileInfo(coupon: CidRequest) {
     const headers = this.generateRspHeaders();
     const response = await this.httpService

@@ -41,6 +41,13 @@ const REDIS_OTP_PREFIX = config.get<string>('REDIS_OTP_PREFIX') ?? '';
 // decorator
 const ROLES_DECORATOR_KEY = config.get<string>('ROLES_DECORATOR_KEY') ?? '';
 
+// TBANK
+
+const TBANK_URL = config.get<string>('TBANK_URL') ?? '';
+const TBANK_TERMINAL_KEY = config.get<string>('TBANK_TERMINAL_KEY') ?? '';
+const TBANK_WEBHOOK_URL = config.get<string>('TBANK_WEBHOOK_URL') ?? '';
+const TBANK_PASSWORD = config.get<string>('TBANK_PASSWORD') ?? '';
+
 //export
 export {
   APP_PORT,
@@ -68,4 +75,8 @@ export {
   REDIS_PORT,
   REDIS_PASSWORD,
   REDIS_OTP_PREFIX,
+  TBANK_URL,
+  TBANK_TERMINAL_KEY,
+  TBANK_WEBHOOK_URL,
+  TBANK_PASSWORD,
 };

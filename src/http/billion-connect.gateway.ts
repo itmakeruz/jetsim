@@ -1,5 +1,5 @@
 // src/integrations/billion-connect.service.ts
-import { GetUsageRequest } from '@interfaces';
+import { GetUsageRequest, GetStatusRequest } from '@interfaces';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
@@ -116,6 +116,38 @@ export class BillionConnectService {
       'x-sign-method': this.signMethod, // 'md5'
       'x-sign-value': sign,
     };
+    try {
+      const response = await this.http.post('', payloadJson, { headers });
+      // if (!this.isSuccess(response.data)) {
+      //   throw new InternalServerErrorException(response.data?.tradeMsg);
+      // }
+      return response.data;
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const resp = err?.response?.data;
+      const msg = `BillionConnect F040 failed${status ? ` [${status}]` : ''}: ${JSON.stringify(resp || err.message)}`;
+      throw new InternalServerErrorException(msg);
+    }
+  }
+
+  async getStatus(data: GetStatusRequest) {
+    const payload = {
+      tradeType: 'F042',
+      tradeTime: this.formatDateTime(new Date()),
+      tradeData: {
+        iccid: data?.iccid,
+      },
+    };
+
+    const payloadJson = JSON.stringify(payload);
+    const sign = this.md5(this.appSecret + payloadJson);
+
+    const headers = {
+      'x-channel-id': this.appKey,
+      'x-sign-method': this.signMethod, // 'md5'
+      'x-sign-value': sign,
+    };
+
     try {
       const response = await this.http.post('', payloadJson, { headers });
       // if (!this.isSuccess(response.data)) {

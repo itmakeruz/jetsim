@@ -58,3 +58,7 @@ export interface GetUsageRequest {
   iccid: string;
   language: number;
 }
+
+export interface GetStatusRequest {
+  iccid: string;
+}
