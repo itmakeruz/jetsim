@@ -198,6 +198,11 @@ export class RegionGroupService {
         include: { regions: true },
       });
       if (group) groups = [group];
+      regions = group.regions.map((r) => ({
+        id: r.id,
+        name: r[`name_${lang}`] || r.name_ru,
+        image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
+      }));
     }
 
     // 5️⃣ WHERE tayyorlash
