@@ -468,7 +468,7 @@ export class OrderService {
           quantity: item.quantity,
           regions: item?.tariff?.regions?.map((region) => ({
             id: region?.id,
-            name: region?.name?.[`name_${lang}`],
+            name: region?.[`name_${lang}`],
             image: `${FilePath.REGION_ICON}/${region?.image}`,
           })),
         })),
