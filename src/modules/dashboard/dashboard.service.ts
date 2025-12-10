@@ -24,7 +24,7 @@ export class DashboardService {
     ) AS total_orders,
 
     (SELECT COUNT(*) FROM "order" o
-     WHERE o.status = 'ACTIVE'
+     WHERE o.status = 'COMPLETED'
        AND (${start} IS NULL OR o.created_at >= ${start})
        AND (${end} IS NULL OR o.created_at <= ${end})
     ) AS active_orders,
