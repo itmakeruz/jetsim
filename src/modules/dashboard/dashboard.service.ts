@@ -15,8 +15,8 @@ export class DashboardService {
       dateFilter.startDate && dateFilter.endDate
         ? {
             created_at: {
-              gte: dateFilter.startDate,
-              lte: dateFilter.endDate,
+              gte: dateFilter.startDate ?? undefined,
+              lte: dateFilter.endDate ?? undefined,
             },
           }
         : {};
