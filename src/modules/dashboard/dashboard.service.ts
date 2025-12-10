@@ -43,17 +43,20 @@ export class DashboardService {
       }),
 
       this.prisma.$queryRaw`
-      SELECT 
-        DATE(s.created_at) AS day,
+      SELECT DATE(s.created_at) AS day,
         SUM(t.price_sell) AS total
       FROM sims s
-      JOIN tariff t ON t.id = s.tariff_id
-      WHERE 
-        (${dateFilter.startDate} IS NULL OR s.created_at >= ${dateFilter.startDate})
-        AND (${dateFilter.endDate} IS NULL OR s.created_at <= ${dateFilter.endDate})
+        JOIN tariff t ON t.id = s.tariff_id
+      WHERE (
+          $ { dateFilter.startDate } IS NULL
+         OR s.created_at >= $ { dateFilter.startDate }::timestamp
+        )
+       AND (
+         $ { dateFilter.endDate } IS NULL
+         OR s.created_at <= $ { dateFilter.endDate }::timestamp
+       )
       GROUP BY 1
-      ORDER BY 1
-    `,
+      ORDER BY 1 `,
 
       this.prisma.sims.groupBy({
         by: ['tariff_id'],
