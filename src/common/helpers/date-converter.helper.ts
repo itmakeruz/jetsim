@@ -6,9 +6,9 @@ export function dateConverter(date: string) {
     const start = new Date(result[0]);
     const end = new Date(result[1]);
 
-    if (!(start && end && !isNaN(start.getTime()) && !isNaN(end.getTime()))) {
-      throw new Error();
-    }
+    // if (!(start && end && !isNaN(start.getTime()) && !isNaN(end.getTime()))) {
+    //   throw new Error();
+    // }
     start.setHours(0, 0, 0, 0);
     end.setHours(23, 59, 59, 999);
 
