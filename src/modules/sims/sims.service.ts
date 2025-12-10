@@ -158,13 +158,13 @@ export class SimsService {
     for (let sim of sims) {
       if (sim.partner_id === PartnerIds.JOYTEL) {
         const response = await this.joyTelService.getStatus({ coupon: sim?.coupon });
+        console.log(response);
+
         responses.push(response);
         console.log('Joytel check status response: ', response);
       }
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
         const response = await this.billionConnectService.getStatus({ iccid: sim?.iccid });
-        console.log(response);
-
         response.push(response);
         console.log('BC CHECK status cron response: ', response);
       }
