@@ -1,16 +1,19 @@
 import { PartnerIds } from '@enums';
 import { paginate } from '@helpers';
-import { HttpService, JoyTel } from '@http';
+import { BillionConnectService, HttpService, JoyTel } from '@http';
 import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
 import { sim_not_found } from '@constants';
 import { OrderStatus } from '@prisma/client';
+import { WinstonLoggerService } from '@logger';
 
 @Injectable()
 export class SimsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly joyTelService: JoyTel,
+    private readonly billionConnectService: BillionConnectService,
+    private readonly logger: WinstonLoggerService,
   ) {}
 
   async findAll(query: any) {
@@ -127,5 +130,40 @@ export class SimsService {
       success: true,
       data: response,
     };
+  }
+
+  async checkSimStatusOnPartnerSide() {
+    this.logger.log('Sim Status on partner side CRON is working!');
+    const sims = await this.prisma.sims.findMany({
+      where: {
+        status: OrderStatus.COMPLETED,
+        sim_status: null,
+      },
+      select: {
+        id: true,
+        coupon: true,
+        partner_id: true,
+        channel_order_id: true,
+        iccid: true,
+      },
+    });
+    console.log(sims);
+
+    if (!sims || sims.length === 0) {
+      this.logger.log('Sims not found for update status');
+      return;
+    }
+
+    for (let sim of sims) {
+      if (sim.partner_id === PartnerIds.JOYTEL) {
+        const response = await this.joyTelService.getStatus({ coupon: sim?.coupon });
+        console.log('Joytel check status response: ', response);
+      }
+      if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
+        const response = await this.billionConnectService.getStatus({ iccid: sim?.iccid });
+        console.log('BC CHECK status cron response: ', response);
+      }
+    }
+    this.logger.info('Finish update partner status in partner side');
   }
 }
