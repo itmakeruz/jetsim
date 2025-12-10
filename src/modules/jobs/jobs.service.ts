@@ -29,9 +29,6 @@ export class JobsService {
         sim_status: {
           notIn: [SimStatus.ACTIVATED, SimStatus.EXPIRED],
         },
-        iccid: {
-          not: null,
-        },
       },
       select: {
         id: true,
@@ -41,6 +38,7 @@ export class JobsService {
         iccid: true,
       },
     });
+    console.log(sims);
 
     if (!sims || sims.length === 0) {
       this.logger.log('Sims not found for update status');
