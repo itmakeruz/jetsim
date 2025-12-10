@@ -6,6 +6,7 @@ import { GetDashboardDto } from './dto';
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
+  @Get()
   async get(@Query() query: GetDashboardDto) {
     return;
   }
