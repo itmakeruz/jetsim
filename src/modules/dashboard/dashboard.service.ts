@@ -11,35 +11,43 @@ export class DashboardService {
   async get(query: GetDashboardDto) {
     const dateFilter = dateConverter(query?.date);
 
-    const whereDate =
-      dateFilter.startDate && dateFilter.endDate
-        ? {
-            created_at: {
-              gte: dateFilter.startDate ?? undefined,
-              lte: dateFilter.endDate ?? undefined,
-            },
-          }
-        : {};
-
     const [totalOrders, activeOrders, totalRevenue, newClients, dailySales, topTariffs] = await Promise.all([
       this.prisma.order.count({
-        where: whereDate,
+        where: {
+          created_at: {
+            gte: dateFilter?.startDate ?? undefined,
+            lte: dateFilter?.endDate ?? undefined,
+          },
+        },
       }),
 
       this.prisma.order.count({
         where: {
           status: OrderStatus.COMPLETED,
-          ...whereDate,
+          created_at: {
+            gte: dateFilter?.startDate ?? undefined,
+            lte: dateFilter?.endDate ?? undefined,
+          },
         },
       }),
 
       this.prisma.sims.aggregate({
         _sum: {},
-        where: whereDate,
+        where: {
+          created_at: {
+            gte: dateFilter?.startDate ?? undefined,
+            lte: dateFilter?.endDate ?? undefined,
+          },
+        },
       }),
 
       this.prisma.user.count({
-        where: whereDate,
+        where: {
+          created_at: {
+            gte: dateFilter?.startDate ?? undefined,
+            lte: dateFilter?.endDate ?? undefined,
+          },
+        },
       }),
 
       this.prisma.$queryRaw`
@@ -63,7 +71,12 @@ export class DashboardService {
         _count: { tariff_id: true },
         orderBy: { _count: { tariff_id: 'desc' } },
         take: 10,
-        where: whereDate,
+        where: {
+          created_at: {
+            gte: dateFilter?.startDate ?? undefined,
+            lte: dateFilter?.endDate ?? undefined,
+          },
+        },
       }),
     ]);
 
