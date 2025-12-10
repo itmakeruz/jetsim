@@ -10,88 +10,68 @@ export class DashboardService {
 
   async get(query: GetDashboardDto) {
     const dateFilter = dateConverter(query?.date);
-    const whereSql = this.buildDateFilterSQL(dateFilter);
-
     const start = dateFilter?.startDate ? `'${dateFilter.startDate.toISOString()}'` : 'NULL';
 
     const end = dateFilter?.endDate ? `'${dateFilter.endDate.toISOString()}'` : 'NULL';
 
-    const dashboard = await this.prisma.$queryRawUnsafe<any[]>(`
- SELECT 
-  -- 1. Total Orders
-  (SELECT COUNT(*)::INT
-   FROM "order" o
-   WHERE 
-     (:startDate IS NULL OR o.created_at >= :startDate)
-     AND (:endDate IS NULL OR o.created_at <= :endDate)
-  ) AS total_orders,
+    const result = await this.prisma.$queryRawUnsafe<any[]>(`
+  SELECT 
+    (SELECT COUNT(*)::INT
+     FROM "order" o
+     WHERE (${start} IS NULL OR o.created_at >= ${start})
+       AND (${end} IS NULL OR o.created_at <= ${end})
+    ) AS total_orders,
 
-  -- 2. Active Orders
-  (SELECT COUNT(*)::INT
-   FROM "order" o
-   WHERE o.status = 'COMPLETED'
-     AND (:startDate IS NULL OR o.created_at >= :startDate)
-     AND (:endDate IS NULL OR o.created_at <= :endDate)
-  ) AS active_orders,
+    (SELECT COUNT(*)::INT
+     FROM "order" o
+     WHERE o.status = 'COMPLETED'
+       AND (${start} IS NULL OR o.created_at >= ${start})
+       AND (${end} IS NULL OR o.created_at <= ${end})
+    ) AS active_orders,
 
-  -- 3. Total Revenue
-  (SELECT COALESCE(SUM(t.price_sell)::FLOAT, 0)
-   FROM sims s
-   JOIN tariff t ON t.id = s.tariff_id
-   WHERE
-     (:startDate IS NULL OR s.created_at >= :startDate)
-     AND (:endDate IS NULL OR s.created_at <= :endDate)
-  ) AS total_revenue,
+    (SELECT COALESCE(SUM(t.price_sell)::FLOAT, 0)
+     FROM sims s
+     JOIN tariff t ON t.id = s.tariff_id
+     WHERE (${start} IS NULL OR s.created_at >= ${start})
+       AND (${end} IS NULL OR s.created_at <= ${end})
+    ) AS total_revenue,
 
-  -- 4. New clients
-  (SELECT COUNT(*)::INT
-   FROM "user" u
-   WHERE
-     (:startDate IS NULL OR u.created_at >= :startDate)
-     AND (:endDate IS NULL OR u.created_at <= :endDate)
-  ) AS new_clients,
+    (SELECT COUNT(*)::INT
+     FROM "user" u
+     WHERE (${start} IS NULL OR u.created_at >= ${start})
+       AND (${end} IS NULL OR u.created_at <= ${end})
+    ) AS new_clients,
 
-  -- 5. Daily sales
-  (
-    SELECT json_agg(row_to_json(x))
-    FROM (
-      SELECT 
-        DATE(s.created_at) AS day,
-        SUM(t.price_sell)::FLOAT AS total
-      FROM sims s
-      JOIN tariff t ON t.id = s.tariff_id
-      WHERE
-        (:startDate IS NULL OR s.created_at >= :startDate)
-        AND (:endDate IS NULL OR s.created_at <= :endDate)
-      GROUP BY 1
-      ORDER BY 1
-    ) x
-  ) AS daily_sales,
+    (
+      SELECT json_agg(row_to_json(x))
+      FROM (
+        SELECT DATE(s.created_at) AS day,
+               SUM(t.price_sell)::FLOAT AS total
+        FROM sims s
+        JOIN tariff t ON t.id = s.tariff_id
+        WHERE (${start} IS NULL OR s.created_at >= ${start})
+          AND (${end} IS NULL OR s.created_at <= ${end})
+        GROUP BY 1 ORDER BY 1
+      ) x
+    ) AS daily_sales,
 
-  -- 6. Top 10 tariffs
-  (
-    SELECT json_agg(row_to_json(y))
-    FROM (
-      SELECT 
-        t.id,
-        t.name_ru,
-        COUNT(s.id)::INT AS sold
-      FROM sims s
-      JOIN tariff t ON t.id = s.tariff_id
-      WHERE
-        (:startDate IS NULL OR s.created_at >= :startDate)
-        AND (:endDate IS NULL OR s.created_at <= :endDate)
-      GROUP BY t.id, t.name_ru
-      ORDER BY sold DESC
-      LIMIT 10
-    ) y
-  ) AS top_tariffs;
+    (
+      SELECT json_agg(row_to_json(y))
+      FROM (
+        SELECT t.id, t.name_ru,
+               COUNT(s.id)::INT AS sold
+        FROM sims s
+        JOIN tariff t ON t.id = s.tariff_id
+        WHERE (${start} IS NULL OR s.created_at >= ${start})
+          AND (${end} IS NULL OR s.created_at <= ${end})
+        GROUP BY t.id, t.name_ru
+        ORDER BY sold DESC
+        LIMIT 10
+      ) y
+    ) AS top_tariffs
 `);
-    return {
-      success: true,
-      message: '',
-      data: dashboard,
-    };
+
+    return result[0];
   }
 
   private buildDateFilterSQL(dateFilter: { startDate?: Date; endDate?: Date }) {
