@@ -70,23 +70,10 @@ export class DashboardService {
       ) y
     ) AS top_tariffs
 `);
-
-    return result[0];
-  }
-
-  private buildDateFilterSQL(dateFilter: { startDate?: Date; endDate?: Date }) {
-    const conditions: string[] = [];
-
-    if (dateFilter?.startDate) {
-      conditions.push(`s.created_at >= '${dateFilter.startDate.toISOString()}'`);
-    }
-
-    if (dateFilter?.endDate) {
-      conditions.push(`s.created_at <= '${dateFilter.endDate.toISOString()}'`);
-    }
-
-    if (!conditions.length) return '';
-
-    return 'WHERE ' + conditions.join(' AND ');
+    return {
+      success: true,
+      message: '',
+      data: result[0],
+    };
   }
 }
