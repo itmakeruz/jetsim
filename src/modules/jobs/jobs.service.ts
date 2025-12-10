@@ -26,9 +26,7 @@ export class JobsService {
     const sims = await this.prisma.sims.findMany({
       where: {
         status: OrderStatus.COMPLETED,
-        sim_status: {
-          not: null,
-        },
+        sim_status: null,
       },
       select: {
         id: true,
