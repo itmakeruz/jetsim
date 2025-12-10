@@ -3,7 +3,7 @@ import { paginate } from '@helpers';
 import { BillionConnectService, HttpService, JoyTel } from '@http';
 import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
-import { sim_not_found } from '@constants';
+import { FilePath, sim_not_found } from '@constants';
 import { OrderStatus, SimStatus } from '@prisma/client';
 import { WinstonLoggerService } from '@logger';
 
@@ -186,6 +186,226 @@ export class SimsService {
     return {
       sims: sims,
       data: responses,
+    };
+  }
+
+  async staticSims(userId: number, lang: string) {
+    const sims = await paginate('sims', {
+      // page: query?.page,
+      // size: query?.size,
+      // filter: query?.filters,
+      // sort: query?.sort,
+      where: {
+        user_id: userId,
+      },
+      select: {
+        id: true,
+        order_id: true,
+        created_at: true,
+        tariff: {
+          select: {
+            id: true,
+            is_4g: true,
+            is_5g: true,
+            name_ru: true,
+            name_en: true,
+            quantity_internet: true,
+            validity_period: true,
+            region_group: {
+              select: {
+                id: true,
+                name_ru: true,
+                name_en: true,
+                image: true,
+              },
+            },
+            regions: {
+              select: {
+                id: true,
+                name_ru: true,
+                name_en: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: 'success',
+      ...sims,
+      data: sims?.data?.map((sim: any) => {
+        return {
+          id: sim?.id,
+          order_id: sim?.order_id,
+          tariff_id: sim?.tariff?.id,
+          tariff_name: sim?.tariff?.[`name_${lang}`],
+          usage: 300,
+          day_left: 10,
+          is_4g: sim?.tariff?.is_4g,
+          is_5g: sim?.tariff?.is_5g,
+          region_group: {
+            id: sim?.tariff?.region_group?.id,
+            name: sim?.tariff?.region_group?.[`name_${lang}`],
+            image: `${FilePath.REGION_GROUP_ICON}/${sim?.tariff?.region_group?.image}`,
+          },
+          regions: sim?.tariff?.regions?.map((region: any) => ({
+            id: region?.id,
+            name: region?.[`name_${lang}`],
+            image: `${FilePath.REGION_ICON}/${region?.image}`,
+          })),
+        };
+      }),
+    };
+  }
+
+  async activatedStaticSims(userId: number, lang: string) {
+    const sims = await paginate('sims', {
+      // page: query?.page,
+      // size: query?.size,
+      // filter: query?.filters,
+      // sort: query?.sort,
+      where: {
+        user_id: userId,
+        sim_status: SimStatus.ACTIVATED,
+      },
+      select: {
+        id: true,
+        order_id: true,
+        created_at: true,
+        tariff: {
+          select: {
+            id: true,
+            is_4g: true,
+            is_5g: true,
+            name_ru: true,
+            name_en: true,
+            quantity_internet: true,
+            validity_period: true,
+            region_group: {
+              select: {
+                id: true,
+                name_ru: true,
+                name_en: true,
+                image: true,
+              },
+            },
+            regions: {
+              select: {
+                id: true,
+                name_ru: true,
+                name_en: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: 'success',
+      ...sims,
+      data: sims?.data?.map((sim: any) => {
+        return {
+          id: sim?.id,
+          order_id: sim?.order_id,
+          tariff_id: sim?.tariff?.id,
+          tariff_name: sim?.tariff?.[`name_${lang}`],
+          usage: 300,
+          day_left: 10,
+          is_4g: sim?.tariff?.is_4g,
+          is_5g: sim?.tariff?.is_5g,
+          region_group: {
+            id: sim?.tariff?.region_group?.id,
+            name: sim?.tariff?.region_group?.[`name_${lang}`],
+            image: `${FilePath.REGION_GROUP_ICON}/${sim?.tariff?.region_group?.image}`,
+          },
+          regions: sim?.tariff?.regions?.map((region: any) => ({
+            id: region?.id,
+            name: region?.[`name_${lang}`],
+            image: `${FilePath.REGION_ICON}/${region?.image}`,
+          })),
+        };
+      }),
+    };
+  }
+
+  async getActiveSimsStatic(userId: number, lang: string) {
+    const sims = await paginate('sims', {
+      where: {
+        user_id: userId,
+        sim_status: null,
+      },
+      select: {
+        id: true,
+        order_id: true,
+        iccid: true,
+        uid: true,
+        pin_1: true,
+        pin_2: true,
+        puk_1: true,
+        puk_2: true,
+        qrcode: true,
+        tariff: {
+          select: {
+            id: true,
+            name_ru: true,
+            name_en: true,
+            quantity_internet: true,
+            validity_period: true,
+            is_4g: true,
+            is_5g: true,
+            region_group: {
+              select: {
+                id: true,
+                name_ru: true,
+                name_en: true,
+                image: true,
+              },
+            },
+            regions: {
+              select: {
+                id: true,
+                name_ru: true,
+                name_en: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: '',
+      data: sims?.data?.map((sim: any) => {
+        return {
+          id: sim?.id,
+          order_id: sim?.order_id,
+          tariff_id: sim?.tariff?.id,
+          tariff_name: sim?.tariff?.[`name_${lang}`],
+          usage: sim?.tariff?.quantity_internet,
+          day_left: sim?.tariff?.validity_period,
+          is_4g: sim?.tariff?.is_4g,
+          is_5g: sim?.tariff?.is_5g,
+          qr_code: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
+          region_group: {
+            id: sim?.tariff?.region_group?.id,
+            name: sim?.tariff?.region_group?.[`name_${lang}`],
+            image: `${FilePath.REGION_GROUP_ICON}/${sim?.tariff?.region_group?.image}`,
+          },
+          regions: sim?.tariff?.regions?.map((region: any) => ({
+            id: region?.id,
+            name: region?.[`name_${lang}`],
+            image: `${FilePath.REGION_ICON}/${region?.image}`,
+          })),
+        };
+      }),
     };
   }
 }
