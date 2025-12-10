@@ -11,6 +11,8 @@ export class DashboardService {
   async get(query: GetDashboardDto) {
     const dateFilter = dateConverter(query?.date);
 
+    const whereSql = this.buildDateFilterSQL(dateFilter);
+
     const [totalOrders, activeOrders, totalRevenue, newClients, dailySales, topTariffs] = await Promise.all([
       this.prisma.order.count({
         where: {
@@ -31,19 +33,12 @@ export class DashboardService {
         },
       }),
 
-      this.prisma.$queryRaw<{ total: number }[]>`
+      this.prisma.$queryRawUnsafe<{ total: number }[]>(`
         SELECT COALESCE(SUM(t.price_sell), 0) AS total
         FROM sims s
         JOIN tariff t ON t.id = s.tariff_id
-        WHERE (
-          ${dateFilter.startDate} IS NULL
-          OR s.created_at >= ${dateFilter.startDate}::timestamp
-        )
-        AND (
-          ${dateFilter.endDate} IS NULL
-          OR s.created_at <= ${dateFilter.endDate}::timestamp
-        )
-      `,
+        ${whereSql}
+      `),
 
       this.prisma.user.count({
         where: {
@@ -54,23 +49,16 @@ export class DashboardService {
         },
       }),
 
-      this.prisma.$queryRaw`
+      this.prisma.$queryRawUnsafe(`
         SELECT 
           DATE(s.created_at) AS day,
           SUM(t.price_sell) AS total
         FROM sims s
         JOIN tariff t ON t.id = s.tariff_id
-        WHERE (
-            ${dateFilter.startDate} IS NULL
-            OR s.created_at >= ${dateFilter.startDate}::timestamp
-        )
-        AND (
-            ${dateFilter.endDate} IS NULL
-            OR s.created_at <= ${dateFilter.endDate}::timestamp
-        )
+        ${whereSql}
         GROUP BY 1
         ORDER BY 1
-      `,
+      `),
 
       this.prisma.sims.groupBy({
         by: ['tariff_id'],
@@ -98,5 +86,21 @@ export class DashboardService {
         top_tariffs: topTariffs,
       },
     };
+  }
+
+  private buildDateFilterSQL(dateFilter: { startDate?: Date; endDate?: Date }) {
+    const conditions = [];
+
+    if (dateFilter?.startDate) {
+      conditions.push(`s.created_at >= '${dateFilter.startDate.toISOString()}'`);
+    }
+
+    if (dateFilter?.endDate) {
+      conditions.push(`s.created_at <= '${dateFilter.endDate.toISOString()}'`);
+    }
+
+    if (!conditions.length) return '';
+
+    return 'WHERE ' + conditions.join(' AND ');
   }
 }
