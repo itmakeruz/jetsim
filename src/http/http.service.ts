@@ -65,6 +65,7 @@ export class HttpService {
           response: res.data,
         });
       }
+      console.log(res, 'from send');
 
       return res.data;
     } catch (error: any) {
