@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
-import { OrderStatus, Status } from '@prisma/client';
+import { OrderStatus } from '@prisma/client';
 import { dateConverter } from 'src/common/helpers/date-converter.helper';
 import { GetDashboardDto } from './dto';
 
@@ -31,15 +31,19 @@ export class DashboardService {
         },
       }),
 
-      this.prisma.sims.aggregate({
-        _sum: {},
-        where: {
-          created_at: {
-            gte: dateFilter?.startDate ?? undefined,
-            lte: dateFilter?.endDate ?? undefined,
-          },
-        },
-      }),
+      this.prisma.$queryRaw<{ total: number }[]>`
+        SELECT COALESCE(SUM(t.price_sell), 0) AS total
+        FROM sims s
+        JOIN tariff t ON t.id = s.tariff_id
+        WHERE (
+          ${dateFilter.startDate} IS NULL
+          OR s.created_at >= ${dateFilter.startDate}::timestamp
+        )
+        AND (
+          ${dateFilter.endDate} IS NULL
+          OR s.created_at <= ${dateFilter.endDate}::timestamp
+        )
+      `,
 
       this.prisma.user.count({
         where: {
@@ -51,20 +55,22 @@ export class DashboardService {
       }),
 
       this.prisma.$queryRaw`
-      SELECT DATE(s.created_at) AS day,
-        SUM(t.price_sell) AS total
-      FROM sims s
+        SELECT 
+          DATE(s.created_at) AS day,
+          SUM(t.price_sell) AS total
+        FROM sims s
         JOIN tariff t ON t.id = s.tariff_id
-      WHERE (
-          $ { dateFilter.startDate } IS NULL
-         OR s.created_at >= $ { dateFilter.startDate }::timestamp
+        WHERE (
+            ${dateFilter.startDate} IS NULL
+            OR s.created_at >= ${dateFilter.startDate}::timestamp
         )
-       AND (
-         $ { dateFilter.endDate } IS NULL
-         OR s.created_at <= $ { dateFilter.endDate }::timestamp
-       )
-      GROUP BY 1
-      ORDER BY 1 `,
+        AND (
+            ${dateFilter.endDate} IS NULL
+            OR s.created_at <= ${dateFilter.endDate}::timestamp
+        )
+        GROUP BY 1
+        ORDER BY 1
+      `,
 
       this.prisma.sims.groupBy({
         by: ['tariff_id'],
@@ -86,7 +92,7 @@ export class DashboardService {
       data: {
         total_orders: totalOrders,
         active_orders: activeOrders,
-        total_revenue: totalRevenue._sum ?? 0,
+        total_revenue: Number(totalRevenue[0]?.total ?? 0),
         new_clients: newClients,
         daily_sales: dailySales,
         top_tariffs: topTariffs,
