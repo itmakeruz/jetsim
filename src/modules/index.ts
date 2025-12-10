@@ -9,6 +9,7 @@ export * from './tariff';
 export * from './region';
 export * from './prisma';
 export * from './gateway';
+export * from './payment';
 export * from './partner';
 export * from './support';
 export * from './statics';
