@@ -10,86 +10,73 @@ export class DashboardService {
 
   async get(query: GetDashboardDto) {
     const dateFilter = dateConverter(query?.date);
-
     const whereSql = this.buildDateFilterSQL(dateFilter);
 
-    const [totalOrders, activeOrders, totalRevenue, newClients, dailySales, topTariffs] = await Promise.all([
-      this.prisma.order.count({
-        where: {
-          created_at: {
-            gte: dateFilter?.startDate ?? undefined,
-            lte: dateFilter?.endDate ?? undefined,
-          },
-        },
-      }),
+    const start = dateFilter?.startDate ? `'${dateFilter.startDate.toISOString()}'` : 'NULL';
 
-      this.prisma.order.count({
-        where: {
-          status: OrderStatus.COMPLETED,
-          created_at: {
-            gte: dateFilter?.startDate ?? undefined,
-            lte: dateFilter?.endDate ?? undefined,
-          },
-        },
-      }),
+    const end = dateFilter?.endDate ? `'${dateFilter.endDate.toISOString()}'` : 'NULL';
 
-      this.prisma.$queryRawUnsafe<{ total: number }[]>(`
-        SELECT COALESCE(SUM(t.price_sell), 0) AS total
+    const dashboard = await this.prisma.$queryRawUnsafe<any[]>(`
+  SELECT 
+    (SELECT COUNT(*) FROM "order" o
+     WHERE (${start} IS NULL OR o.created_at >= ${start})
+       AND (${end} IS NULL OR o.created_at <= ${end})
+    ) AS total_orders,
+
+    (SELECT COUNT(*) FROM "order" o
+     WHERE o.status = 'ACTIVE'
+       AND (${start} IS NULL OR o.created_at >= ${start})
+       AND (${end} IS NULL OR o.created_at <= ${end})
+    ) AS active_orders,
+
+    (SELECT COALESCE(CAST(SUM(t.price_sell) AS FLOAT), 0)
+     FROM sims s
+     JOIN tariff t ON t.id = s.tariff_id
+     WHERE (${start} IS NULL OR s.created_at >= ${start})
+       AND (${end} IS NULL OR s.created_at <= ${end})
+    ) AS total_revenue,
+
+    (SELECT COUNT(*) FROM "user" u
+     WHERE (${start} IS NULL OR u.created_at >= ${start})
+       AND (${end} IS NULL OR u.created_at <= ${end})
+    ) AS new_clients,
+
+    (
+      SELECT json_agg(row_to_json(x))
+      FROM (
+        SELECT DATE(s.created_at) AS day,
+               CAST(SUM(t.price_sell) AS FLOAT) AS total
         FROM sims s
         JOIN tariff t ON t.id = s.tariff_id
-        ${whereSql}
-      `),
+        WHERE (${start} IS NULL OR s.created_at >= ${start})
+          AND (${end} IS NULL OR s.created_at <= ${end})
+        GROUP BY 1 ORDER BY 1
+      ) x
+    ) AS daily_sales,
 
-      this.prisma.user.count({
-        where: {
-          created_at: {
-            gte: dateFilter?.startDate ?? undefined,
-            lte: dateFilter?.endDate ?? undefined,
-          },
-        },
-      }),
-
-      this.prisma.$queryRawUnsafe(`
-        SELECT 
-          DATE(s.created_at) AS day,
-          SUM(t.price_sell) AS total
+    (
+      SELECT json_agg(row_to_json(y))
+      FROM (
+        SELECT t.id, t.name_ru, COUNT(s.id)::INT AS sold
         FROM sims s
         JOIN tariff t ON t.id = s.tariff_id
-        ${whereSql}
-        GROUP BY 1
-        ORDER BY 1
-      `),
-
-      this.prisma.sims.groupBy({
-        by: ['tariff_id'],
-        _count: { tariff_id: true },
-        orderBy: { _count: { tariff_id: 'desc' } },
-        take: 10,
-        where: {
-          created_at: {
-            gte: dateFilter?.startDate ?? undefined,
-            lte: dateFilter?.endDate ?? undefined,
-          },
-        },
-      }),
-    ]);
-
+        WHERE (${start} IS NULL OR s.created_at >= ${start})
+          AND (${end} IS NULL OR s.created_at <= ${end})
+        GROUP BY t.id, t.name_ru
+        ORDER BY sold DESC
+        LIMIT 10
+      ) y
+    ) AS top_tariffs
+`);
     return {
       success: true,
       message: '',
-      data: {
-        total_orders: totalOrders,
-        active_orders: activeOrders,
-        total_revenue: Number(totalRevenue[0]?.total ?? 0),
-        new_clients: newClients,
-        daily_sales: dailySales,
-        top_tariffs: topTariffs,
-      },
+      data: dashboard,
     };
   }
 
   private buildDateFilterSQL(dateFilter: { startDate?: Date; endDate?: Date }) {
-    const conditions = [];
+    const conditions: string[] = [];
 
     if (dateFilter?.startDate) {
       conditions.push(`s.created_at >= '${dateFilter.startDate.toISOString()}'`);
