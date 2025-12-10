@@ -147,7 +147,6 @@ export class SimsService {
         iccid: true,
       },
     });
-    console.log(sims);
 
     if (!sims || sims.length === 0) {
       this.logger.log('Sims not found for update status');
@@ -165,5 +164,7 @@ export class SimsService {
       }
     }
     this.logger.info('Finish update partner status in partner side');
+
+    return sims;
   }
 }
