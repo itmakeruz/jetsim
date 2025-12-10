@@ -27,7 +27,7 @@ export class JobsService {
       where: {
         status: OrderStatus.COMPLETED,
         sim_status: {
-          notIn: [SimStatus.ACTIVATED, SimStatus.EXPIRED],
+          not: null,
         },
       },
       select: {
