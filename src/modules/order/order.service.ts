@@ -699,6 +699,7 @@ export class OrderService {
         qrcode_type: data.data.qrcodeType,
         qrcode: data.data.qrcode,
         cid: data.data.cid,
+        iccid: data.data.cid,
         sale_plan_name: data.data.salePlanName,
         sale_plan_days: data.data.salePlanDays.toString(),
         pin_1: data.data.pin1,
