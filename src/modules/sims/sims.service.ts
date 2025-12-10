@@ -153,18 +153,25 @@ export class SimsService {
       return;
     }
 
+    let responses;
+
     for (let sim of sims) {
       if (sim.partner_id === PartnerIds.JOYTEL) {
         const response = await this.joyTelService.getStatus({ coupon: sim?.coupon });
+        responses.push(response);
         console.log('Joytel check status response: ', response);
       }
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
         const response = await this.billionConnectService.getStatus({ iccid: sim?.iccid });
+        response.push(response);
         console.log('BC CHECK status cron response: ', response);
       }
     }
     this.logger.info('Finish update partner status in partner side');
 
-    return sims;
+    return {
+      sims: sims,
+      data: responses,
+    };
   }
 }
