@@ -11,52 +11,37 @@ export class DashboardService {
   async get(query: GetDashboardDto) {
     const dateFilter = dateConverter(query?.date);
 
+    const whereDate =
+      dateFilter.startDate && dateFilter.endDate
+        ? {
+            created_at: {
+              gte: dateFilter.startDate,
+              lte: dateFilter.endDate,
+            },
+          }
+        : {};
+
     const [totalOrders, activeOrders, totalRevenue, newClients, dailySales, topTariffs] = await Promise.all([
-      // 1. Jami buyurtmalar
       this.prisma.order.count({
-        where: {
-          created_at: {
-            gte: dateFilter.startDate,
-            lte: dateFilter.endDate,
-          },
-        },
+        where: whereDate,
       }),
 
-      // 2. Aktiv buyurtmalar
       this.prisma.order.count({
         where: {
           status: OrderStatus.COMPLETED,
-          created_at: {
-            gte: dateFilter.startDate,
-            lte: dateFilter.endDate,
-          },
+          ...whereDate,
         },
       }),
 
-      // 3. Total revenue
       this.prisma.sims.aggregate({
-        _sum: {
-          /* example: price_sell */
-        },
-        where: {
-          created_at: {
-            gte: dateFilter.startDate,
-            lte: dateFilter.endDate,
-          },
-        },
+        _sum: {},
+        where: whereDate,
       }),
 
-      // 4. Yangi klientlar
       this.prisma.user.count({
-        where: {
-          created_at: {
-            gte: dateFilter.startDate,
-            lte: dateFilter.endDate,
-          },
-        },
+        where: whereDate,
       }),
 
-      // 5. Daily sales
       this.prisma.$queryRaw`
       SELECT 
         DATE(s.created_at) AS day,
@@ -70,26 +55,12 @@ export class DashboardService {
       ORDER BY 1
     `,
 
-      // 6. Top tarifs
       this.prisma.sims.groupBy({
         by: ['tariff_id'],
-        _count: {
-          tariff_id: true,
-        },
-        orderBy: {
-          _count: {
-            tariff_id: 'desc',
-          },
-        },
+        _count: { tariff_id: true },
+        orderBy: { _count: { tariff_id: 'desc' } },
         take: 10,
-        where: {
-          ...(dateFilter.startDate && {
-            created_at: {
-              gte: dateFilter.startDate,
-              lte: dateFilter.endDate,
-            },
-          }),
-        },
+        where: whereDate,
       }),
     ]);
 
@@ -101,8 +72,8 @@ export class DashboardService {
         active_orders: activeOrders,
         total_revenue: totalRevenue._sum ?? 0,
         new_clients: newClients,
-        daily_Sales: dailySales,
-        top_tariffs: newClients,
+        daily_sales: dailySales,
+        top_tariffs: topTariffs,
       },
     };
   }

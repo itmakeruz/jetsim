@@ -3,8 +3,8 @@ import { BadRequestException } from '@nestjs/common';
 export function dateConverter(date?: string) {
   if (!date) {
     return {
-      startDate: null,
-      endDate: null,
+      startDate: undefined,
+      endDate: undefined,
     };
   }
 
