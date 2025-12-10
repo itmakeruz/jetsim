@@ -8,6 +8,6 @@ export class DashboardController {
 
   @Get()
   async get(@Query() query: GetDashboardDto) {
-    return;
+    return this.dashboardService.get(query);
   }
 }

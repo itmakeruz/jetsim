@@ -94,12 +94,16 @@ export class DashboardService {
     ]);
 
     return {
-      totalOrders,
-      activeOrders,
-      totalRevenue: totalRevenue._sum ?? 0,
-      newClients,
-      dailySales,
-      topTariffs,
+      success: true,
+      message: '',
+      data: {
+        total_orders: totalOrders,
+        active_orders: activeOrders,
+        total_revenue: totalRevenue._sum ?? 0,
+        new_clients: newClients,
+        daily_Sales: dailySales,
+        top_tariffs: newClients,
+      },
     };
   }
 }
