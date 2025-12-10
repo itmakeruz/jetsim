@@ -163,6 +163,8 @@ export class SimsService {
       }
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
         const response = await this.billionConnectService.getStatus({ iccid: sim?.iccid });
+        console.log(response);
+
         response.push(response);
         console.log('BC CHECK status cron response: ', response);
       }
