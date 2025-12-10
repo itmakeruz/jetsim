@@ -167,7 +167,7 @@ export class SimsService {
         const response = await this.billionConnectService.getStatus({ iccid: sim?.iccid });
         console.log(response);
 
-        const esimStatus = response.tradeCode?.find((el) => {
+        const esimStatus = response.tradeData?.find((el) => {
           el?.status === 2;
         });
         await this.prisma.sims.update({
