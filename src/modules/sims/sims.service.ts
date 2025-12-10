@@ -4,7 +4,7 @@ import { BillionConnectService, HttpService, JoyTel } from '@http';
 import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
 import { sim_not_found } from '@constants';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, SimStatus } from '@prisma/client';
 import { WinstonLoggerService } from '@logger';
 
 @Injectable()
@@ -156,16 +156,26 @@ export class SimsService {
     let responses;
 
     for (let sim of sims) {
-      if (sim.partner_id === PartnerIds.JOYTEL) {
-        const response = await this.joyTelService.getStatus({ coupon: sim?.coupon });
-        console.log(response);
+      // if (sim.partner_id === PartnerIds.JOYTEL) {
+      //   const response = await this.joyTelService.getStatus({ coupon: sim?.coupon });
+      //   console.log(response);
 
-        responses.push(response);
-        console.log('Joytel check status response: ', response);
-      }
+      //   responses.push(response);
+      //   console.log('Joytel check status response: ', response);
+      // }
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
         const response = await this.billionConnectService.getStatus({ iccid: sim?.iccid });
-        response.push(response);
+        const esimStatus = response.tradeCode?.find((el) => {
+          el?.status === 2;
+        });
+        await this.prisma.sims.update({
+          where: {
+            id: sim?.id,
+          },
+          data: {
+            sim_status: esimStatus ? SimStatus.ACTIVATED : null,
+          },
+        });
         console.log('BC CHECK status cron response: ', response);
       }
     }
