@@ -22,10 +22,10 @@ export class PaymentController {
     return this.paymentService.findOne(param.id);
   }
 
-  @Post()
-  async create(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
-    return this.paymentService.create(request?.user?.id, headers?.lang);
-  }
+  // @Post()
+  // async create(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
+  //   return this.paymentService.create(request?.user?.id, headers?.lang);
+  // }
 
   @ApiOperation({ summary: 'Prepare payment request', description: 'Prepare payment request' })
   @ApiBearerAuth()
@@ -35,10 +35,10 @@ export class PaymentController {
     return this.paymentService.preparePayment(request?.user?.id, data);
   }
 
-  @Post('accept-payment-test')
-  async acceptPaymentTest(@Req() request: IRequest, @Body() data: any) {
-    return this.paymentService.acceptPaymentTest(request?.user?.id, data);
-  }
+  // @Post('accept-payment-test')
+  // async acceptPaymentTest(@Req() request: IRequest, @Body() data: any) {
+  //   return this.paymentService.acceptPaymentTest(request?.user?.id, data);
+  // }
 
   @Post('accept-transaction-status')
   acceptTransactionStatus(@Body() data: TBankWebHookResponse) {
