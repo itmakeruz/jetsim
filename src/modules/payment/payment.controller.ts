@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto, GetTransactionDto, UpdatePaymentDto } from './dto';
 import { DeviceHeadersDto, ParamId } from '@enums';
 import { IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('payment')
 export class PaymentController {
@@ -24,6 +26,9 @@ export class PaymentController {
     return this.paymentService.create(request?.user?.id, headers?.lang);
   }
 
+  @ApiOperation({ summary: 'Prepare payment request', description: 'Prepare payment request' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Post('prepare-payment')
   async preparePayment(@Req() request: IRequest, @Body() data: any) {
     return this.paymentService.preparePayment(request?.user?.id, data);
