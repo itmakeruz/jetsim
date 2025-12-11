@@ -277,7 +277,7 @@ export class PaymentService {
       });
     }
 
-    await this.prisma.transaction.update({
+    const updatedTransaction = await this.prisma.transaction.update({
       where: {
         id: existTransaction.id,
       },
@@ -288,7 +288,7 @@ export class PaymentService {
       },
     });
 
-    await this.socketGateway.sendPaymentStatus(existTransaction.user.id, { status: existTransaction.status });
+    await this.socketGateway.sendPaymentStatus(existTransaction.user.id, { status: updatedTransaction.status });
 
     return this.orderService.create(existTransaction.user.id);
   }

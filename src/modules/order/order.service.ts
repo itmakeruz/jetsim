@@ -281,6 +281,7 @@ export class OrderService {
               item.tariff.sku_id,
               1,
             );
+            console.log(response);
 
             // response = {
             //   tradeCode: '1000',
@@ -351,6 +352,7 @@ export class OrderService {
             //     ],
             //   },
             // };
+            console.log(response);
 
             let status = true;
             if (response.tradeCode !== '1000') {
