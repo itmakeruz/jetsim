@@ -1,4 +1,4 @@
-import { TBANK_PASSWORD, TBANK_TERMINAL_ID, TBANK_URL } from '@config';
+import { TBANK_PASSWORD, TBANK_TERMINAL_ID, TBANK_URL, TBANK_WEBHOOK_URL } from '@config';
 import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { HttpService } from './http.service';
@@ -28,18 +28,36 @@ export class TBank {
   }
 
   //HELPERS
-  private generateToken(params: any, password: string): string {
-    const data = {
-      ...params,
-      Password: password,
-    };
+  private flatten(obj: any, prefix = '', result = {}) {
+    for (const key in obj) {
+      const value = obj[key];
+      const newKey = prefix ? `${prefix}${key}` : key;
 
-    const sortedPaylaod = Object.keys(data)
+      if (typeof value === 'object' && !Array.isArray(value)) {
+        this.flatten(value, newKey, result);
+      } else if (Array.isArray(value)) {
+        value.forEach((item, i) => {
+          this.flatten(item, `${newKey}${i}`, result);
+        });
+      } else {
+        result[newKey] = value;
+      }
+    }
+
+    return result;
+  }
+
+  private generateToken(params: any, password: string): string {
+    const flatObject = this.flatten(params);
+
+    flatObject['Password'] = password;
+
+    const sortedString = Object.keys(flatObject)
       .sort()
-      .map((key) => data[key])
+      .map((key) => flatObject[key])
       .join('');
 
-    return crypto.createHash('sha256').update(sortedPaylaod).digest('hex');
+    return crypto.createHash('sha256').update(sortedString).digest('hex');
   }
 
   private buildPayload(data: any) {
@@ -49,6 +67,7 @@ export class TBank {
     };
 
     payload.Token = this.generateToken(payload, this.PASSWORD);
+    payload.NotificationURL = TBANK_WEBHOOK_URL;
 
     return payload;
   }
