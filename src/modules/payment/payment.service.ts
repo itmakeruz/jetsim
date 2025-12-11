@@ -257,6 +257,10 @@ export class PaymentService {
       throw new BadRequestException();
     }
 
+    if (existTransaction.status === TransactionStatus.SUCCESS) {
+      return;
+    }
+
     if (data.Success === false) {
       await this.prisma.transaction.update({
         where: {
