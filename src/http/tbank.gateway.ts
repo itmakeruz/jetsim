@@ -1,4 +1,4 @@
-import { TBANK_PASSWORD, TBANK_TERMINAL_KEY, TBANK_URL } from '@config';
+import { TBANK_PASSWORD, TBANK_TERMINAL_ID, TBANK_URL } from '@config';
 import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { HttpService } from './http.service';
@@ -6,7 +6,7 @@ import { HttpService } from './http.service';
 export class TBank {
   private readonly URL = TBANK_URL;
   private readonly PASSWORD = TBANK_PASSWORD;
-  private readonly TERMINAl_KEY = TBANK_TERMINAL_KEY;
+  private readonly TBANK_TERMINAL_ID = TBANK_TERMINAL_ID;
   constructor(private readonly http: HttpService) {}
 
   async initPayment(dto: any) {
@@ -43,7 +43,7 @@ export class TBank {
   private buildPayload(data: any) {
     const payload = {
       ...data,
-      TerminalKey: this.TERMINAl_KEY,
+      TerminalKey: this.TBANK_TERMINAL_ID,
     };
 
     payload.Token = this.generateToken(payload, this.PASSWORD);

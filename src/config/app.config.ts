@@ -43,7 +43,7 @@ const ROLES_DECORATOR_KEY = config.get<string>('ROLES_DECORATOR_KEY') ?? '';
 
 // TBANK
 const TBANK_URL = config.get<string>('TBANK_URL') ?? '';
-const TBANK_TERMINAL_KEY = config.get<string>('TBANK_TERMINAL_KEY') ?? '';
+const TBANK_TERMINAL_ID = config.get<string>('TBANK_TERMINAL_ID') ?? '';
 const TBANK_WEBHOOK_URL = config.get<string>('TBANK_WEBHOOK_URL') ?? '';
 const TBANK_PASSWORD = config.get<string>('TBANK_PASSWORD') ?? '';
 
@@ -78,7 +78,7 @@ export {
   REDIS_PASSWORD,
   REDIS_OTP_PREFIX,
   TBANK_URL,
-  TBANK_TERMINAL_KEY,
+  TBANK_TERMINAL_ID,
   TBANK_WEBHOOK_URL,
   TBANK_PASSWORD,
   TELEGRAM_BOT_TOKEN,

@@ -113,7 +113,7 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
-  TBANK_TOKEN: string;
+  TBANK_TERMINAL_ID: string;
 
   @IsOptional()
   @IsString()
