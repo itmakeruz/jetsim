@@ -457,7 +457,7 @@ export class OrderService {
           id: item?.tariff?.id,
           name: item?.tariff?.[`name_${lang}`],
           price_sell: item.tariff?.price_sell ? item.tariff?.price_sell / 100 : item?.price,
-          total_amount: Number(item.price) * item.quantity,
+          total_amount: Number(item.price / 100) * item.quantity,
           quantity_sms: item.tariff.quantity_sms,
           quantity_minute: item.tariff.quantity_minute,
           quantity_internet: item.tariff.quantity_internet,
