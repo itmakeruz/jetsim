@@ -100,7 +100,7 @@ model Transaction {
   id                     Int               @id @default(autoincrement())
   amount                 String
   status                 TransactionStatus @default(PENDING)
-  partner_transaction_id Int?
+  partner_transaction_id BigInt?
   order_id               Int?
   user_id                Int?
 
