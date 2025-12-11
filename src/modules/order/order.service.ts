@@ -457,7 +457,7 @@ export class OrderService {
           id: item?.tariff?.id,
           name: item?.tariff?.[`name_${lang}`],
           price_sell: item.tariff?.price_sell ? item.tariff?.price_sell / 100 : item?.price,
-          total_amount: (item.price / 100) * item.quantity,
+          total_amount: Number(item.price / 100) * item.quantity,
           quantity_sms: item.tariff.quantity_sms,
           quantity_minute: item.tariff.quantity_minute,
           quantity_internet: item.tariff.quantity_internet,
@@ -515,7 +515,7 @@ export class OrderService {
             basket_id: basket.id,
             tariff_id: item.tariff_id,
             quantity: item.quantity,
-            price: tariff?.price_sell * 100,
+            price: tariff?.price_sell,
           },
         });
       }
@@ -571,7 +571,7 @@ export class OrderService {
           // region_id: data.region_id,
           tariff_id: data.tariff_id,
           quantity: data.quantity,
-          price: tariff?.price_sell * 100,
+          price: tariff?.price_sell,
         },
       });
     }
