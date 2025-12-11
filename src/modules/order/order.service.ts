@@ -447,7 +447,7 @@ export class OrderService {
       };
     }
 
-    const total = basket.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+    const total = basket.items.reduce((sum, item) => sum + Number(item.price / 100) * item.quantity, 0);
 
     return {
       success: true,
@@ -456,7 +456,7 @@ export class OrderService {
         items: basket.items.map((item) => ({
           id: item?.tariff?.id,
           name: item?.tariff?.[`name_${lang}`],
-          price_sell: item.tariff?.price_sell ?? item.price,
+          price_sell: item.tariff?.price_sell ? item.tariff?.price_sell / 100 : item?.price,
           total_amount: Number(item.price) * item.quantity,
           quantity_sms: item.tariff.quantity_sms,
           quantity_minute: item.tariff.quantity_minute,
