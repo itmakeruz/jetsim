@@ -28,11 +28,19 @@ export class TBank {
   }
 
   //HELPERS
-  private generateToken(params: Record<string, any>, password: string): string {
-    const data = {
-      ...params,
-      Password: password,
-    };
+  private generateToken(payload: any, password: string): string {
+    const data: Record<string, any> = {};
+
+    // Token faqat primitive root-level maydonlar bo‘yicha yaratiladi
+    for (const key of Object.keys(payload)) {
+      const val = payload[key];
+
+      if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+        data[key] = val;
+      }
+    }
+
+    data.Password = password;
 
     const sortedPayload = Object.keys(data)
       .sort()
