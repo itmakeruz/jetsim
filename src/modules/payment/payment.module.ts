@@ -4,10 +4,12 @@ import { PaymentController } from './payment.controller';
 import { PrismaModule } from '@prisma';
 import { WinstonLoggerService } from '@logger';
 import { HttpModule, TBank } from '@http';
+import { OrderModule } from '../order';
+import { OrderService } from '../order/order.service';
 
 @Module({
   controllers: [PaymentController],
-  providers: [PaymentService, WinstonLoggerService, TBank],
-  imports: [PrismaModule, HttpModule],
+  providers: [PaymentService, WinstonLoggerService, TBank, OrderService],
+  imports: [PrismaModule, HttpModule, OrderModule],
 })
 export class PaymentModule {}

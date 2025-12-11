@@ -515,7 +515,7 @@ export class OrderService {
             basket_id: basket.id,
             tariff_id: item.tariff_id,
             quantity: item.quantity,
-            price: tariff?.price_sell?.toString() ?? '0', // ❗ region emas, faqat tariff dan narx
+            price: tariff?.price_sell * 100,
           },
         });
       }
@@ -571,7 +571,7 @@ export class OrderService {
           // region_id: data.region_id,
           tariff_id: data.tariff_id,
           quantity: data.quantity,
-          price: tariff?.price_sell?.toString() ?? '0',
+          price: tariff?.price_sell * 100,
         },
       });
     }

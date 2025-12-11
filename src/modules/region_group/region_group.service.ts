@@ -85,7 +85,7 @@ export class RegionGroupService {
         id: group.id,
         name: group[`name_${lan}`],
         image: `${FilePath.REGION_GROUP_ICON}/${group.image}`,
-        min_price: group.tariffs[0]?.price_sell ?? 0,
+        min_price: group.tariffs[0]?.price_sell / 100 || 0,
         regions: group.regions.map((r) => ({
           id: r.id,
           name: r[`name_${lan}`],
@@ -251,7 +251,7 @@ export class RegionGroupService {
       const formatted = {
         id: plan.id,
         name: plan[`name_${lang}`] || plan.name_ru,
-        price_sell: plan.price_sell,
+        price_sell: plan.price_sell / 100,
         quantity_internet: plan.quantity_internet,
         quantity_sms: plan.quantity_sms,
         quantity_minute: plan.quantity_minute,

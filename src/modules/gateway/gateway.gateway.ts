@@ -42,6 +42,10 @@ export class GatewayGateway implements OnGatewayConnection, OnGatewayDisconnect 
   @SubscribeMessage('action')
   async action(@ConnectedSocket() client: Socket) {}
 
+  async sendPaymentStatus(user_id: number, status: { status: string }) {
+    this.server.to(`user_${user_id}`).emit('payment_status', { status });
+  }
+
   async sendOrderMessage(user_id: number, order_id: number, qrcode: string) {
     this.server.to(`user_${user_id}`).emit('order', { order_id, qrcode });
   }

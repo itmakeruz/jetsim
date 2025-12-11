@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto, GetTransactionDto, UpdatePaymentDto } from './dto';
-import { ParamId } from '@enums';
+import { DeviceHeadersDto, ParamId } from '@enums';
 import { IRequest } from '@interfaces';
+import { HeadersValidation } from '@decorators';
 
 @Controller('payment')
 export class PaymentController {
@@ -19,8 +20,13 @@ export class PaymentController {
   }
 
   @Post()
-  create(@Body() data: CreatePaymentDto) {
-    return this.paymentService.create(data);
+  async create(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
+    return this.paymentService.create(request?.user?.id, headers?.lang);
+  }
+
+  @Post('prepare-payment')
+  async preparePayment(@Req() request: IRequest, @Body() data: any) {
+    return this.paymentService.preparePayment(request?.user?.id, data);
   }
 
   @Post('accept-payment-test')
@@ -28,10 +34,10 @@ export class PaymentController {
     return this.paymentService.acceptPaymentTest(request?.user?.id, data);
   }
 
-  @Post('accept-transaction-status')
-  acceptTransactionStatus(@Body() data: any) {
-    return this.paymentService.create(data);
-  }
+  // @Post('accept-transaction-status')
+  // acceptTransactionStatus(@Body() data: any) {
+  //   return this.paymentService.create(data);
+  // }
 
   @Patch(':id')
   update(@Param() param: ParamId, @Body() data: UpdatePaymentDto) {

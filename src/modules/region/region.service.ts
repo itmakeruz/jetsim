@@ -82,7 +82,7 @@ export class RegionService {
         name: region[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region.image}`,
         status: region.status,
-        min_price: region.tariffs[0]?.price_sell ?? 0,
+        min_price: region.tariffs[0]?.price_sell / 100 || 0,
         created_at: region.created_at,
       })),
     };
@@ -132,7 +132,7 @@ export class RegionService {
       const formatted = {
         id: plan.id,
         name: plan[`name_${lang}`],
-        price_sell: plan.price_sell,
+        price_sell: plan.price_sell / 100,
         quantity_internet: plan.quantity_internet,
         validity_period: plan.validity_period,
         region_group: plan.region_group
