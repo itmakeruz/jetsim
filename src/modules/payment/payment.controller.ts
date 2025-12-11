@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto, GetTransactionDto, UpdatePaymentDto } from './dto';
 import { ParamId } from '@enums';
+import { IRequest } from '@interfaces';
 
 @Controller('payment')
 export class PaymentController {
@@ -20,6 +21,11 @@ export class PaymentController {
   @Post()
   create(@Body() data: CreatePaymentDto) {
     return this.paymentService.create(data);
+  }
+
+  @Post('accept-payment-test')
+  async acceptPaymentTest(@Req() request: IRequest, @Body() data: any) {
+    return this.paymentService.acceptPaymentTest(request?.user?.id, data);
   }
 
   @Post('accept-transaction-status')

@@ -3,12 +3,14 @@ import { CreatePaymentDto, GetTransactionDto, UpdatePaymentDto } from './dto';
 import { PrismaService } from '@prisma';
 import { WinstonLoggerService } from '@logger';
 import { paginate } from '@helpers';
+import { TBank } from '@http';
 
 @Injectable()
 export class PaymentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: WinstonLoggerService,
+    private readonly TbankService: TBank,
   ) {}
   async findAll(query: GetTransactionDto) {
     const transactions = await paginate('transaction', {
@@ -53,6 +55,13 @@ export class PaymentService {
       message: '',
       data: data,
     };
+  }
+
+  async acceptPaymentTest(userId: number, data: any) {
+    const response = await this.TbankService.initPayment(data);
+    console.log(response);
+
+    return response;
   }
 
   update(id: number, data: UpdatePaymentDto) {
