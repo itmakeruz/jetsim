@@ -6,6 +6,7 @@ import { IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { TBankWebHookResponse } from '@constants';
 
 @Controller('payment')
 export class PaymentController {
@@ -39,10 +40,10 @@ export class PaymentController {
     return this.paymentService.acceptPaymentTest(request?.user?.id, data);
   }
 
-  // @Post('accept-transaction-status')
-  // acceptTransactionStatus(@Body() data: any) {
-  //   return this.paymentService.create(data);
-  // }
+  @Post('accept-transaction-status')
+  acceptTransactionStatus(@Body() data: TBankWebHookResponse) {
+    return this.paymentService.acceptTransactionStatus(data);
+  }
 
   @Patch(':id')
   update(@Param() param: ParamId, @Body() data: UpdatePaymentDto) {
