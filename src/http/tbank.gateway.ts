@@ -15,6 +15,8 @@ export class TBank {
   }
 
   async sendInit(payload: any) {
+    console.log(payload);
+
     return this.http
       .setUrl(this.URL + '/v2/Init')
       .setMethod('POST')
