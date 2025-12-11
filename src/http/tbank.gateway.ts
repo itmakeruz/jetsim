@@ -28,46 +28,28 @@ export class TBank {
   }
 
   //HELPERS
-  private flatten(obj: any, prefix = '', result = {}) {
-    for (const key in obj) {
-      const value = obj[key];
-      const newKey = prefix ? `${prefix}${key}` : key;
+  private generateToken(params: Record<string, any>, password: string): string {
+    const data = {
+      ...params,
+      Password: password,
+    };
 
-      if (typeof value === 'object' && !Array.isArray(value)) {
-        this.flatten(value, newKey, result);
-      } else if (Array.isArray(value)) {
-        value.forEach((item, i) => {
-          this.flatten(item, `${newKey}${i}`, result);
-        });
-      } else {
-        result[newKey] = value;
-      }
-    }
-
-    return result;
-  }
-
-  private generateToken(params: any, password: string): string {
-    const flatObject = this.flatten(params);
-
-    flatObject['Password'] = password;
-
-    const sortedString = Object.keys(flatObject)
+    const sortedPayload = Object.keys(data)
       .sort()
-      .map((key) => flatObject[key])
+      .map((key) => data[key])
       .join('');
 
-    return crypto.createHash('sha256').update(sortedString).digest('hex');
+    return crypto.createHash('sha256').update(sortedPayload).digest('hex');
   }
 
   private buildPayload(data: any) {
     const payload = {
       ...data,
       TerminalKey: this.TBANK_TERMINAL_ID,
+      NotificationURL: TBANK_WEBHOOK_URL,
     };
 
     payload.Token = this.generateToken(payload, this.PASSWORD);
-    payload.NotificationURL = TBANK_WEBHOOK_URL;
 
     return payload;
   }
