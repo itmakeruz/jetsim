@@ -47,25 +47,27 @@ export class TelegramBotService {
   }) {
     const partnerName = this.getPartnerName(params.partnerId);
 
+    const formattedResponse = '```json\n' + JSON.stringify(params.response, null, 2) + '\n```';
+
     const message = `=
-    ✅ ${partnerName} - Заказ успешно оформлен!
+✅ ${partnerName} - Заказ успешно оформлен!
 
-    📋 Информация о заказе:
-    • ID заказа: ${params.orderId}
-    • ID ESIM: ${params.esimId}
-    • Дата: ${params.date}
+📋 Информация о заказе:
+• ID заказа: ${params.orderId}
+• ID ESIM: ${params.esimId}
+• Дата: ${params.date}
 
-    👤 Клиент:
-    • Имя: ${params.client.name}
-    • Электронная почта: ${params.client.email}
+👤 Клиент:
+• Имя: ${params.client.name}
+• Электронная почта: ${params.client.email}
 
-    🔄 Ответ от ${partnerName}:
-    • Trade Code: ${params.tradeCode}
-    • Order ID: ${params.providerOrderId}
+🔄 Ответ от ${partnerName}:
+• Trade Code: ${params.tradeCode ?? '—'}
+• Order ID: ${params.providerOrderId ?? '—'}
 
-    📄 Ответ:
-    ${JSON.stringify(params.response)}
-    `;
+📄 Ответ:
+${formattedResponse}
+`;
 
     await this.send(message);
   }
