@@ -9,6 +9,7 @@ import { TaxValues } from '@constants';
 import { TransactionStatus } from '@prisma/client';
 import { OrderService } from '../order/order.service';
 import { GatewayGateway } from '../gateway';
+import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
 
 @Injectable()
 export class PaymentService {
@@ -290,7 +291,7 @@ export class PaymentService {
 
     await this.socketGateway.sendPaymentStatus(existTransaction.user.id, { status: updatedTransaction.status });
 
-    return this.orderService.create(existTransaction.user.id);
+    return this.orderService.create(existTransaction.user.id, updatedTransaction.id);
   }
 
   async acceptPaymentTest(id: number, data: any) {

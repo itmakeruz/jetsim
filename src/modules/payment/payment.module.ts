@@ -7,10 +7,11 @@ import { HttpModule, TBank } from '@http';
 import { OrderModule } from '../order';
 import { OrderService } from '../order/order.service';
 import { QrService } from '@helpers';
+import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
 
 @Module({
   controllers: [PaymentController],
-  providers: [PaymentService, WinstonLoggerService, TBank, OrderService, QrService],
+  providers: [PaymentService, WinstonLoggerService, TBank, OrderService, QrService, TelegramBotService],
   imports: [PrismaModule, HttpModule, OrderModule],
 })
 export class PaymentModule {}

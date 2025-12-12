@@ -11,20 +11,30 @@ export class TBank {
 
   async initPayment(dto: any) {
     const payload = this.buildPayload(dto);
-    return this.sendInit(payload);
+    return this.sendInit(payload, '/v2/Init');
   }
 
-  async sendInit(payload: any) {
+  async sendInit(payload: any, endpoint: string) {
     console.log(payload);
 
     return this.http
-      .setUrl(this.URL + '/v2/Init')
+      .setUrl(this.URL + endpoint)
       .setMethod('POST')
       .setBody(payload)
       .setHeaders({ 'Content-Type': 'application/json' })
       .setTimeout(30)
       .setIsLog(true)
       .send();
+  }
+
+  async getPaymentStatus(paymentId: number) {
+    const payload = {
+      TerminalKey: TBANK_TERMINAL_ID,
+      PaymentId: paymentId,
+      Token: this.generateToken({ TerminalKey: TBANK_TERMINAL_ID, PaymentId: paymentId }, TBANK_PASSWORD),
+    };
+
+    return this.sendInit(payload, '/v2/GetState');
   }
 
   //HELPERS

@@ -5,10 +5,11 @@ import { PrismaModule } from '@prisma';
 import { HttpModule, JoyTel } from '@http';
 import { QrService } from '@helpers';
 import { WinstonLoggerService } from '@logger';
+import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
 
 @Module({
   imports: [PrismaModule, HttpModule],
   controllers: [OrderController],
-  providers: [OrderService, JoyTel, QrService, WinstonLoggerService],
+  providers: [OrderService, JoyTel, QrService, WinstonLoggerService, TelegramBotService],
 })
 export class OrderModule {}
