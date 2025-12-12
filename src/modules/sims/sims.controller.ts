@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
 import { SimsService } from './sims.service';
 import { DeviceHeadersDto, ParamId } from '@enums';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('sims')
 export class SimsController {
@@ -16,18 +17,24 @@ export class SimsController {
   }
 
   @ApiOperation({ summary: 'Get all sims static' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Get('static')
   async findAllStaticSims(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.simsService.staticSims(request?.user?.id, headers?.lang);
   }
 
   @ApiOperation({ summary: 'Get all sims active working' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Get('active')
   async findAllActiveStaticSims(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.simsService.getActiveSimsStatic(request?.user?.id, headers?.lang);
   }
 
   @ApiOperation({ summary: 'Get all sims already activated also no actiive' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Get('activated')
   async findAllActivatedStaticSims(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.simsService.activatedStaticSims(request?.user?.id, headers?.lang);
