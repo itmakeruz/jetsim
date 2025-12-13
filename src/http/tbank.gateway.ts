@@ -65,6 +65,7 @@ export class TBank {
       ...data,
       TerminalKey: this.TBANK_TERMINAL_ID,
       NotificationURL: TBANK_WEBHOOK_URL,
+      SuccessURL: 'https://jetsim.netlify.app/',
     };
 
     payload.Token = this.generateToken(payload, this.PASSWORD);
