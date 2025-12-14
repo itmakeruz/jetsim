@@ -274,6 +274,7 @@ export class SimsService {
       select: {
         id: true,
         order_id: true,
+        status: true,
         created_at: true,
         tariff: {
           select: {
@@ -315,6 +316,7 @@ export class SimsService {
           order_id: sim?.order_id,
           tariff_id: sim?.tariff?.id,
           tariff_name: sim?.tariff?.[`name_${lang}`],
+          status: sim?.status,
           usage: 300,
           day_left: 10,
           is_4g: sim?.tariff?.is_4g,
@@ -350,6 +352,7 @@ export class SimsService {
         puk_1: true,
         puk_2: true,
         qrcode: true,
+        status: true,
         tariff: {
           select: {
             id: true,
@@ -389,6 +392,7 @@ export class SimsService {
           order_id: sim?.order_id,
           tariff_id: sim?.tariff?.id,
           tariff_name: sim?.tariff?.[`name_${lang}`],
+          status: sim?.status,
           usage: sim?.tariff?.quantity_internet,
           day_left: sim?.tariff?.validity_period,
           is_4g: sim?.tariff?.is_4g,
