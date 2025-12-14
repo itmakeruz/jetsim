@@ -394,6 +394,11 @@ export class SimsService {
           is_4g: sim?.tariff?.is_4g,
           is_5g: sim?.tariff?.is_5g,
           qr_code: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
+          pin_1: sim?.pin_1,
+          pin_2: sim?.pin_2,
+          puk_1: sim?.puk_1,
+          puk_2: sim?.puk_2,
+          iccid: sim?.iccid,
           region_group: {
             id: sim?.tariff?.region_group?.id,
             name: sim?.tariff?.region_group?.[`name_${lang}`],
