@@ -341,7 +341,9 @@ export class SimsService {
     const sims = await paginate('sims', {
       where: {
         user_id: userId,
-        sim_status: null,
+        sim_status: {
+          not: 'ACTIVATED',
+        },
       },
       select: {
         id: true,
