@@ -468,4 +468,44 @@ export class SimsService {
       }
     }
   }
+
+  async getUsage(userId: number) {
+    const sims = await this.prisma.sims.findMany({
+      where: {
+        user_id: userId,
+        sim_status: 'ACTIVATED',
+        status: 'COMPLETED',
+      },
+      select: {
+        id: true,
+        coupon: true,
+        iccid: true,
+        status: true,
+        partner_id: true,
+      },
+    });
+
+    for (let sim of sims) {
+      if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
+        const response = await this.billionConnectService.getUsage({ iccid: sim.iccid });
+        const usage = response.subOrderList[0].usageInfoList?.reduce(
+          (acc: number, infoList: { usedDate: string; usageAmt: string }) => {
+            acc += Number(infoList.usedDate);
+          },
+          0,
+        );
+
+        console.log(usage);
+
+        await this.prisma.sims.update({
+          where: {
+            id: sim.id,
+          },
+          data: {
+            last_usage_quantity: usage.toString(),
+          },
+        });
+      }
+    }
+  }
 }

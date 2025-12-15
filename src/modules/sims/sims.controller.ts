@@ -46,6 +46,14 @@ export class SimsController {
     return this.simsService.checkSimStatusOnPartnerSide();
   }
 
+  @ApiOperation({ summary: 'Get all sims' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Get('usage')
+  async getUsage(@Req() request: IRequest) {
+    return this.simsService.getUsage(request.user.id);
+  }
+
   @ApiOperation({ summary: 'Get sim by id' })
   @Get(':id')
   async findOne(@Param() param: ParamId) {

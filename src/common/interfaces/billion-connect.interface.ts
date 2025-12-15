@@ -53,10 +53,7 @@ export interface BillionConnectCallbackResponse {
 }
 
 export interface GetUsageRequest {
-  orderId: string;
-  channelOrderId: string;
   iccid: string;
-  language: number;
 }
 
 export interface GetStatusRequest {
