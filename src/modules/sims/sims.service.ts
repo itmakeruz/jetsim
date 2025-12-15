@@ -424,7 +424,6 @@ export class SimsService {
     const sims = await this.prisma.sims.findMany({
       where: {
         id: userId,
-        status: 'COMPLETED',
       },
       select: {
         id: true,
@@ -433,17 +432,19 @@ export class SimsService {
         partner_id: true,
       },
     });
-    console.log(sims);
+    console.log(sims, 'sims');
 
     for (let sim of sims) {
-      console.log(sim);
+      console.log(sim, 'sim');
 
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
+        console.log('ifga kirdim');
+
         const partnerStatus = await this.billionConnectService.getStatus({ iccid: sim.iccid });
         const status = partnerStatus.tradeData.find((el) => {
           el.status = 2;
         });
-        console.log(status);
+        console.log(status, 'statusman');
 
         if (status || status.length > 0) {
           await this.prisma.sims.update({
