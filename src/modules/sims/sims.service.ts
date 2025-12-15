@@ -426,8 +426,8 @@ export class SimsService {
     const sims = await this.prisma.sims.findMany({
       where: {
         user_id: userId,
-        sim_status: {
-          not: 'ACTIVATED',
+        status: {
+          notIn: ['FAILED', 'PENDING', 'NOTIFY_COUPON', 'REDEEM_COUPON'],
         },
       },
       select: {
