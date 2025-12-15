@@ -337,6 +337,7 @@ export class SimsService {
   }
 
   async getActiveSimsStatic(userId: number, lang: string) {
+    await this.updateStatus(userId);
     const sims = await paginate('sims', {
       where: {
         user_id: userId,
@@ -417,5 +418,41 @@ export class SimsService {
         };
       }),
     };
+  }
+
+  async updateStatus(userId: number) {
+    const sims = await this.prisma.sims.findMany({
+      where: {
+        id: userId,
+        sim_status: {
+          not: 'ACTIVATED',
+        },
+      },
+      select: {
+        id: true,
+        coupon: true,
+        iccid: true,
+        partner_id: true,
+      },
+    });
+
+    for (let sim of sims) {
+      if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
+        const partnerStatus = await this.billionConnectService.getStatus({ iccid: sim.iccid });
+        const status = partnerStatus.tradeData.find((el) => {
+          el.status = 2;
+        });
+        if (status || status.length > 0) {
+          await this.prisma.sims.update({
+            where: {
+              id: sim?.id,
+            },
+            data: {
+              sim_status: 'ACTIVATED',
+            },
+          });
+        }
+      }
+    }
   }
 }
