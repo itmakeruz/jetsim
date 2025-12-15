@@ -454,4 +454,57 @@ export class SimsService {
       }
     }
   }
+
+  async getUsage(userId: number) {
+    const sims = await this.prisma.sims.findMany({
+      where: {
+        user_id: userId,
+        sim_status: 'ACTIVATED',
+        status: 'COMPLETED',
+      },
+      select: {
+        id: true,
+        coupon: true,
+        iccid: true,
+        status: true,
+        partner_id: true,
+        partner_order_id: true,
+      },
+    });
+    console.log(sims);
+    const responses: any = [];
+
+    for (let sim of sims) {
+      if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
+        const response = await this.billionConnectService.getUsage({
+          iccid: sim.iccid,
+          orderId: sim?.partner_order_id,
+        });
+        console.log(response);
+        responses.push(response);
+        const tradeData = response?.tradeData ?? null;
+
+        if (Array.isArray(tradeData) && response?.tradeCode === '1000') {
+          const usage = response.subOrderList[0].usageInfoList?.reduce(
+            (acc: number, infoList: { usedDate: string; usageAmt: string }) => {
+              acc += Number(infoList.usedDate);
+            },
+            0,
+          );
+
+          console.log(usage);
+
+          await this.prisma.sims.update({
+            where: {
+              id: sim.id,
+            },
+            data: {
+              last_usage_quantity: usage.toString(),
+            },
+          });
+        }
+      }
+    }
+    return responses;
+  }
 }

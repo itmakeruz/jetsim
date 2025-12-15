@@ -313,6 +313,7 @@ export class OrderService {
               order_tid: response?.orderTid,
               order_code: response?.orderCode,
               status: status ? OrderStatus.REDEEM_COUPON : OrderStatus.FAILED,
+              response: Object.assign(newSim?.response, response),
             },
             select: {
               id: true,
@@ -400,6 +401,8 @@ export class OrderService {
             },
             data: {
               status: status ? OrderStatus.NOTIFY_COUPON : OrderStatus.FAILED,
+              response: Object.assign(newSim?.response, response),
+              partner_order_id: response?.tradeData?.orderId,
             },
           });
 
@@ -413,8 +416,8 @@ export class OrderService {
                 name: newOrder.user.name,
                 email: newOrder.user.email,
               },
-              tradeCode: response?.radeCode,
-              providerOrderId: response?.radeData?.orderId,
+              tradeCode: response?.tradeCode,
+              providerOrderId: response?.tradeData?.orderId,
               response,
             });
           } else {
@@ -427,8 +430,8 @@ export class OrderService {
                 name: newOrder.user.name,
                 email: newOrder.user.email,
               },
-              errorCode: response?.radeCode,
-              providerOrderId: response?.radeData?.orderId,
+              errorCode: response?.tradeCode,
+              providerOrderId: response?.tradeData?.orderId,
               response,
             });
           }
@@ -915,9 +918,9 @@ export class OrderService {
     if (sim?.partner?.identified_number === PartnerIds.BILLION_CONNECT) {
       response = await this.billionConnect.getUsage({
         orderId: sim?.order_code,
-        channelOrderId: sim?.channel_order_id,
+        // channelOrderId: sim?.channel_order_id,
         iccid: sim?.iccid,
-        language: 2,
+        // language: 2,
       });
     }
     return {

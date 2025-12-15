@@ -101,9 +101,8 @@ export class BillionConnectService {
       tradeType: 'F046',
       tradeTime: this.formatDateTime(new Date()),
       tradeData: {
-        orderId: data?.orderId,
-        channelOrderId: data?.channelOrderId,
         iccid: data?.iccid,
+        orderId: data?.orderId,
         language: 2, //english,
       },
     };
