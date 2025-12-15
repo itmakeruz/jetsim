@@ -337,7 +337,7 @@ export class SimsService {
   }
 
   async getActiveSimsStatic(userId: number, lang: string) {
-    await this.updateStatus(userId);
+    console.log(await this.updateStatus(userId));
     const sims = await paginate('sims', {
       where: {
         user_id: userId,
@@ -435,8 +435,11 @@ export class SimsService {
         partner_id: true,
       },
     });
+    console.log(sims);
 
     for (let sim of sims) {
+      console.log(sim);
+
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
         const partnerStatus = await this.billionConnectService.getStatus({ iccid: sim.iccid });
         const status = partnerStatus.tradeData.find((el) => {
