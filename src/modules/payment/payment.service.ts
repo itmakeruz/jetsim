@@ -257,12 +257,10 @@ export class PaymentService {
     if (!existTransaction) {
       throw new BadRequestException();
     }
-    console.log('men tepamandeeeeee');
 
     if (existTransaction.status === TransactionStatus.SUCCESS) {
       return;
     }
-    console.log('otib ketvomanu man eeeeee');
 
     if (data.Success === false) {
       await this.prisma.transaction.update({

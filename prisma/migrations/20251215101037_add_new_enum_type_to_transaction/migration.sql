@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "TransactionStatus" ADD VALUE 'WAITING_ORDER_CONFIRMATION';
