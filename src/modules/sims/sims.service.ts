@@ -443,23 +443,29 @@ export class SimsService {
       console.log(sim, 'sim');
 
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
-        console.log('ifga kirdim');
+        console.log('Billion Connect partner uchun status tekshirilmoqda...', sim.iccid);
 
         const partnerStatus = await this.billionConnectService.getStatus({ iccid: sim.iccid });
-        console.log(partnerStatus);
+        console.log('Partner status:', partnerStatus);
 
-        const hasActivatedStatus = partnerStatus.tradeData.some((el: any) => el.status === 2);
-        console.log(hasActivatedStatus, 'statusman');
+        // Xavfsiz tekshirish: tradeData mavjudmi va massivmi?
+        const tradeData = partnerStatus?.tradeData ?? null;
 
-        if (hasActivatedStatus) {
-          await this.prisma.sims.update({
-            where: {
-              id: sim?.id,
-            },
-            data: {
-              sim_status: 'ACTIVATED',
-            },
-          });
+        if (Array.isArray(tradeData)) {
+          const hasActivatedStatus = tradeData.some((el: any) => el.status === 2);
+
+          if (hasActivatedStatus) {
+            await this.prisma.sims.update({
+              where: { id: sim.id },
+              data: { sim_status: 'ACTIVATED' },
+            });
+            console.log(`SIM ${sim.iccid} ACTIVATED ga o'tkazildi`);
+          } else {
+            console.log(`SIM ${sim.iccid} uchun status 2 topilmadi`);
+          }
+        } else {
+          console.log(`SIM ${sim.iccid} uchun tradeData null yoki massiv emas:`, tradeData);
+          // Bu yerda kerak bo'lsa boshqa logika qo'shishingiz mumkin (masalan, xato holati)
         }
       }
     }
