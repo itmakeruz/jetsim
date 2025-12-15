@@ -475,23 +475,27 @@ export class SimsService {
         const response = await this.billionConnectService.getUsage({ iccid: sim.iccid });
         console.log(response);
 
-        const usage = response.subOrderList[0].usageInfoList?.reduce(
-          (acc: number, infoList: { usedDate: string; usageAmt: string }) => {
-            acc += Number(infoList.usedDate);
-          },
-          0,
-        );
+        const tradeData = response?.tradeData ?? null;
 
-        console.log(usage);
+        if (Array.isArray(tradeData) && response?.tradeCode === '1000') {
+          const usage = response.subOrderList[0].usageInfoList?.reduce(
+            (acc: number, infoList: { usedDate: string; usageAmt: string }) => {
+              acc += Number(infoList.usedDate);
+            },
+            0,
+          );
 
-        await this.prisma.sims.update({
-          where: {
-            id: sim.id,
-          },
-          data: {
-            last_usage_quantity: usage.toString(),
-          },
-        });
+          console.log(usage);
+
+          await this.prisma.sims.update({
+            where: {
+              id: sim.id,
+            },
+            data: {
+              last_usage_quantity: usage.toString(),
+            },
+          });
+        }
       }
     }
   }
