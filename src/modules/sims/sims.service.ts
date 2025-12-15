@@ -449,7 +449,7 @@ export class SimsService {
         console.log(partnerStatus);
 
         const status = partnerStatus.tradeData.find((el) => {
-          el.status = 2;
+          el.status === 2;
         });
         console.log(status, 'statusman');
 
