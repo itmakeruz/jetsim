@@ -337,6 +337,7 @@ enum TariffType {
 enum TransactionStatus {
   PENDING // Xarid yaratilgan, to'lov kutilmoqda
   SUCCESS // To'lov muvaffaqiyatli amalga oshdi
+  WAITING_ORDER_CONFIRMATION // To'lov tasdiqlanishi kutilmoqda
   FAILED // To'lov rad etildi / muvaffaqiyatsiz
   CANCELED // To'lov bekor qilindi
   REFUNDED // To'lov qaytarildi
