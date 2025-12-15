@@ -402,6 +402,7 @@ export class OrderService {
             data: {
               status: status ? OrderStatus.NOTIFY_COUPON : OrderStatus.FAILED,
               response: Object.assign(newSim?.response, response),
+              partner_order_id: response?.tradeData?.orderId,
             },
           });
 
@@ -916,7 +917,7 @@ export class OrderService {
     }
     if (sim?.partner?.identified_number === PartnerIds.BILLION_CONNECT) {
       response = await this.billionConnect.getUsage({
-        // orderId: sim?.order_code,
+        orderId: sim?.order_code,
         // channelOrderId: sim?.channel_order_id,
         iccid: sim?.iccid,
         // language: 2,

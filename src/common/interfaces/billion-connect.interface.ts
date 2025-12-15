@@ -54,6 +54,7 @@ export interface BillionConnectCallbackResponse {
 
 export interface GetUsageRequest {
   iccid: string;
+  orderId: string;
 }
 
 export interface GetStatusRequest {
