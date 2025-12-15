@@ -419,8 +419,6 @@ export class SimsService {
   }
 
   async updateStatus(userId: number) {
-    console.log(userId);
-
     const sims = await this.prisma.sims.findMany({
       where: {
         user_id: userId,
@@ -435,18 +433,11 @@ export class SimsService {
         partner_id: true,
       },
     });
-    console.log(sims, 'sims');
 
     for (let sim of sims) {
-      console.log(sim, 'sim');
-
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
-        console.log('Billion Connect partner uchun status tekshirilmoqda...', sim.iccid);
-
         const partnerStatus = await this.billionConnectService.getStatus({ iccid: sim.iccid });
-        console.log('Partner status:', partnerStatus);
 
-        // Xavfsiz tekshirish: tradeData mavjudmi va massivmi?
         const tradeData = partnerStatus?.tradeData ?? null;
 
         if (Array.isArray(tradeData)) {
@@ -457,13 +448,7 @@ export class SimsService {
               where: { id: sim.id },
               data: { sim_status: 'ACTIVATED' },
             });
-            console.log(`SIM ${sim.iccid} ACTIVATED ga o'tkazildi`);
-          } else {
-            console.log(`SIM ${sim.iccid} uchun status 2 topilmadi`);
           }
-        } else {
-          console.log(`SIM ${sim.iccid} uchun tradeData null yoki massiv emas:`, tradeData);
-          // Bu yerda kerak bo'lsa boshqa logika qo'shishingiz mumkin (masalan, xato holati)
         }
       }
     }
