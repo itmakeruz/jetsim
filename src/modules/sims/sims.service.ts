@@ -504,5 +504,6 @@ export class SimsService {
         }
       }
     }
+    return responses;
   }
 }
