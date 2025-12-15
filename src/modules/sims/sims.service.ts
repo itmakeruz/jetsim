@@ -448,12 +448,10 @@ export class SimsService {
         const partnerStatus = await this.billionConnectService.getStatus({ iccid: sim.iccid });
         console.log(partnerStatus);
 
-        const status = partnerStatus.tradeData.find((el) => {
-          el.status === 2;
-        });
-        console.log(status, 'statusman');
+        const hasActivatedStatus = partnerStatus.tradeData.some((el: any) => el.status === 2);
+        console.log(hasActivatedStatus, 'statusman');
 
-        if (status || status.length > 0) {
+        if (hasActivatedStatus) {
           await this.prisma.sims.update({
             where: {
               id: sim?.id,
