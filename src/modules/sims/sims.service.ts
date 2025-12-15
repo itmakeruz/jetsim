@@ -424,6 +424,7 @@ export class SimsService {
     const sims = await this.prisma.sims.findMany({
       where: {
         id: userId,
+        status: 'COMPLETED',
       },
       select: {
         id: true,
