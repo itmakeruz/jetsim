@@ -446,6 +446,8 @@ export class SimsService {
         console.log('ifga kirdim');
 
         const partnerStatus = await this.billionConnectService.getStatus({ iccid: sim.iccid });
+        console.log(partnerStatus);
+
         const status = partnerStatus.tradeData.find((el) => {
           el.status = 2;
         });
