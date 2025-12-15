@@ -129,19 +129,19 @@ export class AuthService {
   async auth(data: AuthDto, lang: string) {
     const isExist = await this.prisma.user.findFirst({
       where: {
-        email: data.email,
+        email: data.email.toLowerCase(),
       },
     });
 
     if (!isExist) {
       await this.prisma.user.create({
         data: {
-          email: data.email,
+          email: data.email.toLowerCase(),
         },
       });
     }
 
-    await this.generateAndStoreOtp(data.email);
+    await this.generateAndStoreOtp(data.email.toLowerCase());
 
     return {
       success: true,
@@ -151,7 +151,7 @@ export class AuthService {
   }
 
   async verifyOtp(email: string, otp: string, lang: string = 'ru') {
-    const key = `otp:${email}`;
+    const key = `otp:${email.toLowerCase()}`;
     const storedOtp = await this.redisService.getOtp(key);
 
     if (!storedOtp) {
@@ -166,7 +166,7 @@ export class AuthService {
 
     const user = await this.prisma.user.findFirst({
       where: {
-        email: email,
+        email: email.toLowerCase(),
       },
     });
 
