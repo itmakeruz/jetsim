@@ -263,10 +263,10 @@ export class SimsService {
 
   async activatedStaticSims(userId: number, lang: string) {
     const sims = await paginate('sims', {
-      // page: query?.page,
-      // size: query?.size,
-      // filter: query?.filters,
-      // sort: query?.sort,
+      page: 1,
+      size: 20,
+      filter: null,
+      sort: null,
       where: {
         user_id: userId,
         sim_status: SimStatus.ACTIVATED,
