@@ -473,6 +473,8 @@ export class SimsService {
     for (let sim of sims) {
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
         const response = await this.billionConnectService.getUsage({ iccid: sim.iccid });
+        console.log(response);
+
         const usage = response.subOrderList[0].usageInfoList?.reduce(
           (acc: number, infoList: { usedDate: string; usageAmt: string }) => {
             acc += Number(infoList.usedDate);
