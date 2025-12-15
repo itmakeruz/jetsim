@@ -262,11 +262,7 @@ export class SimsService {
   }
 
   async activatedStaticSims(userId: number, lang: string) {
-    const sims = await paginate('sims', {
-      page: 1,
-      size: 20,
-      filter: null,
-      sort: null,
+    const sims = await this.prisma.sims.findMany({
       where: {
         user_id: userId,
         sim_status: SimStatus.ACTIVATED,
@@ -310,7 +306,7 @@ export class SimsService {
       success: true,
       message: 'success',
       ...sims,
-      data: sims?.data?.map((sim: any) => {
+      data: sims?.map((sim: any) => {
         return {
           id: sim?.id,
           order_id: sim?.order_id,
