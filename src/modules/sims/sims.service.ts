@@ -421,6 +421,8 @@ export class SimsService {
   }
 
   async updateStatus(userId: number) {
+    console.log(userId);
+
     const sims = await this.prisma.sims.findMany({
       where: {
         id: userId,
