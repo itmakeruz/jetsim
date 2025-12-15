@@ -49,7 +49,7 @@ export class TelegramBotService {
 
     const formattedResponse = '```json\n' + JSON.stringify(params.response, null, 2) + '\n```';
 
-    const message = `=
+    const message = `
 ✅ ${partnerName} - Заказ успешно оформлен!
 
 📋 Информация о заказе:
@@ -84,7 +84,7 @@ ${formattedResponse}
   }) {
     const partnerName = this.getPartnerName(params.partnerId);
 
-    const message = `=
+    const message = `
     ⛔ Ошибка активации — ${partnerName}
 
     📋 Данные заказа:

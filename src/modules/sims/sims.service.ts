@@ -263,10 +263,6 @@ export class SimsService {
 
   async activatedStaticSims(userId: number, lang: string) {
     const sims = await paginate('sims', {
-      // page: query?.page,
-      // size: query?.size,
-      // filter: query?.filters,
-      // sort: query?.sort,
       where: {
         user_id: userId,
         sim_status: SimStatus.ACTIVATED,
@@ -337,6 +333,9 @@ export class SimsService {
   }
 
   async getActiveSimsStatic(userId: number, lang: string) {
+    setImmediate(async () => {
+      await this.updateStatus(userId);
+    });
     const sims = await paginate('sims', {
       where: {
         user_id: userId,
@@ -404,6 +403,7 @@ export class SimsService {
           puk_1: sim?.puk_1,
           puk_2: sim?.puk_2,
           iccid: sim?.iccid,
+          uid: sim?.uid,
           region_group: {
             id: sim?.tariff?.region_group?.id,
             name: sim?.tariff?.region_group?.[`name_${lang}`],
@@ -417,5 +417,56 @@ export class SimsService {
         };
       }),
     };
+  }
+
+  async updateStatus(userId: number) {
+    console.log(userId);
+
+    const sims = await this.prisma.sims.findMany({
+      where: {
+        user_id: userId,
+        status: {
+          notIn: ['FAILED', 'PENDING', 'NOTIFY_COUPON', 'REDEEM_COUPON'],
+        },
+      },
+      select: {
+        id: true,
+        coupon: true,
+        iccid: true,
+        partner_id: true,
+      },
+    });
+    console.log(sims, 'sims');
+
+    for (let sim of sims) {
+      console.log(sim, 'sim');
+
+      if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
+        console.log('Billion Connect partner uchun status tekshirilmoqda...', sim.iccid);
+
+        const partnerStatus = await this.billionConnectService.getStatus({ iccid: sim.iccid });
+        console.log('Partner status:', partnerStatus);
+
+        // Xavfsiz tekshirish: tradeData mavjudmi va massivmi?
+        const tradeData = partnerStatus?.tradeData ?? null;
+
+        if (Array.isArray(tradeData)) {
+          const hasActivatedStatus = tradeData.some((el: any) => el.status === 2);
+
+          if (hasActivatedStatus) {
+            await this.prisma.sims.update({
+              where: { id: sim.id },
+              data: { sim_status: 'ACTIVATED' },
+            });
+            console.log(`SIM ${sim.iccid} ACTIVATED ga o'tkazildi`);
+          } else {
+            console.log(`SIM ${sim.iccid} uchun status 2 topilmadi`);
+          }
+        } else {
+          console.log(`SIM ${sim.iccid} uchun tradeData null yoki massiv emas:`, tradeData);
+          // Bu yerda kerak bo'lsa boshqa logika qo'shishingiz mumkin (masalan, xato holati)
+        }
+      }
+    }
   }
 }

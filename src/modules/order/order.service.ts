@@ -320,7 +320,7 @@ export class OrderService {
           });
           if (status) {
             await this.telegramBotService.notifyOrderSuccess({
-              partnerId: 1, // masalan: PartnerIds.JOYTEL
+              partnerId: 1,
               orderId: newOrder.id,
               esimId: newSim.id,
               date: new Date().toISOString(),
@@ -405,7 +405,7 @@ export class OrderService {
 
           if (status) {
             await this.telegramBotService.notifyOrderSuccess({
-              partnerId: 2, // masalan: PartnerIds.JOYTEL
+              partnerId: 2,
               orderId: newOrder.id,
               esimId: newSim.id,
               date: new Date().toISOString(),
@@ -413,8 +413,8 @@ export class OrderService {
                 name: newOrder.user.name,
                 email: newOrder.user.email,
               },
-              tradeCode: response.code,
-              providerOrderId: response.orderTid,
+              tradeCode: response?.radeCode,
+              providerOrderId: response?.radeData?.orderId,
               response,
             });
           } else {
@@ -427,8 +427,8 @@ export class OrderService {
                 name: newOrder.user.name,
                 email: newOrder.user.email,
               },
-              errorCode: response.code,
-              providerOrderId: response.orderTid,
+              errorCode: response?.radeCode,
+              providerOrderId: response?.radeData?.orderId,
               response,
             });
           }
