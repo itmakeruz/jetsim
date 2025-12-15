@@ -102,6 +102,7 @@ export class BillionConnectService {
       tradeTime: this.formatDateTime(new Date()),
       tradeData: {
         iccid: data?.iccid,
+        orderId: data?.orderId,
         language: 2, //english,
       },
     };
