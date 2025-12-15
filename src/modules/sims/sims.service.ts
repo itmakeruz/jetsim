@@ -442,6 +442,8 @@ export class SimsService {
         const status = partnerStatus.tradeData.find((el) => {
           el.status = 2;
         });
+        console.log(status);
+
         if (status || status.length > 0) {
           await this.prisma.sims.update({
             where: {
