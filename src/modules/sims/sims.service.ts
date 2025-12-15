@@ -467,13 +467,17 @@ export class SimsService {
         iccid: true,
         status: true,
         partner_id: true,
+        partner_order_id: true,
       },
     });
     console.log(sims);
 
     for (let sim of sims) {
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
-        const response = await this.billionConnectService.getUsage({ iccid: sim.iccid });
+        const response = await this.billionConnectService.getUsage({
+          iccid: sim.iccid,
+          orderId: sim?.partner_order_id,
+        });
         console.log(response);
 
         const tradeData = response?.tradeData ?? null;
