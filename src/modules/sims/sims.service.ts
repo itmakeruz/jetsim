@@ -340,7 +340,6 @@ export class SimsService {
       where: {
         user_id: userId,
         sim_status: null,
-        status: OrderStatus.COMPLETED,
       },
       select: {
         id: true,
