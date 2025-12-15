@@ -469,6 +469,7 @@ export class SimsService {
         partner_id: true,
       },
     });
+    console.log(sims);
 
     for (let sim of sims) {
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
