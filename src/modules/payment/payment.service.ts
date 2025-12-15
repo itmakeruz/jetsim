@@ -259,7 +259,7 @@ export class PaymentService {
     }
     console.log('men tepamandeeeeee');
 
-    if (existTransaction.status === TransactionStatus.SUCCESS) {
+    if (existTransaction) {
       return;
     }
     console.log('otib ketvomanu man eeeeee');
