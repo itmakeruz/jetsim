@@ -471,6 +471,7 @@ export class SimsService {
       },
     });
     console.log(sims);
+    const responses: any = [];
 
     for (let sim of sims) {
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
@@ -479,7 +480,7 @@ export class SimsService {
           orderId: sim?.partner_order_id,
         });
         console.log(response);
-
+        responses.push(response);
         const tradeData = response?.tradeData ?? null;
 
         if (Array.isArray(tradeData) && response?.tradeCode === '1000') {
