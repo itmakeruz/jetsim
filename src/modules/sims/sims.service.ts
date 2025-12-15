@@ -337,7 +337,9 @@ export class SimsService {
   }
 
   async getActiveSimsStatic(userId: number, lang: string) {
-    console.log(await this.updateStatus(userId));
+    setImmediate(async () => {
+      await this.updateStatus(userId);
+    });
     const sims = await paginate('sims', {
       where: {
         user_id: userId,
