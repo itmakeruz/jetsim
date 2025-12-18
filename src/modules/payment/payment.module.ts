@@ -8,10 +8,19 @@ import { OrderModule } from '../order';
 import { OrderService } from '../order/order.service';
 import { QrService } from '@helpers';
 import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
+import { CreateSimService } from '../order/create-sim/create-sim.service';
 
 @Module({
   controllers: [PaymentController],
-  providers: [PaymentService, WinstonLoggerService, TBank, OrderService, QrService, TelegramBotService],
+  providers: [
+    PaymentService,
+    WinstonLoggerService,
+    TBank,
+    OrderService,
+    QrService,
+    TelegramBotService,
+    CreateSimService,
+  ],
   imports: [PrismaModule, HttpModule, OrderModule],
 })
 export class PaymentModule {}

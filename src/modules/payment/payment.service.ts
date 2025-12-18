@@ -6,7 +6,7 @@ import { paginate } from '@helpers';
 import { TBank } from '@http';
 import { basket_empty, TBankInitRequest, TBankWebHookResponse } from '@constants';
 import { TaxValues } from '@constants';
-import { TransactionStatus } from '@prisma/client';
+import { OrderStatus, TransactionStatus } from '@prisma/client';
 import { OrderService } from '../order/order.service';
 import { GatewayGateway } from '../gateway';
 import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
@@ -274,7 +274,16 @@ export class PaymentService {
           updated_at: new Date(),
         },
       });
+      return;
     }
+
+    const order = await this.prisma.order.create({
+      data: {
+        user_id: existTransaction.user.id,
+        status: OrderStatus.CREATED,
+        transaction_id: existTransaction.id,
+      },
+    });
 
     const updatedTransaction = await this.prisma.transaction.update({
       where: {

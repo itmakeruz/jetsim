@@ -45,8 +45,8 @@ export class WinstonLoggerService {
     this.logger.info(message, error);
   }
 
-  error(message: string) {
-    this.logger.error(message);
+  error(message: string, error?: any) {
+    this.logger.error(message, error);
   }
 
   warn(message: string) {
