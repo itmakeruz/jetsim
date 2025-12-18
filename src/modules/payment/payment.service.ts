@@ -255,11 +255,11 @@ export class PaymentService {
     });
 
     if (!existTransaction) {
-      throw new BadRequestException();
+      return 'OK';
     }
 
     if (existTransaction.status === TransactionStatus.SUCCESS) {
-      return;
+      return 'OK';
     }
 
     if (data.Success === false) {
@@ -274,7 +274,7 @@ export class PaymentService {
           updated_at: new Date(),
         },
       });
-      return;
+      return 'OK';
     }
 
     const order = await this.prisma.order.create({
@@ -298,7 +298,8 @@ export class PaymentService {
 
     await this.socketGateway.sendPaymentStatus(existTransaction.user.id, { status: updatedTransaction.status });
 
-    return this.orderService.create(existTransaction.user.id, updatedTransaction.id);
+    await this.orderService.create(existTransaction.user.id, updatedTransaction.id);
+    return 'OK';
   }
 
   async acceptPaymentTest(id: number, data: any) {
