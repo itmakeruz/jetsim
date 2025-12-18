@@ -531,95 +531,6 @@ export class OrderService {
         if (partner_id === PartnerIds.BILLION_CONNECT) {
           await this.createSimsService.processBillion(newOrder.id, newOrder.user.id, item);
         }
-
-        // else if (partner_id === PartnerIds.BILLION_CONNECT) {
-        //   const newSim = await this.prisma.sims.create({
-        //     data: {
-        //       user_id: basket.user.id,
-        //       order_id: newOrder.id,
-        //       status: OrderStatus.CREATED,
-        //       partner_id: PartnerIds.BILLION_CONNECT,
-        //       tariff_id: item.tariff_id,
-        //       main_region_id: item?.region_id,
-        //     },
-        //   });
-
-        //   const body = {
-        //     channelOrderId: newSim.id.toString(),
-        //     email: basket.user.email || undefined,
-        //     subOrderList: [
-        //       {
-        //         channelSubOrderId: item.id.toString(),
-        //         deviceSkuId: item.tariff.sku_id,
-        //         planSkuCopies: '1',
-        //         number: '1',
-        //       },
-        //     ],
-        //   };
-
-        //   response = await this.billionConnect.createEsimOrder(body);
-        //   // response = {
-        //   //   tradeCode: '1000',
-        //   //   tradeMsg: '成功',
-        //   //   tradeData: {
-        //   //     channelOrderId: '137',
-        //   //     orderId: '2756382091550128',
-        //   //     subOrderList: [
-        //   //       {
-        //   //         subOrderId: '1756382091554129',
-        //   //         channelSubOrderId: '93',
-        //   //       },
-        //   //     ],
-        //   //   },
-        //   // };
-        //   console.log(response);
-
-        //   let status = true;
-        //   if (response.tradeCode !== '1000') {
-        //     status = false;
-        //   }
-
-        //   await this.prisma.sims.update({
-        //     where: {
-        //       id: newSim.id,
-        //     },
-        //     data: {
-        //       status: status ? OrderStatus.NOTIFY_COUPON : OrderStatus.FAILED,
-        //       response: Object.assign(newSim?.response, response),
-        //       partner_order_id: response?.tradeData?.orderId,
-        //     },
-        //   });
-
-        //   if (status) {
-        //     await this.telegramBotService.notifyOrderSuccess({
-        //       partnerId: 2,
-        //       orderId: newOrder.id,
-        //       esimId: newSim.id,
-        //       date: new Date().toISOString(),
-        //       client: {
-        //         name: newOrder.user.name,
-        //         email: newOrder.user.email,
-        //       },
-        //       tradeCode: response?.tradeCode,
-        //       providerOrderId: response?.tradeData?.orderId,
-        //       response,
-        //     });
-        //   } else {
-        //     await this.telegramBotService.notifyOrderError({
-        //       partnerId: 2,
-        //       orderId: newOrder.id,
-        //       esimId: newSim.id,
-        //       date: new Date().toISOString(),
-        //       client: {
-        //         name: newOrder.user.name,
-        //         email: newOrder.user.email,
-        //       },
-        //       errorCode: response?.tradeCode,
-        //       providerOrderId: response?.tradeData?.orderId,
-        //       response,
-        //     });
-        //   }
-        // }
         orders.push(newOrder);
         responses.push({ order: newOrder, partnerResponse: response });
       } catch (error) {
@@ -629,7 +540,9 @@ export class OrderService {
     }
 
     await this.prisma.basketItem.deleteMany({
-      where: { basket_id: basket.id },
+      where: {
+        basket_id: basket.id,
+      },
     });
 
     return {
