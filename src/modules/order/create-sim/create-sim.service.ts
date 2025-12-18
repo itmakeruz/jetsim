@@ -56,7 +56,9 @@ export class CreateSimService {
       }
 
       await this.prisma.sims.update({
-        where: { id: sim.id },
+        where: {
+          id: sim.id,
+        },
         data: {
           order_tid: response.data.orderTid,
           order_code: response.data.orderCode,
