@@ -66,7 +66,7 @@ export class TBank {
       TerminalKey: this.TBANK_TERMINAL_ID,
       NotificationURL: TBANK_WEBHOOK_URL,
       // NotificationURL: TBANK_WEBHOOK_URL,
-      SuccessURL: 'https://167.172.99.238:1721/payment/accept-transaction-status',
+      SuccessURL: 'http://167.172.99.238:1721/payment/accept-transaction-status',
     };
 
     payload.Token = this.generateToken(payload, this.PASSWORD);
