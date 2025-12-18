@@ -85,24 +85,24 @@ ${formattedResponse}
     const partnerName = this.getPartnerName(params.partnerId);
 
     const message = `
-    ⛔ Ошибка активации — ${partnerName}
+⛔ Ошибка активации — ${partnerName}
 
-    📋 Данные заказа:
-    • ID заказа: ${params.orderId}
-    • ID ESIM: ${params.esimId}
-    • Дата: ${params.date}
+📋 Данные заказа:
+• ID заказа: ${params.orderId}
+• ID ESIM: ${params.esimId}
+• Дата: ${params.date}
 
-    👤 Клиент:
-    • Имя: ${params.client.name}
-    • Электронная почта: ${params.client.email}
+👤 Клиент:
+• Имя: ${params.client.name}
+• Электронная почта: ${params.client.email}
 
-    ⚠️ Ошибка:
-    • Error Code: ${params.errorCode}
-    • Order ID: ${params.providerOrderId ?? '—'}
+⚠️ Ошибка:
+• Error Code: ${params.errorCode}
+• Order ID: ${params.providerOrderId ?? '—'}
 
-    📄 Ответ:
-    ${JSON.stringify(params.response)}
-    `;
+📄 Ответ:
+${JSON.stringify(params.response)}
+`;
 
     await this.send(message);
   }
