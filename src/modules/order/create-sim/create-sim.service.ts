@@ -48,6 +48,7 @@ export class CreateSimService {
         item.tariff.sku_id,
         1,
       );
+      console.log(response);
 
       if (response.code !== 0) {
         error = response;
@@ -74,8 +75,8 @@ export class CreateSimService {
           name: sim.user.name,
           email: sim.user.email,
         },
-        tradeCode: response.code,
-        providerOrderId: response.orderTid,
+        tradeCode: response?.data?.code,
+        providerOrderId: response?.data?.orderTid,
         response,
       });
     } catch (error) {
@@ -147,8 +148,8 @@ export class CreateSimService {
           name: sim.user.name,
           email: sim.user.email,
         },
-        tradeCode: response?.tradeCode,
-        providerOrderId: response?.tradeData?.orderId ?? response.orderTid,
+        tradeCode: response?.tradeCode ?? response?.data?.orderCode,
+        providerOrderId: response?.tradeData?.orderId ?? response?.data?.orderTid,
         response,
       });
     } catch (e) {
