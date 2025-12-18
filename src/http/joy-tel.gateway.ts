@@ -87,7 +87,7 @@ export class JoyTel {
 
     try {
       const response = await this.httpService.setUrl(url).setHeaders(headers).setBody(body).send();
-      return response.data;
+      return response;
     } catch (error) {
       console.error('JoyTel RAW ERROR >>>', error?.response?.data || error.message);
       throw new InternalServerErrorException('JoyTel order failed');
