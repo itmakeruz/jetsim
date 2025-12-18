@@ -17,7 +17,7 @@ export class CreateSimService {
     private readonly telegramBotService: TelegramBotService,
   ) {}
 
-  private async processJoyTel(order_id: number, user_id: number, item: any) {
+  async processJoyTel(order_id: number, user_id: number, item: any) {
     const sim = await this.prisma.sims.create({
       data: {
         user_id: user_id,
@@ -83,11 +83,11 @@ export class CreateSimService {
     }
   }
 
-  private async processBillion(order, basket, item) {
+  async processBillion(order_id: number, user_id: number, item: any) {
     const sim = await this.prisma.sims.create({
       data: {
-        user_id: basket.user.id,
-        order_id: order.id,
+        user_id: user_id,
+        order_id: order_id,
         partner_id: PartnerIds.BILLION_CONNECT,
         tariff_id: item.tariff_id,
         status: OrderStatus.CREATED,
@@ -152,7 +152,7 @@ export class CreateSimService {
         response,
       });
     } catch (e) {
-      await this.failSim(sim.id, e, PartnerIds.BILLION_CONNECT, order.id);
+      await this.failSim(sim.id, e, PartnerIds.BILLION_CONNECT, sim.order_id);
     }
   }
 
