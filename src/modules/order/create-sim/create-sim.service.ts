@@ -124,7 +124,7 @@ export class CreateSimService {
         ],
       });
 
-      if (response.tradeCode !== '1000') {
+      if (response.tradeCode !== '1000' && response.tradeData?.successFlag !== 'true') {
         throw new Error();
       }
 
