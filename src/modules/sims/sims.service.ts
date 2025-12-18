@@ -402,6 +402,12 @@ export class SimsService {
           puk_1: sim?.puk_1,
           puk_2: sim?.puk_2,
           iccid: sim?.iccid,
+          can_activate:
+            sim.status === OrderStatus.NOTIFY_COUPON ||
+            sim.status === OrderStatus.REDEEM_COUPON ||
+            sim.status === OrderStatus.COMPLETED
+              ? true
+              : false,
           uid: sim?.uid,
           region_group: {
             id: sim?.tariff?.region_group?.id,
