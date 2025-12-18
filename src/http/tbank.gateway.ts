@@ -64,9 +64,9 @@ export class TBank {
     const payload = {
       ...data,
       TerminalKey: this.TBANK_TERMINAL_ID,
-      NotificationURL: TBANK_WEBHOOK_URL,
+      NotificationURL: 'http://80.78.242.23:1721/payment/accept-transaction-status',
       // NotificationURL: TBANK_WEBHOOK_URL,
-      SuccessURL: 'http://80.78.242.23:1721/payment/accept-transaction-status',
+      SuccessURL: 'https://jetsim.netlify.app/inactive',
     };
 
     payload.Token = this.generateToken(payload, this.PASSWORD);
