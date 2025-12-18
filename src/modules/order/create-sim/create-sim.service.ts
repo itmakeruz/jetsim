@@ -58,8 +58,8 @@ export class CreateSimService {
       await this.prisma.sims.update({
         where: { id: sim.id },
         data: {
-          order_tid: response.orderTid,
-          order_code: response.orderCode,
+          order_tid: response.data.orderTid,
+          order_code: response.data.orderCode,
           status: OrderStatus.REDEEM_COUPON,
           response,
           updated_at: new Date(),
@@ -75,7 +75,7 @@ export class CreateSimService {
           name: sim.user.name,
           email: sim.user.email,
         },
-        tradeCode: response?.data?.code,
+        tradeCode: response?.data?.orderCode,
         providerOrderId: response?.data?.orderTid,
         response,
       });
