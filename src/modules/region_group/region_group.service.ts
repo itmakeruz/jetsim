@@ -260,6 +260,7 @@ export class RegionGroupService {
         includes_internet: plan.quantity_internet > 0,
         is_4g: plan.is_4g,
         is_5g: plan.is_5g,
+        description: plan[`title_${lang}`] || plan.title_ru,
         validity_period: plan.validity_period,
         region_group: plan.region_group
           ? {
