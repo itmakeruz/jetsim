@@ -513,15 +513,12 @@ export class OrderService {
       },
     });
 
-    const orders = [];
-    const responses = [];
     for (const item of basket.items) {
       try {
         if (item.tariff.status !== Status.ACTIVE) {
           throw new ConflictException(`Пакет ${item.tariff.id} неактивен!`);
         }
 
-        let response: any;
         const partner_id = item.tariff.partner_id;
 
         if (partner_id === PartnerIds.JOYTEL) {
@@ -531,8 +528,6 @@ export class OrderService {
         if (partner_id === PartnerIds.BILLION_CONNECT) {
           await this.createSimsService.processBillion(newOrder.id, newOrder.user.id, item);
         }
-        orders.push(newOrder);
-        responses.push({ order: newOrder, partnerResponse: response });
       } catch (error) {
         this.logger.info('Order item failed', error);
         await this.socketGateway.sendErrorOrderMessage(user_id, newOrder.id);

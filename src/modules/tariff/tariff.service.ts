@@ -184,7 +184,7 @@ export class TariffService {
         quantity_internet: tariff?.quantity_internet,
         validity_period: tariff?.validity_period,
         price_sell: tariff?.price_sell / 100,
-        price_arrival: tariff?.price_arrival,
+        price_arrival: tariff?.price_arrival / 100,
         cashback_percent: tariff?.cashback_percent,
         sku_id: tariff?.sku_id,
         region_group_id: tariff?.region_group_id,
@@ -317,7 +317,11 @@ export class TariffService {
     return {
       success: true,
       message: 'Тариф успешно найден!',
-      data: tariff,
+      data: {
+        ...tariff,
+        price_sell: tariff?.price_sell / 100,
+        price_arrival: tariff?.price_arrival / 100,
+      },
     };
   }
 
@@ -358,7 +362,7 @@ export class TariffService {
         quantity_internet: data?.quantity_internet,
         validity_period: data?.validity_period,
         price_sell: data?.price_sell * 100,
-        price_arrival: data?.price_arrival,
+        price_arrival: data?.price_arrival * 100,
         sku_id: data?.sku_id,
         cashback_percent: data?.cashback_percent,
         is_global: data?.is_global,
@@ -436,7 +440,7 @@ export class TariffService {
         quantity_internet: data.quantity_internet ?? tariff.quantity_internet,
         validity_period: data.validity_period ?? tariff.validity_period,
         price_sell: data.price_sell ? data.price_sell * 100 : tariff.price_sell,
-        price_arrival: data.price_arrival ?? tariff.price_arrival,
+        price_arrival: data.price_arrival ? data?.price_arrival * 100 : tariff.price_arrival,
         sku_id: data.sku_id ?? tariff.sku_id,
         cashback_percent: data.cashback_percent ?? tariff.cashback_percent,
         region_group_id: data?.region_group_id ?? tariff.region_group_id,
