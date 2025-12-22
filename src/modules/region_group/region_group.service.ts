@@ -209,22 +209,37 @@ export class RegionGroupService {
     const where: any = { deleted_at: null, status: 'ACTIVE' };
     const orArr: any[] = [];
 
-    if (ids.length === 1) {
-      // 1 region tanlansa → local + regional + global
-      orArr.push({ regions: { some: { id: ids[0] } }, is_local: true });
-      orArr.push({ regions: { some: { id: ids[0] } }, is_regional: true });
-      orArr.push({ is_global: true });
-    } else if (ids.length > 1) {
-      // Ko'p region tanlansa → faqat matched group lar
+    if (ids.length > 0) {
+      // Region tanlangan bo'lsa:
+      //  - LOCAL: faqat shu region(lar) bilan bog'langan tariflar
+      //  - REGIONAL: faqat tanlangan region(lar)ni to'liq qamrab oladigan grouplardan
+      //  - GLOBAL: har doim qo'shiladi
+
+      // Lokal tariflar: regionlar kesimi bo'yicha
+      orArr.push({
+        is_local: true,
+        regions: {
+          some: {
+            id: { in: ids },
+          },
+        },
+      });
+
+      // Regional tariflar: faqat tanlangan IDlarning barchasi ichida bo'lgan grouplar
       if (groups.length > 0) {
-        orArr.push({ region_group_id: { in: groups.map((g) => g.id) } });
-      } else {
-        // mos group bo'lmasa → hech narsa qaytarsin
+        orArr.push({
+          is_regional: true,
+          region_group_id: { in: groups.map((g) => g.id) },
+        });
+      } else if (ids.length > 1) {
+        // Ko'p region tanlangan, lekin ularga mos keladigan group topilmadi
         throw new NotFoundException(route_not_found[lang]);
-        return { success: true, data: { regions, tariffs: { local: [], regional: [], global: [] } } };
       }
+
+      // Global tariflar
+      orArr.push({ is_global: true });
     } else if (groupId) {
-      // Faqat groupId bo‘lsa
+      // Faqat groupId bo‘lsa → shu groupdagi barcha tariflar + global
       orArr.push({ region_group_id: groupId });
       orArr.push({ is_global: true });
     } else {
@@ -232,7 +247,9 @@ export class RegionGroupService {
       orArr.push({ is_global: true });
     }
 
-    if (orArr.length > 0) where.OR = orArr;
+    if (orArr.length > 0) {
+      where.OR = orArr;
+    }
 
     // 6️⃣ Tariflarni olish
     const tariffs = await this.prisma.tariff.findMany({
@@ -255,9 +272,9 @@ export class RegionGroupService {
         quantity_internet: plan.quantity_internet,
         quantity_sms: plan.quantity_sms,
         quantity_minute: plan.quantity_minute,
-        includes_minutes: plan.quantity_minute > 0,
-        includes_sms: plan.quantity_sms > 0,
-        includes_internet: plan.quantity_internet > 0,
+        has_minutes: plan.quantity_minute > 0,
+        has_sms: plan.quantity_sms > 0,
+        has_internet: plan.quantity_internet > 0,
         is_4g: plan.is_4g,
         is_5g: plan.is_5g,
         description: plan[`title_${lang}`] || plan.title_ru,
