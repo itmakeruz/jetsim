@@ -892,7 +892,7 @@ export class OrderService {
       updatedOrder?.puk_1,
       updatedOrder?.puk_2,
     );
-    await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+    // await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
     saveQrCode(updatedOrder.id, qrBuffer);
 
     return {
@@ -960,7 +960,7 @@ export class OrderService {
       updatedSim?.puk_1,
       updatedSim?.puk_2,
     );
-    await sendMailHelper(updatedSim.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+    // await sendMailHelper(updatedSim.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
     saveQrCode(updatedSim.id, qrBuffer);
 
     return {

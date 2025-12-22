@@ -1,5 +1,6 @@
 import * as nodemailer from 'nodemailer';
 import { MAIL_PASS, MAIL_USER } from '@config';
+import axios from 'axios';
 
 export async function sendMailHelper(to: string, subject: string, text: string, html?: string, qrBuffer?: Buffer) {
   const transporter = nodemailer.createTransport({
@@ -159,4 +160,12 @@ export function otpEmailTemplate(userEmail: string, otp: string, ttlMinutes: num
     </body>
   </html>
   `;
+}
+
+export function sendOtpFromAnotherService(userEmail: string, otpCode: string, ttlMinutes: number) {
+  return axios.post('http://80.78.242.23:4000/mail/send-otp', {
+    userEmail,
+    otpCode,
+    ttlMinutes,
+  });
 }
