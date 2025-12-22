@@ -172,7 +172,7 @@ export class JoyTel {
   async getStatus(coupon: CouponRequest) {
     const headers = this.generateRspHeaders();
     const response = await this.httpService
-      .setUrl(JOYTEL_URL + '/esim/usage/query')
+      .setUrl(JOYTEL_URL + '/esim/status/query')
       .setHeaders(headers)
       .setBody(coupon)
       .send();
