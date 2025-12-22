@@ -8,7 +8,7 @@ export class HttpService {
   private method: string;
   private url = '';
   private headers: Record<string, string> = {};
-  private timeout = 5000;
+  private timeout = 30000;
   private isLog = false;
 
   setParams(params: any): this {

@@ -163,6 +163,7 @@ export class JoyTel {
     const response = await this.httpService
       .setUrl(JOYTEL_URL + '/esim/usage/query')
       .setHeaders(headers)
+      .setTimeout(30)
       .setBody(coupon)
       .send();
 
@@ -174,6 +175,7 @@ export class JoyTel {
     const response = await this.httpService
       .setUrl(JOYTEL_URL + '/esim/status/query')
       .setHeaders(headers)
+      .setTimeout(30)
       .setBody(coupon)
       .send();
 

@@ -484,7 +484,7 @@ export class SimsService {
         const response = await this.joyTelService.getStatus({ coupon: sim.coupon });
         console.log(response);
 
-        if (response.status === '000') {
+        if (response.code === '000') {
           if (response.data.status === '1') {
             await this.prisma.sims.update({
               where: { id: sim.id },

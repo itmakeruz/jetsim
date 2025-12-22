@@ -151,6 +151,7 @@ export class RegionGroupService {
       : [];
 
     let regions: any[] = [];
+    let groupRegionIds: number[] = [];
 
     // 1️⃣ Regionlarni olish
     if (ids.length > 0) {
@@ -175,7 +176,7 @@ export class RegionGroupService {
       }));
     }
 
-    // 2️⃣ Group orqali regionlar (agar faqat groupId bo‘lsa)
+    // 2️⃣ Group orqali regionlarni va ko'rsatiladigan "region" obyektini olish (agar faqat groupId bo‘lsa)
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
@@ -186,11 +187,21 @@ export class RegionGroupService {
         throw new NotFoundException(route_not_found[lang]);
       }
 
-      regions = group.regions.map((r) => ({
-        id: r.id,
-        name: r[`name_${lang}`] || r.name_ru,
-        image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
-      }));
+      // Front uchun "regions" ichida faqat bitta element: tanlangan REGION GROUP ning o'zi
+      regions = [
+        {
+          id: group.id,
+          name: group[`name_${lang}`] || group.name_ru,
+          image: group.image ? `${FilePath.REGION_GROUP_ICON}/${group.image}` : null,
+        },
+      ];
+
+      // Filtrlash uchun esa shu group tarkibidagi region ID lar kerak bo'ladi
+      groupRegionIds = group.regions.map((r) => r.id);
+    }
+
+    if (!groupId && ids.length === 0) {
+      regions = [];
     }
 
     // 3️⃣ QAT’I WHERE (MUAMMO SHU YERDA YOPILGAN)
@@ -250,8 +261,8 @@ export class RegionGroupService {
       ];
     } else if (groupId) {
       // Group orqali kelgan bo'lsa, group ichidagi regionlar asosida xuddi ids dagidek filterlaymiz
-      const groupRegionIds = regions.map((r) => r.id);
-
+      // groupRegionIds yuqorida 2-qadamda to'ldirilgan
+      const regionIdsFromGroup = groupRegionIds;
       where.OR = [
         // 🔹 LOCAL — faqat group regionlari orqali
         {
@@ -259,7 +270,7 @@ export class RegionGroupService {
             { is_local: true },
             {
               regions: {
-                some: { id: { in: groupRegionIds } },
+                some: { id: { in: regionIdsFromGroup } },
               },
             },
           ],
@@ -273,13 +284,13 @@ export class RegionGroupService {
               OR: [
                 {
                   regions: {
-                    some: { id: { in: groupRegionIds } },
+                    some: { id: { in: regionIdsFromGroup } },
                   },
                 },
                 {
                   region_group: {
                     regions: {
-                      some: { id: { in: groupRegionIds } },
+                      some: { id: { in: regionIdsFromGroup } },
                     },
                   },
                 },
@@ -294,7 +305,7 @@ export class RegionGroupService {
             { is_global: true },
             {
               regions: {
-                some: { id: { in: groupRegionIds } },
+                some: { id: { in: regionIdsFromGroup } },
               },
             },
           ],
