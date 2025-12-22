@@ -153,16 +153,38 @@ export class SimsService {
       return;
     }
 
-    let responses;
+    let responses: any[] = [];
 
     for (let sim of sims) {
-      // if (sim.partner_id === PartnerIds.JOYTEL) {
-      //   const response = await this.joyTelService.getStatus({ coupon: sim?.coupon });
-      //   console.log(response);
+      // JOYTEL partneri uchun status tekshirish
+      if (sim.partner_id === PartnerIds.JOYTEL) {
+        const response: any = await this.joyTelService.getStatus({ coupon: sim?.coupon });
+        console.log('Joytel check status response: ', response);
 
-      //   responses.push(response);
-      //   console.log('Joytel check status response: ', response);
-      // }
+        responses.push(response);
+
+        // Kutilgan response:
+        // {
+        //   code: "000",
+        //   mesg: "success",
+        //   data: { status: "1", statusTime: "1653546537101" }
+        // }
+        const statusCode = response?.data?.status;
+
+        if (statusCode === '1') {
+          await this.prisma.sims.update({
+            where: { id: sim.id },
+            data: { sim_status: SimStatus.ACTIVATED },
+          });
+        } else if (statusCode === '2') {
+          await this.prisma.sims.update({
+            where: { id: sim.id },
+            data: { sim_status: SimStatus.EXPIRED },
+          });
+        }
+      }
+
+      // BILLION_CONNECT partneri uchun status tekshirish
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
         const response = await this.billionConnectService.getStatus({ iccid: sim?.iccid });
         console.log(response);
@@ -456,6 +478,31 @@ export class SimsService {
             });
           }
         }
+      }
+
+      if (sim.partner_id === PartnerIds.JOYTEL) {
+        const response = await this.joyTelService.getStatus({ coupon: sim.coupon });
+
+        if (response.status === '000') {
+          if (response.data.status === '1') {
+            await this.prisma.sims.update({
+              where: { id: sim.id },
+              data: { sim_status: SimStatus.ACTIVATED },
+            });
+          }
+          // else {
+          //   await this.prisma.sims.update({
+          //     where: { id: sim.id },
+          //     data: { sim_status: SimStatus.EXPIRED },
+          //   });
+          // }
+        }
+        // else {
+        //   await this.prisma.sims.update({
+        //     where: { id: sim.id },
+        //     data: { sim_status: SimStatus.EXPIRED },
+        //   });
+        // }
       }
     }
   }
