@@ -151,9 +151,8 @@ export class RegionGroupService {
       : [];
 
     let regions: any[] = [];
-    let groups: any[] = [];
 
-    // 1️⃣ Tanlangan regionlarni olish
+    // 1️⃣ Regionlarni olish
     if (ids.length > 0) {
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
@@ -162,11 +161,9 @@ export class RegionGroupService {
           name_ru: true,
           name_en: true,
           image: true,
-          region_groups: true,
         },
       });
 
-      // Agar bittasi ham topilmasa → 404
       if (dbRegions.length !== ids.length) {
         throw new NotFoundException(route_not_found[lang]);
       }
@@ -176,23 +173,9 @@ export class RegionGroupService {
         name: r[`name_${lang}`] || r.name_ru,
         image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
       }));
-
-      // 2️⃣ Grouplarni aniqlash (agar barcha regionlar bitta group ichida bo‘lsa)
-      const allGroups = await this.prisma.regionGroup.findMany({
-        include: { regions: true },
-      });
-
-      const matchedGroups = allGroups.filter((group) => {
-        const groupRegionIds = group.regions.map((r) => r.id);
-        return ids.every((id) => groupRegionIds.includes(id));
-      });
-
-      if (matchedGroups.length > 0) {
-        groups = matchedGroups;
-      }
     }
 
-    // 3️⃣ Faqat groupId berilgan holat
+    // 2️⃣ Group orqali regionlar (agar faqat groupId bo‘lsa)
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
@@ -203,8 +186,6 @@ export class RegionGroupService {
         throw new NotFoundException(route_not_found[lang]);
       }
 
-      groups = [group];
-
       regions = group.regions.map((r) => ({
         id: r.id,
         name: r[`name_${lang}`] || r.name_ru,
@@ -212,15 +193,15 @@ export class RegionGroupService {
       }));
     }
 
-    // 4️⃣ WHERE tayyorlash (ENG MUHIM QISM)
+    // 3️⃣ QAT’I WHERE (MUAMMO SHU YERDA YOPILGAN)
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
     };
 
-    // 👉 REGION TANLANGAN
     if (ids.length > 0) {
       where.OR = [
+        // 🔹 LOCAL — faqat region orqali
         {
           AND: [
             { is_local: true },
@@ -231,16 +212,31 @@ export class RegionGroupService {
             },
           ],
         },
+
+        // 🔹 REGIONAL — region YOKI group orqali
         {
           AND: [
             { is_regional: true },
             {
-              regions: {
-                some: { id: { in: ids } },
-              },
+              OR: [
+                {
+                  regions: {
+                    some: { id: { in: ids } },
+                  },
+                },
+                {
+                  region_group: {
+                    regions: {
+                      some: { id: { in: ids } },
+                    },
+                  },
+                },
+              ],
             },
           ],
         },
+
+        // 🔹 GLOBAL — faqat agar region bilan bog‘langan bo‘lsa
         {
           AND: [
             { is_global: true },
@@ -252,36 +248,33 @@ export class RegionGroupService {
           ],
         },
       ];
-    }
-
-    // 👉 FAQAT GROUP TANLANGAN
-    else if (groupId) {
+    } else if (groupId) {
       where.OR = [
+        // LOCAL + REGIONAL faqat shu group
         {
-          AND: [{ region_group_id: groupId }, { is_global: false }],
+          AND: [{ is_global: false }, { region_group_id: groupId }],
         },
-        {
-          is_global: true,
-        },
+        // GLOBAL
+        { is_global: true },
       ];
-    }
-
-    // 👉 HECH NARSA TANLANMAGAN
-    else {
+    } else {
+      // faqat global
       where.OR = [{ is_global: true }];
     }
 
-    // 5️⃣ Tariflarni olish
+    // 4️⃣ Tariflarni olish
     const tariffs = await this.prisma.tariff.findMany({
       where,
       include: {
-        region_group: true,
+        region_group: {
+          include: { regions: true },
+        },
         regions: true,
       },
       orderBy: { price_sell: 'asc' },
     });
 
-    // 6️⃣ Formatlash
+    // 5️⃣ Formatlash
     const result = {
       local: [],
       regional: [],
