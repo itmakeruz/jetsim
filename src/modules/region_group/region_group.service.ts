@@ -235,8 +235,15 @@ export class RegionGroupService {
         },
       });
 
-      // Global tariflar
-      orArr.push({ is_global: true });
+      // Global tariflar: faqat tanlangan region(lar) ro'yxatida bo'lgan global paketlar
+      orArr.push({
+        is_global: true,
+        regions: {
+          some: {
+            id: { in: ids },
+          },
+        },
+      });
     } else if (groupId) {
       // Faqat groupId bo‘lsa → shu groupdagi barcha tariflar + global
       orArr.push({ region_group_id: groupId });
