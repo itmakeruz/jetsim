@@ -482,6 +482,7 @@ export class SimsService {
 
       if (sim.partner_id === PartnerIds.JOYTEL) {
         const response = await this.joyTelService.getStatus({ coupon: sim.coupon });
+        console.log(response);
 
         if (response.status === '000') {
           if (response.data.status === '1') {
