@@ -211,11 +211,11 @@ export class RegionGroupService {
 
     if (ids.length > 0) {
       // Region tanlangan bo'lsa:
-      //  - LOCAL: faqat shu region(lar) bilan bog'langan tariflar
-      //  - REGIONAL: faqat tanlangan region(lar)ni to'liq qamrab oladigan grouplardan
+      //  - LOCAL: faqat shu region(lar) bilan bog'langan lokal tariflar
+      //  - REGIONAL: faqat shu region(lar) bilan bog'langan regional tariflar
       //  - GLOBAL: har doim qo'shiladi
 
-      // Lokal tariflar: regionlar kesimi bo'yicha
+      // Lokal tariflar
       orArr.push({
         is_local: true,
         regions: {
@@ -225,16 +225,15 @@ export class RegionGroupService {
         },
       });
 
-      // Regional tariflar: faqat tanlangan IDlarning barchasi ichida bo'lgan grouplar
-      if (groups.length > 0) {
-        orArr.push({
-          is_regional: true,
-          region_group_id: { in: groups.map((g) => g.id) },
-        });
-      } else if (ids.length > 1) {
-        // Ko'p region tanlangan, lekin ularga mos keladigan group topilmadi
-        throw new NotFoundException(route_not_found[lang]);
-      }
+      // Regional tariflar
+      orArr.push({
+        is_regional: true,
+        regions: {
+          some: {
+            id: { in: ids },
+          },
+        },
+      });
 
       // Global tariflar
       orArr.push({ is_global: true });
