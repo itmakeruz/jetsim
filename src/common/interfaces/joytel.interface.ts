@@ -19,6 +19,7 @@ interface itemList {
 interface snList {
   snCode: string;
   snPin: string;
+  snPuk: string;
   productExpireDate: string;
 }
 

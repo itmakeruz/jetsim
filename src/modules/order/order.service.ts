@@ -826,6 +826,9 @@ export class OrderService {
       data: {
         sn_code: firstSn.snCode,
         sn_pin: firstSn.snPin,
+        pin_1: firstSn.snPin,
+        puk_1: firstSn.snPuk,
+        uid: firstSn.snCode,
         product_code: productCode,
         status: OrderStatus.NOTIFY_COUPON,
       },
