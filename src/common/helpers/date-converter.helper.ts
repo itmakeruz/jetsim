@@ -29,3 +29,9 @@ export function dateConverter(date?: string) {
     endDate: end,
   };
 }
+
+export function dayAfterNConverter(date: Date, days: number): Date {
+  let nextDate = new Date();
+  nextDate.setDate(date.getDate() + days);
+  return nextDate;
+}

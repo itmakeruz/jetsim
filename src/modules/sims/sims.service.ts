@@ -1,5 +1,5 @@
 import { PartnerIds } from '@enums';
-import { paginate } from '@helpers';
+import { paginate, dayAfterNConverter } from '@helpers';
 import { BillionConnectService, HttpService, JoyTel } from '@http';
 import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
@@ -231,6 +231,13 @@ export class SimsService {
             name_ru: true,
             name_en: true,
             validity_period: true,
+            quantity_internet: true,
+            region_group: {
+              select: {
+                id: true,
+                image: true,
+              },
+            },
           },
         },
       },
@@ -240,8 +247,18 @@ export class SimsService {
       success: true,
       message: 'ok',
       data: sims?.data?.map((sim: any) => ({
-        ...sim,
-        name: sim!.tariff?.[`name_${lang}`],
+        id: sim?.id,
+        order_id: sim?.order_id,
+        iccid: sim?.iccid,
+        image: `${FilePath.REGION_GROUP_ICON}/${sim?.tariff?.region_group?.image}`,
+        tariff: {
+          id: sim?.tariff?.id,
+          name: sim?.tariff?.[`name_${lang}`],
+          validity_period: sim?.tariff?.validity_period,
+          quantity_internet: sim?.tariff?.quantity_internet,
+          expire_date: dayAfterNConverter(sim?.created_at, sim?.tariff?.validity_period),
+        },
+        created_at: sim?.created_at,
       })),
     };
   }
