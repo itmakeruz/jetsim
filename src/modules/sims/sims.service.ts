@@ -223,32 +223,14 @@ export class SimsService {
       select: {
         id: true,
         order_id: true,
+        iccid: true,
         created_at: true,
         tariff: {
           select: {
             id: true,
-            is_4g: true,
-            is_5g: true,
             name_ru: true,
             name_en: true,
-            quantity_internet: true,
             validity_period: true,
-            region_group: {
-              select: {
-                id: true,
-                name_ru: true,
-                name_en: true,
-                image: true,
-              },
-            },
-            regions: {
-              select: {
-                id: true,
-                name_ru: true,
-                name_en: true,
-                image: true,
-              },
-            },
           },
         },
       },
@@ -256,33 +238,15 @@ export class SimsService {
 
     return {
       success: true,
-      message: 'success',
-      ...sims,
-      data: sims?.data?.map((sim: any) => {
-        return {
-          id: sim?.id,
-          order_id: sim?.order_id,
-          tariff_id: sim?.tariff?.id,
-          tariff_name: sim?.tariff?.[`name_${lang}`],
-          usage: 300,
-          day_left: 10,
-          is_4g: sim?.tariff?.is_4g,
-          is_5g: sim?.tariff?.is_5g,
-          region_group: {
-            id: sim?.tariff?.region_group?.id,
-            name: sim?.tariff?.region_group?.[`name_${lang}`],
-            image: `${FilePath.REGION_GROUP_ICON}/${sim?.tariff?.region_group?.image}`,
-          },
-          regions: sim?.tariff?.regions?.map((region: any) => ({
-            id: region?.id,
-            name: region?.[`name_${lang}`],
-            image: `${FilePath.REGION_ICON}/${region?.image}`,
-          })),
-        };
-      }),
+      message: 'ok',
+      data: sims?.data?.map((sim: any) => ({
+        ...sim,
+        name: sim!.tariff?.[`name_${lang}`],
+      })),
     };
   }
 
+  //activated sim kartalar
   async activatedStaticSims(userId: number, lang: string) {
     const sims = await paginate('sims', {
       where: {
@@ -354,6 +318,7 @@ export class SimsService {
     };
   }
 
+  //aktivatsiya qilinmaganlar
   async getActiveSimsStatic(userId: number, lang: string) {
     setImmediate(async () => {
       await this.updateStatus(userId);
