@@ -40,7 +40,6 @@ import { CreateSimService } from './create-sim/create-sim.service';
 
 @Injectable()
 export class OrderService {
-  // private readonly logger = new Logger(OrderService.name);
   constructor(
     private readonly prisma: PrismaService,
     private joyTel: JoyTel,
@@ -799,6 +798,7 @@ export class OrderService {
 
   async redeemCoupon(data: JoyTelCallbackResponse) {
     this.logger.log('JoyTel Redeem Coupon:', data);
+
     const sim = await this.prisma.sims.findFirst({
       where: {
         order_tid: data.orderTid,
@@ -810,24 +810,28 @@ export class OrderService {
       throw new BadRequestException('Order not found');
     }
 
-    const snList = data.itemList?.map((el) => el.snList?.[0]).filter((sn) => sn !== undefined) || [];
+    const items = data.itemList ? Object.values(data.itemList) : [];
+
+    if (items.length === 0) {
+      throw new BadRequestException('Item list is empty');
+    }
+
+    const snList = items.flatMap((item) => (item.snList ? Object.values(item.snList) : [])).filter(Boolean);
 
     if (snList.length === 0) {
       throw new BadRequestException('No valid SN data found');
     }
 
     const firstSn = snList[0];
-    const productCode = data.itemList[0]?.productCode;
+    const productCode = items[0].productCode;
 
     await this.prisma.sims.update({
-      where: {
-        id: sim.id,
-      },
+      where: { id: sim.id },
       data: {
         sn_code: firstSn.snCode,
         sn_pin: firstSn.snPin,
         pin_1: firstSn.snPin,
-        puk_1: firstSn.snPuk,
+        puk_1: firstSn.snPuk || null,
         uid: firstSn.snCode,
         product_code: productCode,
         status: OrderStatus.NOTIFY_COUPON,

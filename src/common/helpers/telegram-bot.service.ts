@@ -83,6 +83,7 @@ ${formattedResponse}
     response: any;
   }) {
     const partnerName = this.getPartnerName(params.partnerId);
+    const formattedResponse = '```json\n' + JSON.stringify(params.response, null, 2) + '\n```';
 
     const message = `
 ⛔ Ошибка активации — ${partnerName}
@@ -99,9 +100,11 @@ ${formattedResponse}
 ⚠️ Ошибка:
 • Error Code: ${params.errorCode}
 • Order ID: ${params.providerOrderId ?? '—'}
+• Error Message: ${params.response?.tradeMsg ?? '—'}
 
 📄 Ответ:
-${JSON.stringify(params.response)}
+${formattedResponse}
+'
 `;
 
     await this.send(message);

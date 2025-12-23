@@ -297,6 +297,7 @@ export class SimsService {
             name: region?.[`name_${lang}`],
             image: `${FilePath.REGION_ICON}/${region?.image}`,
           })),
+          created_at: sim?.created_at,
         };
       }),
     };
