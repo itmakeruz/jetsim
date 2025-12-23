@@ -351,9 +351,7 @@ export class SimsService {
         iccid: true,
         uid: true,
         pin_1: true,
-        pin_2: true,
         puk_1: true,
-        puk_2: true,
         qrcode: true,
         status: true,
         tariff: {
@@ -402,16 +400,16 @@ export class SimsService {
           is_5g: sim?.tariff?.is_5g,
           qr_code: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
           pin_1: sim?.pin_1,
-          pin_2: sim?.pin_2,
-          puk_1: sim?.puk_1,
           puk_2: sim?.puk_2,
           iccid: sim?.iccid,
-          can_activate:
-            sim.status === OrderStatus.NOTIFY_COUPON ||
-            sim.status === OrderStatus.REDEEM_COUPON ||
-            sim.status === OrderStatus.COMPLETED
-              ? true
-              : false,
+          validity_period: sim?.tariff?.validity_period,
+          expire_date: dayAfterNConverter(sim?.created_at, sim?.tariff?.validity_period),
+          // can_activate:
+          //   sim.status === OrderStatus.NOTIFY_COUPON ||
+          //   sim.status === OrderStatus.REDEEM_COUPON ||
+          //   sim.status === OrderStatus.COMPLETED
+          //     ? true
+          //     : false,
           uid: sim?.uid,
           region_group: {
             id: sim?.tariff?.region_group?.id,
