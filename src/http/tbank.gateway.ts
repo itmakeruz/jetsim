@@ -66,7 +66,7 @@ export class TBank {
       TerminalKey: this.TBANK_TERMINAL_ID,
       // NotificationURL: 'https://api.jetsim.ru/payment/accept-transaction-status',
       NotificationURL: TBANK_WEBHOOK_URL,
-      SuccessURL: 'https://jetsim.ru/inactive',
+      SuccessURL: 'https://jetsim.ru/myesim',
     };
 
     payload.Token = this.generateToken(payload, this.PASSWORD);
