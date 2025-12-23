@@ -337,9 +337,9 @@ export class SimsService {
 
   //aktivatsiya qilinmaganlar
   async getActiveSimsStatic(userId: number, lang: string) {
-    setImmediate(async () => {
-      await this.updateStatus(userId);
-    });
+    // setImmediate(async () => {
+    //   await this.updateStatus(userId);
+    // });
     const sims = await paginate('sims', {
       where: {
         user_id: userId,
