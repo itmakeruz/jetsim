@@ -189,7 +189,7 @@ export class PaymentService {
 
     const paymentPayload = {
       Amount: data?.order?.totalAmount,
-      OrderId: 1000 + transaction?.id,
+      OrderId: transaction?.id,
       Description: `Оплата eSIM-карты на ${data?.order?.totalAmount}`,
       // DATA: {
       //   Email: data?.user?.email,
