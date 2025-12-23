@@ -400,7 +400,7 @@ export class SimsService {
           is_5g: sim?.tariff?.is_5g,
           qr_code: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
           pin_1: sim?.pin_1,
-          puk_2: sim?.puk_2,
+          puk_1: sim?.puk_1,
           iccid: sim?.iccid,
           validity_period: sim?.tariff?.validity_period,
           expire_date: dayAfterNConverter(sim?.created_at, sim?.tariff?.validity_period),
