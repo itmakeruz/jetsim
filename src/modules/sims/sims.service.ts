@@ -383,6 +383,7 @@ export class SimsService {
         },
       },
     });
+    console.log(sims);
 
     return {
       success: true,
