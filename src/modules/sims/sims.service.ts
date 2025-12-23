@@ -212,29 +212,46 @@ export class SimsService {
   }
 
   async staticSims(userId: number, lang: string) {
+    // setImmediate(async () => {
+    //   await this.updateStatus(userId);
+    // });
     const sims = await paginate('sims', {
-      // page: query?.page,
-      // size: query?.size,
-      // filter: query?.filters,
-      // sort: query?.sort,
       where: {
         user_id: userId,
+        sim_status: null,
       },
       select: {
         id: true,
         order_id: true,
         iccid: true,
+        uid: true,
+        pin_1: true,
+        puk_1: true,
+        qrcode: true,
+        status: true,
         created_at: true,
         tariff: {
           select: {
             id: true,
             name_ru: true,
             name_en: true,
-            validity_period: true,
             quantity_internet: true,
+            validity_period: true,
+            is_4g: true,
+            is_5g: true,
             region_group: {
               select: {
                 id: true,
+                name_ru: true,
+                name_en: true,
+                image: true,
+              },
+            },
+            regions: {
+              select: {
+                id: true,
+                name_ru: true,
+                name_en: true,
                 image: true,
               },
             },
@@ -245,21 +262,43 @@ export class SimsService {
 
     return {
       success: true,
-      message: 'ok',
-      data: sims?.data?.map((sim: any) => ({
-        id: sim?.id,
-        order_id: sim?.order_id,
-        iccid: sim?.iccid,
-        image: `${FilePath.REGION_GROUP_ICON}/${sim?.tariff?.region_group?.image}`,
-        tariff: {
-          id: sim?.tariff?.id,
-          name: sim?.tariff?.[`name_${lang}`],
+      message: '',
+      data: sims?.data?.map((sim: any) => {
+        return {
+          id: sim?.id,
+          order_id: sim?.order_id,
+          tariff_id: sim?.tariff?.id,
+          tariff_name: sim?.tariff?.[`name_${lang}`],
+          status: sim?.status,
+          usage: sim?.tariff?.quantity_internet,
+          day_left: sim?.tariff?.validity_period,
+          is_4g: sim?.tariff?.is_4g,
+          is_5g: sim?.tariff?.is_5g,
+          qr_code: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
+          pin_1: sim?.pin_1,
+          puk_1: sim?.puk_1,
+          iccid: sim?.iccid,
           validity_period: sim?.tariff?.validity_period,
-          quantity_internet: sim?.tariff?.quantity_internet,
           expire_date: dayAfterNConverter(sim?.created_at, sim?.tariff?.validity_period),
-        },
-        created_at: sim?.created_at,
-      })),
+          // can_activate:
+          //   sim.status === OrderStatus.NOTIFY_COUPON ||
+          //   sim.status === OrderStatus.REDEEM_COUPON ||
+          //   sim.status === OrderStatus.COMPLETED
+          //     ? true
+          //     : false,
+          uid: sim?.uid,
+          region_group: {
+            id: sim?.tariff?.region_group?.id,
+            name: sim?.tariff?.region_group?.[`name_${lang}`],
+            image: `${FilePath.REGION_GROUP_ICON}/${sim?.tariff?.region_group?.image}`,
+          },
+          regions: sim?.tariff?.regions?.map((region: any) => ({
+            id: region?.id,
+            name: region?.[`name_${lang}`],
+            image: `${FilePath.REGION_ICON}/${region?.image}`,
+          })),
+        };
+      }),
     };
   }
 
