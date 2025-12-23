@@ -18,6 +18,7 @@ export class CreateSimService {
   ) {}
 
   async processJoyTel(order_id: number, user_id: number, item: any) {
+    let error: any;
     const sim = await this.prisma.sims.create({
       data: {
         user_id: user_id,
@@ -37,7 +38,6 @@ export class CreateSimService {
         },
       },
     });
-    let error: any;
 
     try {
       const response = await this.joyTel.submitEsimOrder(
@@ -89,6 +89,7 @@ export class CreateSimService {
   }
 
   async processBillion(order_id: number, user_id: number, item: any) {
+    let error: any;
     const sim = await this.prisma.sims.create({
       data: {
         user_id: user_id,
@@ -131,6 +132,7 @@ export class CreateSimService {
       this.logger.info('BC INIT ORDER RESPONSE: ', response);
 
       if (response.tradeCode !== '1000' && response.tradeData?.successFlag !== 'true') {
+        error = response;
         throw new Error();
       }
 
@@ -158,7 +160,7 @@ export class CreateSimService {
         response,
       });
     } catch (e) {
-      await this.failSim(sim.id, e, PartnerIds.BILLION_CONNECT, sim.order_id);
+      await this.failSim(sim.id, error, PartnerIds.BILLION_CONNECT, sim.order_id);
     }
   }
 
@@ -185,7 +187,7 @@ export class CreateSimService {
     });
 
     await this.telegramBotService.notifyOrderError({
-      partnerId: 2,
+      partnerId: partnerId,
       orderId: sim.order_id,
       esimId: sim.id,
       date: new Date().toISOString(),
