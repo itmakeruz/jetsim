@@ -280,12 +280,12 @@ export class SimsService {
           iccid: sim?.iccid,
           validity_period: sim?.tariff?.validity_period,
           expire_date: dayAfterNConverter(sim?.created_at, sim?.tariff?.validity_period),
-          // can_activate:
-          //   sim.status === OrderStatus.NOTIFY_COUPON ||
-          //   sim.status === OrderStatus.REDEEM_COUPON ||
-          //   sim.status === OrderStatus.COMPLETED
-          //     ? true
-          //     : false,
+          can_activate:
+            sim.status === OrderStatus.NOTIFY_COUPON ||
+            sim.status === OrderStatus.REDEEM_COUPON ||
+            sim.status === OrderStatus.COMPLETED
+              ? true
+              : false,
           uid: sim?.uid,
           region_group: {
             id: sim?.tariff?.region_group?.id,
