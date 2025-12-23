@@ -354,6 +354,7 @@ export class SimsService {
         puk_1: true,
         qrcode: true,
         status: true,
+        created_at: true,
         tariff: {
           select: {
             id: true,
@@ -383,14 +384,11 @@ export class SimsService {
         },
       },
     });
-    console.log(sims);
 
     return {
       success: true,
       message: '',
       data: sims?.data?.map((sim: any) => {
-        console.log(sim);
-
         return {
           id: sim?.id,
           order_id: sim?.order_id,
