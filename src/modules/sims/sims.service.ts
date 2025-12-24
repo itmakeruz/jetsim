@@ -229,6 +229,7 @@ export class SimsService {
         puk_1: true,
         qrcode: true,
         status: true,
+        last_usage_quantity: true,
         created_at: true,
         tariff: {
           select: {
@@ -271,6 +272,8 @@ export class SimsService {
           tariff_name: sim?.tariff?.[`name_${lang}`],
           status: sim?.status,
           day_left: sim?.tariff?.validity_period,
+          usage: Number(sim?.last_usage_quantity),
+          quantity_internet: sim?.quantity_internet,
           is_4g: sim?.tariff?.is_4g,
           is_5g: sim?.tariff?.is_5g,
           qr_code: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
