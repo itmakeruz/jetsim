@@ -20,6 +20,81 @@ export class JobsService {
     this.logger.log('Joy Tel Orders Checker CRON is working!');
   }
 
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async updateUsage() {
+    const sims = await this.prisma.sims.findMany({
+      where: {
+        status: 'COMPLETED',
+      },
+      select: {
+        id: true,
+        coupon: true,
+        iccid: true,
+        last_usage_quantity: true,
+        partner_id: true,
+        partner_order_id: true,
+      },
+    });
+
+    for (let sim of sims) {
+      if (sim.partner_id === PartnerIds.JOYTEL) {
+        const response = await this.joyTelService.getUsage({
+          coupon: sim.coupon,
+        });
+
+        console.log(response);
+
+        if (response?.code === '000' && Array.isArray(response?.data?.dataUsageList)) {
+          const usage = response.data.dataUsageList.reduce((acc: number, item: { usage: string }) => {
+            acc += Number(item.usage);
+            return acc;
+          }, 0);
+
+          console.log('JOYTEL usage:', usage);
+
+          await this.prisma.sims.update({
+            where: {
+              id: sim.id,
+            },
+            data: {
+              last_usage_quantity: usage.toString(),
+            },
+          });
+        }
+      }
+
+      if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
+        const response = await this.billionConnectService.getUsage({
+          iccid: sim.iccid,
+          orderId: sim?.partner_order_id,
+        });
+        console.log(response);
+        // responses.push(response);
+        const tradeData = response?.tradeData ?? null;
+
+        if (Array.isArray(tradeData) && response?.tradeCode === '1000') {
+          const usage = response.subOrderList[0].usageInfoList?.reduce(
+            (acc: number, infoList: { usedDate: string; usageAmt: string }) => {
+              acc += Number(infoList.usedDate);
+            },
+            0,
+          );
+
+          console.log(usage);
+
+          await this.prisma.sims.update({
+            where: {
+              id: sim.id,
+            },
+            data: {
+              last_usage_quantity: usage.toString(),
+            },
+          });
+        }
+      }
+    }
+  }
+
   // @Cron(CronExpression.EVERY_10_SECONDS)
   // async checkSimStatusOnPartnerSide() {
   //   this.logger.log('Sim Status on partner side CRON is working!');

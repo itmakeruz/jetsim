@@ -1,5 +1,5 @@
 import { PartnerIds } from '@enums';
-import { paginate, dayAfterNConverter } from '@helpers';
+import { paginate, dayAfterNConverter, generateFastEsimInstallmentString } from '@helpers';
 import { BillionConnectService, HttpService, JoyTel } from '@http';
 import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
@@ -270,7 +270,6 @@ export class SimsService {
           tariff_id: sim?.tariff?.id,
           tariff_name: sim?.tariff?.[`name_${lang}`],
           status: sim?.status,
-          usage: sim?.tariff?.quantity_internet,
           day_left: sim?.tariff?.validity_period,
           is_4g: sim?.tariff?.is_4g,
           is_5g: sim?.tariff?.is_5g,
@@ -278,6 +277,10 @@ export class SimsService {
           pin_1: sim?.pin_1,
           puk_1: sim?.puk_1,
           iccid: sim?.iccid,
+          qrcode_content: {
+            for_android: sim?.qrcode,
+            for_ios: generateFastEsimInstallmentString(sim?.qrcode),
+          },
           validity_period: sim?.tariff?.validity_period,
           expire_date: dayAfterNConverter(sim?.created_at, sim?.tariff?.validity_period),
           can_activate:
