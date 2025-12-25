@@ -22,6 +22,7 @@ export class JobsService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async updateUsage() {
+    this.logger.log('Update sim balance!');
     const sims = await this.prisma.sims.findMany({
       where: {
         status: 'COMPLETED',
@@ -43,9 +44,10 @@ export class JobsService {
         });
 
         const list = response?.data?.dataUsageList;
+        console.log(response, list);
 
         if (!Array.isArray(list) || list.length === 0) {
-          console.log('JOYTEL EMPTY USAGE', sim.id);
+          console.log('JOYTEL EMPTY USAGE', sim.id, list);
           continue;
         }
 
