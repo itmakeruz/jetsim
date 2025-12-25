@@ -620,7 +620,7 @@ export class OrderService {
           total_amount: Number(item.price / 100) * item.quantity,
           quantity_sms: item.tariff.quantity_sms,
           quantity_minute: item.tariff.quantity_minute,
-          quantity_internet: item.tariff.quantity_internet,
+          quantity_internet: item.tariff.quantity_internet * 1024,
           validity_period: item.tariff.validity_period,
           is_4g: item.tariff.is_4g,
           is_5g: item.tariff.is_5g,
