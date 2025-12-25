@@ -42,25 +42,24 @@ export class JobsService {
           coupon: sim.coupon,
         });
 
-        console.log(response);
+        const list = response?.data?.dataUsageList;
 
-        if (response?.code === '000' && Array.isArray(response?.data?.dataUsageList)) {
-          const usage = response.data.dataUsageList.reduce((acc: number, item: { usage: string }) => {
-            acc += Number(item.usage);
-            return acc;
-          }, 0);
-
-          console.log('JOYTEL usage:', usage);
-
-          await this.prisma.sims.update({
-            where: {
-              id: sim.id,
-            },
-            data: {
-              last_usage_quantity: usage.toString(),
-            },
-          });
+        if (!Array.isArray(list) || list.length === 0) {
+          console.log('JOYTEL EMPTY USAGE', sim.id);
+          continue;
         }
+
+        const totalBytes = list.reduce((acc, item) => acc + Number(item.usage || 0), 0);
+        const totalMb = +(totalBytes / (1024 * 1024)).toFixed(2);
+
+        console.log(`JOYTEL USAGE: ${totalBytes} bytes = ${totalMb} MB`);
+
+        await this.prisma.sims.update({
+          where: { id: sim.id },
+          data: {
+            last_usage_quantity: totalMb.toString(),
+          },
+        });
       }
 
       if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
