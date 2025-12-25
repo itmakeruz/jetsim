@@ -273,7 +273,7 @@ export class SimsService {
           status: sim?.status,
           day_left: sim?.tariff?.validity_period,
           usage: Number(sim?.last_usage_quantity),
-          quantity_internet: sim?.quantity_internet * 1024,
+          quantity_internet: sim?.tariff?.quantity_internet * 1024,
           is_4g: sim?.tariff?.is_4g,
           is_5g: sim?.tariff?.is_5g,
           qr_code: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
