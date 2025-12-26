@@ -87,6 +87,8 @@ export class BillionConnectService {
       // if (!this.isSuccess(response.data)) {
       //   throw new InternalServerErrorException(response.data?.tradeMsg);
       // }
+      console.log(response);
+
       return response.data;
     } catch (err: any) {
       const status = err?.response?.status;

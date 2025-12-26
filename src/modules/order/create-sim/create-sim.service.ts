@@ -129,6 +129,8 @@ export class CreateSimService {
           },
         ],
       });
+      console.log(response);
+
       this.logger.info('BC INIT ORDER RESPONSE: ', response);
 
       if (response.tradeCode !== '1000' && response.tradeData?.successFlag !== 'true') {
