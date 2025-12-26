@@ -272,7 +272,7 @@ export class SimsService {
           tariff_name: sim?.tariff?.[`name_${lang}`],
           status: sim?.status,
           day_left: sim?.tariff?.validity_period,
-          usage: Number(sim?.last_usage_quantity),
+          usage: Number(sim?.last_usage_quantity) ?? 0,
           quantity_internet: sim?.tariff?.quantity_internet * 1024,
           is_4g: sim?.tariff?.is_4g,
           is_5g: sim?.tariff?.is_5g,
