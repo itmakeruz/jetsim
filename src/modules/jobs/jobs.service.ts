@@ -42,8 +42,9 @@ export class JobsService {
         const response = await this.joyTelService.getUsage({
           coupon: sim.coupon,
         });
+        console.log(response);
 
-        const list = response?.data?.dataUsageList;
+        const list = response?.dataUsageList;
         console.log(response, list);
 
         if (!Array.isArray(list) || list.length === 0) {
