@@ -504,7 +504,7 @@ export class OrderService {
       data: {
         user_id,
         status: OrderStatus.CREATED,
-        transaction_id: transactionId,
+        transaction_id: transactionId ?? 2010,
       },
       select: {
         id: true,

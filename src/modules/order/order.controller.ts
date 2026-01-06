@@ -43,13 +43,13 @@ export class OrderController {
     return this.orderService.findOne(+id);
   }
 
-  // @ApiOperation({ summary: 'create order', description: 'create order' })
-  // @ApiBearerAuth()
-  // @UseGuards(AuthGuard('jwt'))
-  // @Post('esim')
-  // async create(@Req() request: IRequest) {
-  //   return this.orderService.create(request?.user?.id);
-  // }
+  @ApiOperation({ summary: 'create order', description: 'create order' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Post('esim')
+  async create(@Req() request: IRequest) {
+    return this.orderService.create(request?.user?.id, 2100);
+  }
 
   @ApiOperation({ summary: 'Add items to basket public', description: 'Add items to basket public' })
   @ApiBody({ type: [AddToBasket] })
