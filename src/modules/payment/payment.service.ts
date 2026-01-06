@@ -236,7 +236,7 @@ export class PaymentService {
   }
 
   async acceptTransactionStatus(data: TBankWebHookResponse) {
-    this.logger.info('TBANK WEBHOOK DATA: ', data);
+    this.logger.log('TBANK WEBHOOK DATA: ', data);
     console.log(data);
 
     const existTransaction = await this.prisma.transaction.findUnique({
