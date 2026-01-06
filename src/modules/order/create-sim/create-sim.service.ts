@@ -104,6 +104,7 @@ export class CreateSimService {
           select: {
             id: true,
             sku_id: true,
+            validity_period: true,
           },
         },
         user: {
@@ -123,7 +124,7 @@ export class CreateSimService {
           {
             channelSubOrderId: item.id.toString(),
             deviceSkuId: sim.tariff.sku_id,
-            planSkuCopies: '1',
+            planSkuCopies: sim?.tariff?.validity_period?.toString(),
             number: '1',
           },
         ],
