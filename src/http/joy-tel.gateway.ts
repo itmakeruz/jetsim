@@ -11,6 +11,7 @@ import * as crypto from 'crypto';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { CouponRequest, CidRequest } from '@interfaces';
+import { WinstonLoggerService } from '@logger';
 
 @Injectable()
 export class JoyTel {
@@ -21,7 +22,10 @@ export class JoyTel {
   private customerCode = JOYTEL_CUSTOMER_CODE;
   private customerAuth = JOYTEL_CUSTOMER_AUTH;
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly logger: WinstonLoggerService,
+  ) {}
 
   async checkBalance(coupon: any, transaction_id: string) {
     const url = `${this.baseUrl}/esim/usage/query`;
@@ -79,6 +83,8 @@ export class JoyTel {
       remark: '',
       itemList,
     };
+
+    this.logger.log('JT INIT ORDER REQUEST: ', body);
 
     const headers = {
       'Content-Type': 'application/json',

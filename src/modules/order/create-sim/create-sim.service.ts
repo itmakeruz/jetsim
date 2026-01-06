@@ -48,8 +48,7 @@ export class CreateSimService {
         item.tariff.sku_id,
         1,
       );
-
-      this.logger.info('JT INIT ORDER RESPONSE: ', response);
+      this.logger.log('JT INIT ORDER RESPONSE: ', response);
       console.log(response);
 
       if (response.code !== 0) {
@@ -131,7 +130,7 @@ export class CreateSimService {
       });
       console.log(response);
 
-      this.logger.info('BC INIT ORDER RESPONSE: ', response);
+      this.logger.log('BC INIT ORDER RESPONSE: ', response);
 
       if (response.tradeCode !== '1000' && response.tradeData?.successFlag !== 'true') {
         error = response;

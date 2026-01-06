@@ -1,5 +1,6 @@
 // src/integrations/billion-connect.service.ts
 import { GetUsageRequest, GetStatusRequest } from '@interfaces';
+import { WinstonLoggerService } from '@logger';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
@@ -40,7 +41,7 @@ export class BillionConnectService {
   private readonly signMethod = (process.env.BILLION_CONNECT_SIGN_METHOD || 'md5').toLowerCase();
   private readonly http: AxiosInstance;
 
-  constructor() {
+  constructor(private readonly logger: WinstonLoggerService) {
     this.http = axios.create({
       baseURL: this.baseURL,
       timeout: 30000,
@@ -72,6 +73,7 @@ export class BillionConnectService {
         language: 2,
       },
     };
+    this.logger.log('BC INIT ORDER REQUEST: ', payload);
 
     const payloadJson = JSON.stringify(payload);
     const sign = this.md5(this.appSecret + payloadJson);
@@ -87,7 +89,6 @@ export class BillionConnectService {
       // if (!this.isSuccess(response.data)) {
       //   throw new InternalServerErrorException(response.data?.tradeMsg);
       // }
-      console.log(response);
 
       return response.data;
     } catch (err: any) {
