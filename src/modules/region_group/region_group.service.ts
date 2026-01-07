@@ -443,7 +443,7 @@ export class RegionGroupService {
         name_ru: data.name_ru ?? regionGroup.name_ru,
         name_en: data.name_en ?? regionGroup.name_en,
         status: data.status ?? regionGroup.status,
-        image: data.image ?? regionGroup.image,
+        image: fileName ?? regionGroup.image,
         regions: {
           set: data.region_ids?.map((id) => ({ id })) || [],
         },
