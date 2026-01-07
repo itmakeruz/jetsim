@@ -1,5 +1,5 @@
 import { PartnerIds } from '@enums';
-import { paginate, dayAfterNConverter, generateFastEsimInstallmentString } from '@helpers';
+import { paginate, dayAfterNConverter, generateFastEsimInstallmentString, getRemainingDays } from '@helpers';
 import { BillionConnectService, HttpService, JoyTel } from '@http';
 import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
@@ -363,7 +363,7 @@ export class SimsService {
           tariff_name: sim?.tariff?.[`name_${lang}`],
           status: sim?.status,
           usage: 300,
-          day_left: 10,
+          day_left: getRemainingDays(sim?.created_at, sim?.tariff?.validity_period),
           is_4g: sim?.tariff?.is_4g,
           is_5g: sim?.tariff?.is_5g,
           region_group: {

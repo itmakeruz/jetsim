@@ -18,6 +18,7 @@ import {
   generateFastEsimInstallmentString,
   newOrderMessage,
   saveQrCode,
+  getRemainingDays,
 } from '@helpers';
 import { v4 as uuidv4 } from 'uuid';
 import { BillionConnectCallbackResponse, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
@@ -149,7 +150,7 @@ export class OrderService {
             id: sim?.tariff?.id,
             name: sim?.tariff?.[`name_${lang}`],
             usage: 300,
-            day_left: 10,
+            day_left: getRemainingDays(sim?.created_at, sim?.tariff?.validity_period),
             is_4g: sim?.tariff?.is_4g,
             is_5g: sim?.tariff?.is_5g,
             quantity_internet: sim?.tariff?.quantity_internet,
