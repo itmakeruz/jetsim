@@ -62,13 +62,19 @@ export class OrderService {
         sims: {
           select: {
             id: true,
+            iccid: true,
+            pin_1: true,
+            puk_1: true,
             qrcode: true,
             tariff: {
               select: {
                 id: true,
+                name_en: true,
+                name_ru: true,
                 quantity_sms: true,
                 quantity_minute: true,
                 quantity_internet: true,
+                validity_period: true,
                 price_sell: true,
               },
             },
@@ -82,7 +88,33 @@ export class OrderService {
     return {
       success: true,
       message: 'success',
-      data: data,
+      data: data?.map((order: any) => {
+        return {
+          id: order?.id,
+          created_at: order?.created_at,
+          sims: order?.sims?.map((sim: any) => {
+            return {
+              id: sim?.id,
+              iccid: sim?.iccid,
+              pin_1: sim?.pin_1,
+              puk_1: sim?.puk_1,
+              qrcode: sim?.qrcode,
+              tariff: {
+                id: sim?.tariff?.id,
+                name_ru: sim?.tariff?.name_ru,
+                name_en: sim?.tariff?.name_en,
+                quantity_sms: sim?.tariff?.quantity_sms,
+                quantity_minute: sim?.tariff?.quantity_minute,
+                quantity_internet: sim?.tariff?.quantity_internet,
+                validity_period: sim?.tariff?.validity_period,
+                price_sell: sim?.tariff?.price_sell / 100,
+              },
+              created_at: sim?.created_at,
+              day_left: getRemainingDays(sim?.created_at, sim?.tariff?.validity_period),
+            };
+          }),
+        };
+      }),
       ...meta,
     };
   }
