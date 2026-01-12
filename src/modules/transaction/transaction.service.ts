@@ -59,7 +59,7 @@ export class TransactionService {
 
     const formattedData = data.map((item) => ({
       ...item,
-      amount: Number(item.partner_transaction_id),
+      partner_transaction_id: Number(item?.partner_transaction_id),
     }));
 
     return {
@@ -85,13 +85,13 @@ export class TransactionService {
     return {
       success: true,
       data: {
-        id: transaction.id,
-        amount: Number(transaction.partner_transaction_id),
-        status: transaction.status,
-        partner_transaction_id: transaction.partner_transaction_id,
-        order_id: transaction.order_id,
-        user_id: transaction.user_id,
-        created_at: transaction.created_at,
+        id: transaction?.id,
+        amount: transaction?.amount,
+        status: transaction?.status,
+        partner_transaction_id: Number(transaction?.partner_transaction_id),
+        order_id: transaction?.order_id,
+        user_id: transaction?.user_id,
+        created_at: transaction?.created_at,
       },
     };
   }
