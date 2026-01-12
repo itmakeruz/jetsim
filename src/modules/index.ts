@@ -14,4 +14,5 @@ export * from './partner';
 export * from './support';
 export * from './statics';
 export * from './dashboard';
+export * from './transaction';
 export * from './region_group';

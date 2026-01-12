@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreatePaymentDto, GetTransactionDto, UpdatePaymentDto } from './dto';
+import { CreatePaymentDto, UpdatePaymentDto } from './dto';
 import { PrismaService } from '@prisma';
 import { WinstonLoggerService } from '@logger';
 import { paginate } from '@helpers';
@@ -20,36 +20,6 @@ export class PaymentService {
     private readonly orderService: OrderService,
     private readonly socketGateway: GatewayGateway,
   ) {}
-  async findAll(query: GetTransactionDto) {
-    const transactions = await paginate('transaction', {
-      page: query?.page,
-      size: query?.size,
-      // filter: query?.filters,
-      // sort: query?.sort,
-      select: {
-        id: true,
-        status: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        created_at: true,
-      },
-    });
-
-    return {
-      success: true,
-      message: '',
-      ...transactions,
-      data: transactions.data,
-    };
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} payment`;
-  }
 
   async create(userId: number, lang: string) {
     const basket = await this.prisma.basket.findFirst({

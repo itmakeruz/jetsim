@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { CreatePaymentDto, GetTransactionDto, UpdatePaymentDto } from './dto';
+import { CreatePaymentDto, UpdatePaymentDto } from './dto';
 import { DeviceHeadersDto, ParamId } from '@enums';
 import { IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
@@ -12,15 +12,15 @@ import { TBankWebHookResponse } from '@constants';
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @Get()
-  async findAll(@Query() query: GetTransactionDto) {
-    return this.paymentService.findAll(query);
-  }
+  // @Get()
+  // async findAll(@Query() query: GetTransactionDto) {
+  //   return this.paymentService.findAll(query);
+  // }
 
-  @Get(':id')
-  findOne(@Param() param: ParamId) {
-    return this.paymentService.findOne(param.id);
-  }
+  // @Get(':id')
+  // findOne(@Param() param: ParamId) {
+  //   return this.paymentService.findOne(param.id);
+  // }
 
   // @Post()
   // async create(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {

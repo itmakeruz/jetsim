@@ -22,6 +22,7 @@ import {
   StaticsModule,
   DashboardModule,
   RegionGroupModule,
+  TransactionModule,
 } from '@modules';
 import * as path from 'path';
 
@@ -53,6 +54,7 @@ import * as path from 'path';
     StaticsModule,
     DashboardModule,
     RegionGroupModule,
+    TransactionModule,
   ],
   controllers: [],
   providers: [WinstonLoggerService, LoggingInterceptor],
