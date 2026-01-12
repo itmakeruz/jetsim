@@ -98,7 +98,7 @@ export class OrderService {
               iccid: sim?.iccid,
               pin_1: sim?.pin_1,
               puk_1: sim?.puk_1,
-              qrcode: sim?.qrcode,
+              status: sim?.status,
               tariff: {
                 id: sim?.tariff?.id,
                 name_ru: sim?.tariff?.name_ru,
