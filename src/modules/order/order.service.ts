@@ -525,6 +525,8 @@ export class OrderService {
       },
     });
 
+    this.logger.log(`Bascet items for user ${user_id}: `, basket);
+
     if (!basket || basket?.items?.length === 0) {
       throw new BadRequestException(basket_empty['ru']);
     }
