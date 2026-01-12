@@ -117,6 +117,9 @@ export class CreateSimService {
     });
 
     try {
+      const fiksirovanniy_sku_ids = ['1756107340691234'];
+
+      const isFiksirovanniySkuId = fiksirovanniy_sku_ids?.includes(sim?.tariff?.sku_id);
       const response = await this.billionConnect.createEsimOrder({
         channelOrderId: sim.id.toString(),
         email: sim.user.email || undefined,
@@ -124,7 +127,7 @@ export class CreateSimService {
           {
             channelSubOrderId: item.id.toString(),
             deviceSkuId: sim.tariff.sku_id,
-            planSkuCopies: sim?.tariff?.validity_period?.toString(),
+            planSkuCopies: isFiksirovanniySkuId ? '1' : sim?.tariff?.validity_period?.toString(),
             number: '1',
           },
         ],
