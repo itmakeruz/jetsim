@@ -60,6 +60,7 @@ export class TransactionService {
     const formattedData = data.map((item) => ({
       ...item,
       partner_transaction_id: Number(item?.partner_transaction_id),
+      amount: Number(item?.amount) / 100,
     }));
 
     return {
