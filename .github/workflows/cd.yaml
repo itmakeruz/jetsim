@@ -20,27 +20,28 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            cd /var/www/jetsim
-            git stash
+            cd /var/www/davr_new_backend
             git pull origin main
             pnpm install
             pnpm build
-            pm2 restart jetsim-api
+            pm2 restart davr-new-backend
 
-      - name: Notify Telegram on success
+      - name: Telegram notify (CD success)
         if: success()
         run: |
-          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
-          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
+          TEXT="✅ <b>Завершен билд jetsim_api</b>"
+
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="CD Success ✅%0ACommit: $COMMIT_MESSAGE%0AAuthor: $COMMIT_AUTHOR"
+            -d parse_mode=HTML \
+            -d text="$TEXT"
 
-      - name: Notify Telegram on failure
+      - name: Telegram notify (CD failed)
         if: failure()
         run: |
-          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
-          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
+          TEXT="❌ <b>Ошибка деплоя jetsim_api</b>"
+
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="CD Failed ❌%0ACommit: $COMMIT_MESSAGE%0AAuthor: $COMMIT_AUTHOR"
+            -d parse_mode=HTML \
+            -d text="$TEXT"
