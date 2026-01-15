@@ -10,19 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            cd /var/www/jetsim
-            git stash
-            git pull origin main
+            cd /var/www/jetsim || exit 1
+            git fetch origin
+            git reset --hard origin/main
             pnpm install
             pnpm build
             pm2 restart jetsim-api
@@ -30,11 +28,7 @@ jobs:
       - name: Notify Telegram on success
         if: success()
         run: |
-          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
-          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
-
-          TEXT="Отправлены изменения по проекту - jetsim.%0AВетка main.%0AОт ${COMMIT_AUTHOR}%0AКОММИТ - ${COMMIT_MESSAGE}%0A%0AДеплой успешно завершён"
-
+          TEXT="Завершен билд JETSIM-API%0A%0AДеплой успешно завершён"
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="$TEXT"
@@ -42,11 +36,7 @@ jobs:
       - name: Notify Telegram on failure
         if: failure()
         run: |
-          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
-          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
-
-          TEXT="Ошибка деплоя проекта - jetsim.%0AВетка main.%0AОт ${COMMIT_AUTHOR}%0AКОММИТ - ${COMMIT_MESSAGE}"
-
+          TEXT="Ошибка деплоя проекта - jetsim.%0AВетка main"
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="$TEXT"

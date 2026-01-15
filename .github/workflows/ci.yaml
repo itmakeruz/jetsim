@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches:
+      - dev
+      - main
 
 jobs:
   build:
@@ -12,6 +12,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          echo "build step here"
+          # pnpm install
+          # pnpm build
 
       - name: Telegram notify
         if: always()
