@@ -24,7 +24,7 @@ jobs:
             git pull origin main
             pnpm install
             pnpm build
-            pm2 restart jetsim_api
+            pm2 restart jetsim-api
 
       - name: Telegram notify (CD success)
         if: success()
