@@ -21,8 +21,8 @@ export class FaqsController {
 
   @ApiProperty({ description: 'Get faqs Admin' })
   @Get('admin')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   async findAllAdmin() {
     return this.faqsService.findAllAdmin();
   }
@@ -35,32 +35,32 @@ export class FaqsController {
 
   @ApiProperty({ description: 'Get one faq admin' })
   @Get(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   async findOneAdmin(@Param() param: ParamId) {
     return this.faqsService.findOneAdmin(param.id);
   }
 
   @ApiProperty({ description: 'Create faq admin' })
   @Post()
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   create(@Body() data: CreateFaqDto) {
     return this.faqsService.create(data);
   }
 
   @ApiProperty({ description: 'Update faq admin' })
   @Patch(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   update(@Param('id') id: string, @Body() data: UpdateFaqDto) {
     return this.faqsService.update(+id, data);
   }
 
   @ApiProperty({ description: 'delete faq admin' })
   @Delete(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   remove(@Param('id') id: string) {
     return this.faqsService.remove(+id);
   }

@@ -41,8 +41,8 @@ export class RegionController {
 
   @ApiOperation({ summary: 'Get all regions admin', description: 'Get all regions admin' })
   @Get('admin')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async findAllAdmin(@Query() query: GetRegionDto) {
     return await this.regionService.findAllAdmin(query);
   }
@@ -55,8 +55,8 @@ export class RegionController {
 
   @ApiOperation({ summary: 'Get region by id admin', description: 'Get region by id admin' })
   @Get('admin/:id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async findOneAdmin(@Param() param: ParamId) {
     return this.regionService.findOneAdmin(param.id);
   }
@@ -65,8 +65,8 @@ export class RegionController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionDto })
   @Post()
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -90,8 +90,8 @@ export class RegionController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdateRegionDto })
   @Patch(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -114,8 +114,8 @@ export class RegionController {
 
   @ApiOperation({ summary: 'Delete region', description: 'Delete region' })
   @Delete(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async remove(@Param('id') id: string) {
     return this.regionService.remove(+id);
   }
