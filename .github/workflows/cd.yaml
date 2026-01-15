@@ -10,33 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v2
+
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            cd /var/www/jetsim || exit 1
-            git fetch origin
-            git reset --hard origin/main
+            cd /var/www/davrsmart
+            git pull origin main
             pnpm install
             pnpm build
-            pm2 restart jetsim-api
+            pm2 restart davrsmart-api
 
-      - name: Notify Telegram on success
+      - name: Telegram notify (CD success)
         if: success()
         run: |
-          TEXT="Завершен билд jetsim_api%0A%0AДеплой успешно завершён"
-          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
-            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="$TEXT"
+          TEXT="Завершен билд DAVRSMART-BACKEND-NEW-TEST"
 
-      - name: Notify Telegram on failure
-        if: failure()
-        run: |
-          TEXT="Ошибка деплоя проекта - jetsim.%0AВетка main"
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="$TEXT"

@@ -1,29 +1,25 @@
 name: CI
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
       - dev
-    types:
-      - closed
+      - main
 
 jobs:
   notify:
     runs-on: ubuntu-latest
 
-    # faqat merge bo‘lsa
-    if: github.event.pull_request.merged == true
-
     steps:
-      - name: Send Telegram message (merge only)
-        run: |
-          PROJECT_NAME="DAVRSMART-BACKEND-NEW-TEST"
-          AUTHOR="${{ github.event.pull_request.user.login }}"
-          SOURCE_BRANCH="${{ github.event.pull_request.head.ref }}"
-          COMMIT_MESSAGE="${{ github.event.pull_request.title }}"
+      - uses: actions/checkout@v4
 
-          TEXT="Отправлены изменения по проекту - davrsmart.%0AВетка ${SOURCE_BRANCH}.%0AОт ${AUTHOR}%0AКОММИТ - ${COMMIT_MESSAGE}%0A%0AЗавершен билд ${PROJECT_NAME}"
+      - name: Telegram notify (CI)
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
+
+          TEXT="Отправлены изменения по проекту - davrsmart.%0AВетка ${BRANCH_NAME}.%0AОт ${COMMIT_AUTHOR}%0AКОММИТ - ${COMMIT_MESSAGE}"
 
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
