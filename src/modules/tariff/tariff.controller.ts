@@ -18,8 +18,8 @@ export class TariffController {
   }
 
   @ApiOperation({ summary: 'Get all tariffs admin', description: 'Get all tariffs admin' })
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @Get('admin')
   async findAllAdmin(@Query() query: GetTarifftDto) {
     return this.tariffService.findAllAdmin(query);
@@ -33,24 +33,24 @@ export class TariffController {
 
   @ApiOperation({ summary: 'Get tariff admin', description: 'Get tariff admin' })
   @Get('admin/:id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async findOneAdmin(@Param() param: ParamId) {
     return this.tariffService.findOneAdmin(param.id);
   }
 
   @ApiOperation({ summary: 'Create tariff', description: 'Create tariff' })
   @Post()
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async create(@Body() data: CreateTariffDto) {
     return this.tariffService.create(data);
   }
 
   @ApiOperation({ summary: 'Update tariff', description: 'Update tariff' })
   @Patch(':id/change-status')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async changeStatusTariff(@Param() param: ParamId, @Query() query: QueryStatus) {
     return this.tariffService.changeStatusTariff(param.id, query.status);
   }
@@ -63,16 +63,16 @@ export class TariffController {
 
   @ApiOperation({ summary: 'Update tariff', description: 'Update tariff' })
   @Patch(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async update(@Param() param: ParamId, @Body() data: UpdateTariffDto) {
     return this.tariffService.update(param.id, data);
   }
 
   @ApiOperation({ summary: 'Delete tariff', description: 'Delete tariff' })
   @Delete(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async remove(@Param() param: ParamId) {
     return this.tariffService.remove(param.id);
   }

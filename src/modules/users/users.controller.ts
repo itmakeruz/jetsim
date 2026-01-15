@@ -32,8 +32,8 @@ export class UsersController {
 
   @ApiOperation({ description: 'Get users' })
   @Get()
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   findAll(@Query() query: any) {
     return this.usersService.findAll(query);
   }
@@ -78,16 +78,16 @@ export class UsersController {
 
   @ApiOperation({ description: 'Get user details' })
   @Get(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(+id);
   }
 
   @ApiOperation({ description: 'Update user details' })
   @Patch(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   async update(@Param('id') id: string) {
     return this.usersService.changeStatus(+id);
   }

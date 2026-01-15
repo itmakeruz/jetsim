@@ -12,8 +12,8 @@ export class DashboardController {
 
   @ApiOperation({ description: 'Get Dashboard statistics' })
   @Get()
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   async get(@Query() query: GetDashboardDto) {
     return this.dashboardService.get(query);
   }

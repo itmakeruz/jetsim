@@ -15,8 +15,8 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Get orders admin', description: 'Get orders admin' })
   @Get('admin')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   async findAll(@Query() query: GetOrderDto) {
     return this.orderService.findAll(query);
   }

@@ -35,8 +35,8 @@ export class RegionGroupController {
 
   @ApiOperation({ summary: 'Get all region groups admin', description: 'Get all region groups admin' })
   @Get('admin')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async getRegionGroupsAdmin(@Query() query: GetRegionDto) {
     return this.regionGroupService.findRegionGroupsAdmin(query);
   }
@@ -51,8 +51,8 @@ export class RegionGroupController {
 
   @ApiOperation({ summary: 'Get region group by id admin', description: 'Get region group by id admin' })
   @Get('admin/:id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async getRegionGroupByIdAdmin(@Param('id') id: string) {
     return this.regionGroupService.findRegionOneRegionGroup(+id);
   }
@@ -61,8 +61,8 @@ export class RegionGroupController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionGroupDto })
   @Post()
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -83,8 +83,8 @@ export class RegionGroupController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionGroupDto })
   @Patch(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -107,8 +107,8 @@ export class RegionGroupController {
 
   @ApiOperation({ summary: 'Delete region group', description: 'Delete region group' })
   @Delete(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async deleteRegionGroup(@Param('id') id: string) {
     return this.regionGroupService.removeRegionGroup(+id);
   }

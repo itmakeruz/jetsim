@@ -13,16 +13,16 @@ export class TransactionController {
 
   @ApiOperation({ description: 'Get transactions history' })
   @Get()
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   findAll(@Query() query: GetTransactionDto) {
     return this.transactionService.findAll(query);
   }
 
   @ApiOperation({ description: 'Get transaction details' })
   @Get(':id')
-  @UseGuards(AtGuard, RolesGuard)
-  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
+  // @UseGuards(AtGuard, RolesGuard)
+  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   findOne(@Param() param: ParamId) {
     return this.transactionService.findOne(param.id);
   }
