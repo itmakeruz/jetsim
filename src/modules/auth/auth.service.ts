@@ -341,6 +341,8 @@ export class AuthService {
         secret: JWT_RESET_TOKEN,
       });
     } catch (error) {
+      console.log(error?.message);
+
       throw new UnauthorizedException(invalid_reset_token[lang]);
     }
 

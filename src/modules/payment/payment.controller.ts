@@ -1,9 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param, Delete, Req, UseGuards } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { CreatePaymentDto, UpdatePaymentDto } from './dto';
-import { DeviceHeadersDto, ParamId } from '@enums';
+import { UpdatePaymentDto } from './dto';
+import { ParamId } from '@enums';
 import { IRequest } from '@interfaces';
-import { HeadersValidation } from '@decorators';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { TBankWebHookResponse } from '@constants';

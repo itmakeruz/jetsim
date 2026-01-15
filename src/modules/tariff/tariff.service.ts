@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTariffDto, GetTarifftDto, UpdateTariffDto } from './dto';
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
@@ -10,7 +10,6 @@ import {
   tariff_delete_success,
   FilePath,
 } from '@constants';
-import { stat } from 'fs';
 
 @Injectable()
 export class TariffService {

@@ -1,15 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreatePaymentDto, UpdatePaymentDto } from './dto';
+import { UpdatePaymentDto } from './dto';
 import { PrismaService } from '@prisma';
 import { WinstonLoggerService } from '@logger';
-import { paginate } from '@helpers';
 import { TBank } from '@http';
-import { basket_empty, TBankInitRequest, TBankWebHookResponse } from '@constants';
+import { basket_empty, TBankWebHookResponse } from '@constants';
 import { TaxValues } from '@constants';
 import { OrderStatus, TransactionStatus } from '@prisma/client';
 import { OrderService } from '../order/order.service';
 import { GatewayGateway } from '../gateway';
-import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
 
 @Injectable()
 export class PaymentService {

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateRegionDto, CreateRegionGroupDto, GetRegionDto, UpdateRegionDto, UpdateRegionGroupDto } from './dto';
+import { CreateRegionDto, GetRegionDto, UpdateRegionDto } from './dto';
 import { paginate } from '@helpers';
 import {
   FilePath,
@@ -8,7 +8,6 @@ import {
   region_update_success,
   region_delete_success,
   region_find_success,
-  tariffs_loaded,
 } from '@constants';
 import { PrismaService } from '@prisma';
 import { Status } from '@prisma/client';

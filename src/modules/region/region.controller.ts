@@ -10,15 +10,18 @@ import {
   BadRequestException,
   UseInterceptors,
   UploadedFile,
+  UseGuards,
 } from '@nestjs/common';
 import { RegionService } from './region.service';
-import { CreateRegionDto, CreateRegionGroupDto, GetRegionDto, UpdateRegionDto, UpdateRegionGroupDto } from './dto';
+import { CreateRegionDto, GetRegionDto, UpdateRegionDto } from './dto';
 import { DeviceHeadersDto, ParamId } from '@enums';
-import { HeadersValidation } from '@decorators';
-import { ApiBody, ApiConsumes, ApiOperation, ApiProperty } from '@nestjs/swagger';
+import { HeadersValidation, Roles } from '@decorators';
+import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import { AtGuard, RolesGuard } from '@guards';
+import { UserRoles } from '@prisma/client';
 
 @Controller('region')
 export class RegionController {
@@ -38,6 +41,8 @@ export class RegionController {
 
   @ApiOperation({ summary: 'Get all regions admin', description: 'Get all regions admin' })
   @Get('admin')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async findAllAdmin(@Query() query: GetRegionDto) {
     return await this.regionService.findAllAdmin(query);
   }
@@ -50,6 +55,8 @@ export class RegionController {
 
   @ApiOperation({ summary: 'Get region by id admin', description: 'Get region by id admin' })
   @Get('admin/:id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async findOneAdmin(@Param() param: ParamId) {
     return this.regionService.findOneAdmin(param.id);
   }
@@ -58,6 +65,8 @@ export class RegionController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionDto })
   @Post()
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -81,6 +90,8 @@ export class RegionController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdateRegionDto })
   @Patch(':id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -103,15 +114,9 @@ export class RegionController {
 
   @ApiOperation({ summary: 'Delete region', description: 'Delete region' })
   @Delete(':id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async remove(@Param('id') id: string) {
     return this.regionService.remove(+id);
   }
-
-  /**
-   *
-   *
-   *
-   * REGION GROUPS
-   *
-   */
 }

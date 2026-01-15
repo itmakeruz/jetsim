@@ -1,12 +1,13 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query, UseGuards } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { UpdateOrderDto, GetOrderDto, AddToBasket, RemoveFromBasketDto, DecreaseQuantityDto } from './dto';
-import { ApiBearerAuth, ApiBody, ApiHeader, ApiOperation } from '@nestjs/swagger';
+import { UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
+import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { BillionConnectCallbackResponse, IRequest } from '@interfaces';
-import { HeadersValidation } from '@decorators';
-import { DeviceHeadersDto, ParamId } from '@enums';
+import { HeadersValidation, Roles } from '@decorators';
+import { DeviceHeadersDto } from '@enums';
 import { AuthGuard } from '@nestjs/passport';
-import { OptionalJwtAuthGuard } from '@guards';
+import { AtGuard, RolesGuard } from '@guards';
+import { UserRoles } from '@prisma/client';
 
 @Controller('order')
 export class OrderController {
@@ -14,6 +15,8 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Get orders admin', description: 'Get orders admin' })
   @Get('admin')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   async findAll(@Query() query: GetOrderDto) {
     return this.orderService.findAll(query);
   }
@@ -27,8 +30,8 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'Get orders public', description: 'Get orders public' })
-  @UseGuards(AuthGuard('jwt'))
   @Get('static')
+  @UseGuards(AuthGuard('jwt'))
   async findStaticOrders(
     @Query() query: GetOrderDto,
     @Req() request: IRequest,
@@ -39,22 +42,23 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Get orders public', description: 'Get orders public' })
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
   async findOne(@Param('id') id: string) {
     return this.orderService.findOne(+id);
   }
 
   @ApiOperation({ summary: 'create order', description: 'create order' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
   @Post('esim')
+  @UseGuards(AuthGuard('jwt'))
   async create(@Req() request: IRequest) {
     return this.orderService.create(request?.user?.id, 2100);
   }
 
   @ApiOperation({ summary: 'Add items to basket public', description: 'Add items to basket public' })
   @ApiBody({ type: [AddToBasket] })
-  @UseGuards(AuthGuard('jwt'))
   @Post('add-items')
+  @UseGuards(AuthGuard('jwt'))
   async addItemsToBascet(
     @Body() data: AddToBasket[],
     @HeadersValidation() headers: DeviceHeadersDto,
@@ -64,8 +68,8 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'Add tariff to basket public', description: 'Add tariff to basket public' })
-  @UseGuards(AuthGuard('jwt'))
   @Post('add-to-basket')
+  @UseGuards(AuthGuard('jwt'))
   async addTobascet(
     @Body() data: AddToBasket,
     @HeadersValidation() headers: DeviceHeadersDto,
@@ -75,8 +79,8 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'remove item from basket public', description: 'remove item from basket public' })
-  @UseGuards(AuthGuard('jwt'))
   @Post('remove-item-from-basket')
+  @UseGuards(AuthGuard('jwt'))
   async removeFromBascet(
     @Body() data: AddToBasket,
     @HeadersValidation() headers: DeviceHeadersDto,
@@ -86,8 +90,8 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'decrease item from basket public', description: 'decrease item from basket public' })
-  @UseGuards(AuthGuard('jwt'))
   @Post('decrease-item-from-basket')
+  @UseGuards(AuthGuard('jwt'))
   async decreaseQuantity(
     @Body() data: AddToBasket,
     @HeadersValidation() headers: DeviceHeadersDto,
@@ -96,12 +100,12 @@ export class OrderController {
     return this.orderService.decreaseQuantity(data, request?.user?.id, headers.lang);
   }
 
-  @ApiOperation({ summary: 'Get Usage', description: 'Get Usage' })
-  // @UseGuards(AuthGuard('jwt'))
-  @Post('get-usage/:id')
-  async getUsage(@Param() param: ParamId) {
-    return this.orderService.getUsage(param.id);
-  }
+  // @ApiOperation({ summary: 'Get Usage', description: 'Get Usage' })
+  // // @UseGuards(AuthGuard('jwt'))
+  // @Post('get-usage/:id')
+  // async getUsage(@Param() param: ParamId) {
+  //   return this.orderService.getUsage(param.id);
+  // }
 
   /**
    * Joytel callback endpoint

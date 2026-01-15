@@ -9,9 +9,6 @@ import * as fs from 'fs';
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
-  }
 
   async findAll(query: any) {
     const users = await paginate('user', {

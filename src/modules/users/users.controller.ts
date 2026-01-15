@@ -14,21 +14,26 @@ import {
   Delete,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { DeviceHeadersDto, ParamId } from '@enums';
+import { DeviceHeadersDto } from '@enums';
 import { UpdateProfileDto } from './dto';
 import { IRequest } from '@interfaces';
-import { HeadersValidation } from '@decorators';
+import { HeadersValidation, Roles } from '@decorators';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import { AtGuard, RolesGuard } from '@guards';
+import { UserRoles } from '@prisma/client';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @ApiOperation({ description: 'Get users' })
   @Get()
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   findAll(@Query() query: any) {
     return this.usersService.findAll(query);
   }
@@ -71,12 +76,18 @@ export class UsersController {
     return this.usersService.removeProfile(request?.user?.id, headers.lang);
   }
 
+  @ApiOperation({ description: 'Get user details' })
   @Get(':id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(+id);
   }
 
+  @ApiOperation({ description: 'Update user details' })
   @Patch(':id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   async update(@Param('id') id: string) {
     return this.usersService.changeStatus(+id);
   }

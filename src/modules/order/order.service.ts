@@ -1,11 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
 import { PrismaService } from '@prisma';
 import { OrderStatus, Status } from '@prisma/client';
@@ -24,17 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { BillionConnectCallbackResponse, JoyTelCallbackResponse, NotifyResponseJoyTel } from '@interfaces';
 import { GatewayGateway } from '../gateway';
 import { WinstonLoggerService } from '@logger';
-import {
-  basket_empty,
-  user_not_found,
-  order_not_found,
-  order_create_success,
-  basket_add_success,
-  basket_remove_success,
-  tariff_not_found,
-  FilePath,
-  partner_not_found,
-} from '@constants';
+import { basket_empty, user_not_found, order_not_found, FilePath, partner_not_found } from '@constants';
 import { MAIL_USER } from '@config';
 import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
 import { CreateSimService } from './create-sim/create-sim.service';

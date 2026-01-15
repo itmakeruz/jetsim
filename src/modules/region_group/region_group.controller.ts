@@ -9,16 +9,19 @@ import {
   Query,
   UseInterceptors,
   UploadedFile,
+  UseGuards,
 } from '@nestjs/common';
 import { RegionGroupService } from './region_group.service';
 import { CreateRegionGroupDto, UpdateRegionGroupDto } from './dto';
 import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { GetRegionDto } from '../region/dto';
-import { HeadersValidation } from '@decorators';
+import { HeadersValidation, Roles } from '@decorators';
 import { DeviceHeadersDto, ParamId } from '@enums';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import { AtGuard, RolesGuard } from '@guards';
+import { UserRoles } from '@prisma/client';
 
 @Controller('region-group')
 export class RegionGroupController {
@@ -32,6 +35,8 @@ export class RegionGroupController {
 
   @ApiOperation({ summary: 'Get all region groups admin', description: 'Get all region groups admin' })
   @Get('admin')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async getRegionGroupsAdmin(@Query() query: GetRegionDto) {
     return this.regionGroupService.findRegionGroupsAdmin(query);
   }
@@ -46,6 +51,8 @@ export class RegionGroupController {
 
   @ApiOperation({ summary: 'Get region group by id admin', description: 'Get region group by id admin' })
   @Get('admin/:id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async getRegionGroupByIdAdmin(@Param('id') id: string) {
     return this.regionGroupService.findRegionOneRegionGroup(+id);
   }
@@ -54,6 +61,8 @@ export class RegionGroupController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionGroupDto })
   @Post()
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -74,6 +83,8 @@ export class RegionGroupController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionGroupDto })
   @Patch(':id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -96,6 +107,8 @@ export class RegionGroupController {
 
   @ApiOperation({ summary: 'Delete region group', description: 'Delete region group' })
   @Delete(':id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async deleteRegionGroup(@Param('id') id: string) {
     return this.regionGroupService.removeRegionGroup(+id);
   }

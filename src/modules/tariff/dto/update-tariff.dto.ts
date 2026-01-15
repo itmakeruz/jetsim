@@ -1,7 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TariffType } from '@prisma/client';
-import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateTariffDto {
   @ApiProperty({ type: String, required: false, example: 'Название тарифа' })

@@ -36,4 +36,3 @@ export class CreateTransactionDto {
   @IsOptional()
   response?: any;
 }
-
