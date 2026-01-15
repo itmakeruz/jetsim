@@ -20,7 +20,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            cd ~/jetsim
+            cd /var/www/jetsim
             git stash
             git pull origin main
             pnpm install
