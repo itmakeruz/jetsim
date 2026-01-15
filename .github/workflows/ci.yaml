@@ -14,13 +14,21 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Telegram notify (CI)
+        if: always()
         run: |
+          STATUS="${{ job.status }}"
+          PROJECT_NAME="davr_new_backend"
           BRANCH_NAME="${{ github.ref_name }}"
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
           COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
 
-          TEXT="Отправлены изменения по проекту - jetsim_api.%0AВетка ${BRANCH_NAME}.%0AОт ${COMMIT_AUTHOR}%0AКОММИТ - ${COMMIT_MESSAGE}"
+          if [ "$STATUS" = "success" ]; then
+            TEXT="Отправлены изменения по проекту - <b>${PROJECT_NAME}</b>.%0AВетка <b>${BRANCH_NAME}</b>.%0AОт <b>${COMMIT_AUTHOR}</b>.%0AКОММИТ - <b>${COMMIT_MESSAGE}</b>"
+          else
+            TEXT="❌ Ошибка CI по проекту - <b>${PROJECT_NAME}</b>.%0AВетка <b>${BRANCH_NAME}</b>.%0AОт <b>${COMMIT_AUTHOR}</b>.%0AКОММИТ - <b>${COMMIT_MESSAGE}</b>"
+          fi
 
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d parse_mode=HTML \
             -d text="$TEXT"

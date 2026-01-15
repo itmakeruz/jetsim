@@ -20,17 +20,28 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            cd /var/www/davrsmart
+            cd /var/www/davr_new_backend
             git pull origin main
             pnpm install
             pnpm build
-            pm2 restart davrsmart-api
+            pm2 restart davr-new-backend
 
       - name: Telegram notify (CD success)
         if: success()
         run: |
-          TEXT="Завершен билд DAVRSMART-BACKEND-NEW-TEST"
+          TEXT="✅ <b>Завершен билд DAVR_NEW_BACKEND</b>"
 
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d parse_mode=HTML \
+            -d text="$TEXT"
+
+      - name: Telegram notify (CD failed)
+        if: failure()
+        run: |
+          TEXT="❌ <b>Ошибка деплоя DAVR_NEW_BACKEND</b>"
+
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d parse_mode=HTML \
             -d text="$TEXT"
