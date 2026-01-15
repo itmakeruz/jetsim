@@ -19,11 +19,12 @@ jobs:
           STATUS="${{ job.status }}"
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
           COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
+          BRANCH_NAME="${{ github.ref_name }}"
 
           if [ "$STATUS" = "success" ]; then
-            TEXT="CI Success ✅%0ACommit: $COMMIT_MESSAGE%0AAuthor: $COMMIT_AUTHOR"
+            TEXT="Отправлены изменения по проекту - jetsim.%0AВетка ${BRANCH_NAME}.%0AОт ${COMMIT_AUTHOR}%0AКОММИТ - ${COMMIT_MESSAGE}%0A%0AЗавершен билд JETSIM-BACKEND"
           else
-            TEXT="CI Failed ❌%0ACommit: $COMMIT_MESSAGE%0AAuthor: $COMMIT_AUTHOR"
+            TEXT="Ошибка при билде проекта - jetsim.%0AВетка ${BRANCH_NAME}.%0AОт ${COMMIT_AUTHOR}%0AКОММИТ - ${COMMIT_MESSAGE}"
           fi
 
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
