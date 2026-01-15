@@ -28,7 +28,7 @@ jobs:
           BRANCH_NAME="${{ github.ref_name }}"
 
           if [ "$STATUS" = "success" ]; then
-            TEXT="Отправлены изменения по проекту - jetsim.%0AВетка ${BRANCH_NAME}.%0AОт ${COMMIT_AUTHOR}%0AКОММИТ - ${COMMIT_MESSAGE}%0A%0AЗавершен билд JETSIM-BACKEND"
+            TEXT="Отправлены изменения по проекту - jetsim.%0AВетка ${BRANCH_NAME}.%0AОт ${COMMIT_AUTHOR}%0AКОММИТ - ${COMMIT_MESSAGE}%0A"
           else
             TEXT="Ошибка при билде проекта - jetsim.%0AВетка ${BRANCH_NAME}.%0AОт ${COMMIT_AUTHOR}%0AКОММИТ - ${COMMIT_MESSAGE}"
           fi

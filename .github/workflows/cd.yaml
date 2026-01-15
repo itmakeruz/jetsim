@@ -28,7 +28,7 @@ jobs:
       - name: Notify Telegram on success
         if: success()
         run: |
-          TEXT="Завершен билд JETSIM-API%0A%0AДеплой успешно завершён"
+          TEXT="Завершен билд jetsim_api%0A%0AДеплой успешно завершён"
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="$TEXT"
