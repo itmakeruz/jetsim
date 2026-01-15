@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
-import { OrderStatus } from '@prisma/client';
 import { dateConverter } from 'src/common/helpers/date-converter.helper';
 import { GetDashboardDto } from './dto';
 

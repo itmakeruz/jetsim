@@ -3,7 +3,7 @@ import { CreateSupportOperatorsDto, GetUserInfosDto, UpdateSupportOperatorsDto }
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
 import * as bcrypt from 'bcrypt';
-import { support_not_found, support_create_success, support_update_success, support_delete_success } from '@constants';
+import { support_not_found } from '@constants';
 
 @Injectable()
 export class SupportService {

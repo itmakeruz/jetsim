@@ -4,7 +4,6 @@ import { WinstonLoggerService } from '@logger';
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@prisma';
-import { OrderStatus, SimStatus } from '@prisma/client';
 
 @Injectable()
 export class JobsService {

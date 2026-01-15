@@ -1,14 +1,8 @@
-import { BadRequestException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePartnerDto, UpdatePartnerDto, GetAllPartnerDto } from './dto';
 import { PrismaService } from '@prisma';
 import { paginate } from '@helpers';
-import {
-  partner_not_found,
-  partner_create_success,
-  partner_update_success,
-  partner_delete_success,
-  validation_error,
-} from '@constants';
+import { partner_not_found, validation_error } from '@constants';
 
 @Injectable()
 export class PartnerService {

@@ -2,7 +2,7 @@ import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
 
 @Injectable()
 export class ParseFiltersPipe implements PipeTransform {
-  transform(value: any, metadata: ArgumentMetadata) {
+  transform(value: any, _: ArgumentMetadata) {
     const filters: any[] = [];
     let existsFilter = false;
     if (value)

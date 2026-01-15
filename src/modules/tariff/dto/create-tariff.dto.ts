@@ -1,16 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Status, TariffType } from '@prisma/client';
-import { Type } from 'class-transformer';
-import {
-  IsArray,
-  IsBoolean,
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  ValidateNested,
-} from 'class-validator';
+import { Status } from '@prisma/client';
+import { IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 // class Package {
 //   @ApiProperty({ type: Number, required: true, example: 100 })

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Status } from '@prisma/client';
 import { Transform } from 'class-transformer';
-import { IsArray, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateRegionGroupDto {
   @ApiProperty({ type: String, required: true, example: 'Avstraliya & Novaya Zelandiya' })

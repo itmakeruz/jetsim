@@ -1,10 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
 import { SimsService } from './sims.service';
 import { DeviceHeadersDto, ParamId } from '@enums';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
 import { AuthGuard } from '@nestjs/passport';
+import { AtGuard, RolesGuard } from '@guards';
+import { Roles } from '@decorators';
+import { UserRoles } from '@prisma/client';
 
 @Controller('sims')
 export class SimsController {
@@ -12,6 +15,8 @@ export class SimsController {
 
   @ApiOperation({ summary: 'Get all sims' })
   @Get()
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async findAll(@Query() query: any) {
     return this.simsService.findAll(query);
   }
@@ -42,6 +47,8 @@ export class SimsController {
 
   @ApiOperation({ summary: 'Get all sims' })
   @Get('status')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async findAllStatuses() {
     return this.simsService.checkSimStatusOnPartnerSide();
   }
@@ -50,12 +57,16 @@ export class SimsController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get('usage')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async getUsage(@Req() request: IRequest) {
     return this.simsService.getUsage(request.user.id);
   }
 
   @ApiOperation({ summary: 'Get sim by id' })
   @Get(':id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async findOne(@Param() param: ParamId) {
     return this.simsService.findOne(param.id);
   }

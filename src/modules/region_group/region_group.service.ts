@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRegionGroupDto } from './dto/create-region_group.dto';
 import { UpdateRegionGroupDto } from './dto/update-region_group.dto';
 import { PrismaService } from '@prisma';

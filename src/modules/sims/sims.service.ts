@@ -1,7 +1,7 @@
 import { PartnerIds } from '@enums';
 import { paginate, dayAfterNConverter, generateFastEsimInstallmentString, getRemainingDays } from '@helpers';
-import { BillionConnectService, HttpService, JoyTel } from '@http';
-import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
+import { BillionConnectService, JoyTel } from '@http';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
 import { FilePath, sim_not_found } from '@constants';
 import { OrderStatus, SimStatus } from '@prisma/client';

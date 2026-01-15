@@ -13,7 +13,7 @@ export class GatewayGateway implements OnGatewayConnection, OnGatewayDisconnect 
   constructor(private readonly jwtStrategy: JwtStrategy) {}
   @WebSocketServer() server: Server;
 
-  handleConnection(client: Socket, ...args: any[]) {
+  handleConnection(client: Socket, ..._: any[]) {
     try {
       const token = client?.handshake.query?.token as string;
 
@@ -31,6 +31,7 @@ export class GatewayGateway implements OnGatewayConnection, OnGatewayDisconnect 
       client.join(`user_${payload.id}`);
       console.log(`Client ${client.id} joined room user_${payload.id}`);
     } catch (e) {
+      console.log(e?.message);
       client.disconnect();
     }
   }
