@@ -117,7 +117,7 @@ export class CreateSimService {
     });
 
     try {
-      const fiksirovanniy_sku_ids = ['1756107340691234'];
+      const fiksirovanniy_sku_ids = ['1756107340691234', '1768370171837992', '1768370171830991'];
 
       const isFiksirovanniySkuId = fiksirovanniy_sku_ids?.includes(sim?.tariff?.sku_id);
       const response = await this.billionConnect.createEsimOrder({
