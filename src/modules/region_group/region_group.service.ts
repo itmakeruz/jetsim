@@ -153,7 +153,7 @@ export class RegionGroupService {
     let regions: any[] = [];
     let groupRegionIds: number[] = [];
 
-    // 1️⃣ Aniq regionlar kelgan bo‘lsa
+    // 1️⃣ Aniq regionlar
     if (ids.length > 0) {
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
@@ -171,7 +171,7 @@ export class RegionGroupService {
       }));
     }
 
-    // 2️⃣ Faqat groupId bo‘lsa
+    // 2️⃣ Group orqali
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
@@ -193,54 +193,70 @@ export class RegionGroupService {
       groupRegionIds = group.regions.map((r) => r.id);
     }
 
-    // 3️⃣ WHERE
+    const activeRegionIds = ids.length > 0 ? ids : groupRegionIds;
+
+    // 3️⃣ QAT’I WHERE — LOCAL / REGIONAL / GLOBAL TO‘LIQ AJRATILGAN
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
       OR: [],
     };
 
-    const activeRegionIds = ids.length > 0 ? ids : groupRegionIds;
-
-    // 🔹 LOCAL
+    // 🔹 LOCAL — faqat LOCAL
     if (activeRegionIds.length > 0) {
       where.OR.push({
-        is_local: true,
-        regions: {
-          some: { id: { in: activeRegionIds } },
-        },
-      });
-    }
-
-    // 🔹 REGIONAL
-    if (activeRegionIds.length > 0) {
-      where.OR.push({
-        is_regional: true,
-        OR: [
+        AND: [
+          { is_local: true },
+          { is_regional: false },
+          { is_global: false },
           {
             regions: {
               some: { id: { in: activeRegionIds } },
-            },
-          },
-          {
-            region_group: {
-              regions: {
-                some: { id: { in: activeRegionIds } },
-              },
             },
           },
         ],
       });
     }
 
-    // 🔹 GLOBAL (HAR DOIM)
+    // 🔹 REGIONAL — LOCAL EMAS
+    if (activeRegionIds.length > 0) {
+      where.OR.push({
+        AND: [
+          { is_regional: true },
+          { is_local: false },
+          { is_global: false },
+          {
+            OR: [
+              {
+                regions: {
+                  some: { id: { in: activeRegionIds } },
+                },
+              },
+              {
+                region_group: {
+                  regions: {
+                    some: { id: { in: activeRegionIds } },
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      });
+    }
+
+    // 🔹 GLOBAL — hech qachon regionga bog‘liq emas
     where.OR.push({
-      is_global: true,
-      regions: { none: {} },
-      region_group: null,
+      AND: [
+        { is_global: true },
+        { is_local: false },
+        { is_regional: false },
+        { regions: { none: {} } },
+        { region_group: null },
+      ],
     });
 
-    // 4️⃣ Tariflarni olish
+    // 4️⃣ DB’dan olish
     const tariffs = await this.prisma.tariff.findMany({
       where,
       include: {
@@ -250,7 +266,7 @@ export class RegionGroupService {
       orderBy: { price_sell: 'asc' },
     });
 
-    // 5️⃣ Formatlash
+    // 5️⃣ FORMATLASH — YANA HIMOYA BOR
     const result = {
       local: [],
       regional: [],
@@ -286,9 +302,18 @@ export class RegionGroupService {
         })),
       };
 
-      if (plan.is_global) result.global.push(formatted);
-      else if (plan.is_regional) result.regional.push(formatted);
-      else if (plan.is_local) result.local.push(formatted);
+      // 🔐 QAT’I PUSH
+      if (plan.is_local === true && !plan.is_regional && !plan.is_global) {
+        result.local.push(formatted);
+      }
+
+      if (plan.is_regional === true && !plan.is_local && !plan.is_global) {
+        result.regional.push(formatted);
+      }
+
+      if (plan.is_global === true && !plan.is_local && !plan.is_regional) {
+        result.global.push(formatted);
+      }
     }
 
     return {
