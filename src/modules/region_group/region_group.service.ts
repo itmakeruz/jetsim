@@ -138,6 +138,7 @@ export class RegionGroupService {
   }
 
   async getPlansUniversal(groupId: number | null, regionIds: string | null, lang: string) {
+    // 0️⃣ Region ID larni tozalash
     const ids = regionIds
       ? Array.from(
           new Set(
@@ -152,10 +153,16 @@ export class RegionGroupService {
     let regions: any[] = [];
     let groupRegionIds: number[] = [];
 
+    // 1️⃣ Regionlarni olish
     if (ids.length > 0) {
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
-        select: { id: true, name_ru: true, name_en: true, image: true },
+        select: {
+          id: true,
+          name_ru: true,
+          name_en: true,
+          image: true,
+        },
       });
 
       if (dbRegions.length !== ids.length) {
@@ -169,6 +176,7 @@ export class RegionGroupService {
       }));
     }
 
+    // 2️⃣ Group orqali regionlarni va ko'rsatiladigan "region" obyektini olish (agar faqat groupId bo‘lsa)
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
@@ -179,6 +187,7 @@ export class RegionGroupService {
         throw new NotFoundException(route_not_found[lang]);
       }
 
+      // Front uchun "regions" ichida faqat bitta element: tanlangan REGION GROUP ning o'zi
       regions = [
         {
           id: group.id,
@@ -187,9 +196,15 @@ export class RegionGroupService {
         },
       ];
 
+      // Filtrlash uchun esa shu group tarkibidagi region ID lar kerak bo'ladi
       groupRegionIds = group.regions.map((r) => r.id);
     }
 
+    if (!groupId && ids.length === 0) {
+      regions = [];
+    }
+
+    // 3️⃣ QAT’I WHERE (MUAMMO SHU YERDA YOPILGAN)
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
@@ -197,71 +212,123 @@ export class RegionGroupService {
 
     if (ids.length > 0) {
       where.OR = [
-        // LOCAL
-        {
-          AND: [{ is_local: true }, { regions: { some: { id: { in: ids } } } }],
-        },
-
-        // REGIONAL
+        // 🔹 LOCAL — faqat region orqali
         {
           AND: [
-            { is_regional: true },
-            { is_local: false },
+            { is_local: true },
             {
-              region_group: {
-                regions: { some: { id: { in: ids } } },
+              regions: {
+                some: { id: { in: ids } },
               },
             },
           ],
         },
 
-        // GLOBAL
+        // 🔹 REGIONAL — region YOKI group orqali
         {
-          AND: [{ is_global: true }, { is_local: false }, { is_regional: false }],
+          AND: [
+            { is_regional: true },
+            {
+              OR: [
+                {
+                  regions: {
+                    some: { id: { in: ids } },
+                  },
+                },
+                {
+                  region_group: {
+                    regions: {
+                      some: { id: { in: ids } },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+
+        // 🔹 GLOBAL — faqat agar region bilan bog‘langan bo‘lsa
+        {
+          AND: [
+            { is_global: true },
+            {
+              regions: {
+                some: { id: { in: ids } },
+              },
+            },
+          ],
         },
       ];
     } else if (groupId) {
+      // Group orqali kelgan bo'lsa, group ichidagi regionlar asosida xuddi ids dagidek filterlaymiz
+      // groupRegionIds yuqorida 2-qadamda to'ldirilgan
+      const regionIdsFromGroup = groupRegionIds;
       where.OR = [
-        // LOCAL
-        {
-          AND: [{ is_local: true }, { regions: { some: { id: { in: groupRegionIds } } } }],
-        },
-
-        // REGIONAL
+        // 🔹 LOCAL — faqat group regionlari orqali
         {
           AND: [
-            { is_regional: true },
-            { is_local: false },
+            { is_local: true },
             {
-              region_group: {
-                regions: { some: { id: { in: groupRegionIds } } },
+              regions: {
+                some: { id: { in: regionIdsFromGroup } },
               },
             },
           ],
         },
 
-        // GLOBAL
+        // 🔹 REGIONAL — group regionlari orqali (region yoki group-region join orqali)
         {
-          AND: [{ is_global: true }, { is_local: false }, { is_regional: false }],
+          AND: [
+            { is_regional: true },
+            {
+              OR: [
+                {
+                  regions: {
+                    some: { id: { in: regionIdsFromGroup } },
+                  },
+                },
+                {
+                  region_group: {
+                    regions: {
+                      some: { id: { in: regionIdsFromGroup } },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+
+        // 🔹 GLOBAL — faqat agar group regionlari bilan bog‘langan bo‘lsa
+        {
+          AND: [
+            { is_global: true },
+            {
+              regions: {
+                some: { id: { in: regionIdsFromGroup } },
+              },
+            },
+          ],
         },
       ];
     } else {
-      where.OR = [
-        {
-          AND: [{ is_global: true }, { is_local: false }, { is_regional: false }],
-        },
-      ];
+      // faqat global
+      where.OR = [{ is_global: true }];
     }
 
+    // 4️⃣ Tariflarni olish
     const tariffs = await this.prisma.tariff.findMany({
       where,
       include: {
-        region_group: { include: { regions: true } },
+        region_group: {
+          include: { regions: true },
+        },
         regions: true,
       },
       orderBy: { price_sell: 'asc' },
     });
 
+    // 5️⃣ Formatlash
     const result = {
       local: [],
       regional: [],
@@ -297,9 +364,9 @@ export class RegionGroupService {
         })),
       };
 
-      if (plan.is_local) result.local.push(formatted);
+      if (plan.is_global) result.global.push(formatted);
       else if (plan.is_regional) result.regional.push(formatted);
-      else if (plan.is_global) result.global.push(formatted);
+      else if (plan.is_local) result.local.push(formatted);
     }
 
     return {
