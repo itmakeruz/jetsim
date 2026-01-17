@@ -152,16 +152,10 @@ export class RegionGroupService {
     let regions: any[] = [];
     let groupRegionIds: number[] = [];
 
-    // 1️⃣ LOCAL (region orqali)
     if (ids.length > 0) {
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
-        select: {
-          id: true,
-          name_ru: true,
-          name_en: true,
-          image: true,
-        },
+        select: { id: true, name_ru: true, name_en: true, image: true },
       });
 
       if (dbRegions.length !== ids.length) {
@@ -175,7 +169,6 @@ export class RegionGroupService {
       }));
     }
 
-    // 2️⃣ REGIONAL (region group orqali)
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
@@ -197,85 +190,78 @@ export class RegionGroupService {
       groupRegionIds = group.regions.map((r) => r.id);
     }
 
-    // 3️⃣ WHERE
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
     };
 
-    // 🔹 LOCAL SAHIFA — O‘ZGARMAGAN
     if (ids.length > 0) {
       where.OR = [
+        // LOCAL
         {
-          AND: [
-            { is_local: true },
-            { is_regional: false },
-            { is_global: false },
-            {
-              regions: {
-                some: { id: { in: ids } },
-              },
-            },
-          ],
+          AND: [{ is_local: true }, { regions: { some: { id: { in: ids } } } }],
         },
-      ];
-    }
 
-    // 🔹 REGIONAL SAHIFA — GLOBAL QAT’I O‘CHIRILDI
-    else if (groupId) {
-      where.OR = [
+        // REGIONAL
         {
           AND: [
             { is_regional: true },
             { is_local: false },
-            { is_global: false }, // 🔑 MUHIM
             {
-              OR: [
-                {
-                  regions: {
-                    some: { id: { in: groupRegionIds } },
-                  },
-                },
-                {
-                  region_group: {
-                    regions: {
-                      some: { id: { in: groupRegionIds } },
-                    },
-                  },
-                },
-              ],
+              region_group: {
+                regions: { some: { id: { in: ids } } },
+              },
             },
           ],
         },
-      ];
-    }
 
-    // 🔹 GLOBAL SAHIFA — ASOSIY FIX SHU YERDA
-    else {
+        // GLOBAL
+        {
+          AND: [{ is_global: true }, { is_local: false }, { is_regional: false }],
+        },
+      ];
+    } else if (groupId) {
       where.OR = [
+        // LOCAL
+        {
+          AND: [{ is_local: true }, { regions: { some: { id: { in: groupRegionIds } } } }],
+        },
+
+        // REGIONAL
         {
           AND: [
-            { is_global: true },
+            { is_regional: true },
             { is_local: false },
-            { is_regional: false },
-            { regions: { none: {} } }, // ❗ region bo‘lmasligi shart
-            { region_group: null }, // ❗ group bo‘lmasligi shart
+            {
+              region_group: {
+                regions: { some: { id: { in: groupRegionIds } } },
+              },
+            },
           ],
+        },
+
+        // GLOBAL
+        {
+          AND: [{ is_global: true }, { is_local: false }, { is_regional: false }],
+        },
+      ];
+    } else {
+      where.OR = [
+        {
+          AND: [{ is_global: true }, { is_local: false }, { is_regional: false }],
         },
       ];
     }
 
-    // 4️⃣ DB query
     const tariffs = await this.prisma.tariff.findMany({
       where,
       include: {
-        region_group: true,
+        region_group: { include: { regions: true } },
         regions: true,
       },
       orderBy: { price_sell: 'asc' },
     });
 
-    // 5️⃣ Groupga ajratish
     const result = {
       local: [],
       regional: [],
