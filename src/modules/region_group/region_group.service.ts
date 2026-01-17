@@ -140,29 +140,24 @@ export class RegionGroupService {
   async getPlansUniversal(groupId: number | null, regionIds: string | null, lang: string) {
     // 0️⃣ Region ID larni tozalash
     const ids = regionIds
-      ? Array.from(
-          new Set(
+      ? [
+          ...new Set(
             regionIds
               .split('-')
               .map(Number)
               .filter((id) => !isNaN(id) && id > 0),
           ),
-        )
+        ]
       : [];
 
     let regions: any[] = [];
     let groupRegionIds: number[] = [];
 
-    // 1️⃣ Regionlarni olish
+    // 1️⃣ Aniq regionlar kelgan bo‘lsa
     if (ids.length > 0) {
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
-        select: {
-          id: true,
-          name_ru: true,
-          name_en: true,
-          image: true,
-        },
+        select: { id: true, name_ru: true, name_en: true, image: true },
       });
 
       if (dbRegions.length !== ids.length) {
@@ -176,7 +171,7 @@ export class RegionGroupService {
       }));
     }
 
-    // 2️⃣ Group orqali regionlarni va ko'rsatiladigan "region" obyektini olish (agar faqat groupId bo‘lsa)
+    // 2️⃣ Faqat groupId bo‘lsa
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
@@ -187,7 +182,6 @@ export class RegionGroupService {
         throw new NotFoundException(route_not_found[lang]);
       }
 
-      // Front uchun "regions" ichida faqat bitta element: tanlangan REGION GROUP ning o'zi
       regions = [
         {
           id: group.id,
@@ -196,152 +190,67 @@ export class RegionGroupService {
         },
       ];
 
-      // Filtrlash uchun esa shu group tarkibidagi region ID lar kerak bo'ladi
       groupRegionIds = group.regions.map((r) => r.id);
     }
 
-    if (!groupId && ids.length === 0) {
-      regions = [];
-    }
-
-    // 3️⃣ QAT’I WHERE (MUAMMO SHU YERDA YOPILGAN)
-    // 3️⃣ QAT’I WHERE (SOF LOCAL / REGIONAL / GLOBAL AJRATILDI)
+    // 3️⃣ WHERE
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
+      OR: [],
     };
 
-    if (ids.length > 0) {
-      where.OR = [
-        // 🔹 LOCAL — faqat regionga bog‘langan
-        {
-          AND: [
-            { is_local: true },
-            { is_regional: false },
-            { is_global: false },
-            {
-              regions: {
-                some: { id: { in: ids } },
-              },
-            },
-          ],
-        },
+    const activeRegionIds = ids.length > 0 ? ids : groupRegionIds;
 
-        // 🔹 REGIONAL — region yoki group orqali, lekin local emas
-        {
-          AND: [
-            { is_regional: true },
-            { is_local: false },
-            { is_global: false },
-            {
-              OR: [
-                {
-                  regions: {
-                    some: { id: { in: ids } },
-                  },
-                },
-                {
-                  region_group: {
-                    regions: {
-                      some: { id: { in: ids } },
-                    },
-                  },
-                },
-              ],
-            },
-          ],
+    // 🔹 LOCAL
+    if (activeRegionIds.length > 0) {
+      where.OR.push({
+        is_local: true,
+        regions: {
+          some: { id: { in: activeRegionIds } },
         },
-
-        // 🔹 GLOBAL — hech qaysi region yoki groupga bog‘lanmagan
-        {
-          AND: [
-            { is_global: true },
-            { is_local: false },
-            { is_regional: false },
-            { regions: { none: {} } },
-            { region_group: null },
-          ],
-        },
-      ];
-    } else if (groupId) {
-      const regionIdsFromGroup = groupRegionIds;
-
-      where.OR = [
-        // 🔹 LOCAL
-        {
-          AND: [
-            { is_local: true },
-            { is_regional: false },
-            { is_global: false },
-            {
-              regions: {
-                some: { id: { in: regionIdsFromGroup } },
-              },
-            },
-          ],
-        },
-
-        // 🔹 REGIONAL
-        {
-          AND: [
-            { is_regional: true },
-            { is_local: false },
-            { is_global: false },
-            {
-              OR: [
-                {
-                  regions: {
-                    some: { id: { in: regionIdsFromGroup } },
-                  },
-                },
-                {
-                  region_group: {
-                    regions: {
-                      some: { id: { in: regionIdsFromGroup } },
-                    },
-                  },
-                },
-              ],
-            },
-          ],
-        },
-
-        // 🔹 GLOBAL
-        {
-          AND: [
-            { is_global: true },
-            { is_local: false },
-            { is_regional: false },
-            { regions: { none: {} } },
-            { region_group: null },
-          ],
-        },
-      ];
-    } else {
-      where.OR = [
-        {
-          AND: [
-            { is_global: true },
-            { is_local: false },
-            { is_regional: false },
-            { regions: { none: {} } },
-            { region_group: null },
-          ],
-        },
-      ];
+      });
     }
 
+    // 🔹 REGIONAL
+    if (activeRegionIds.length > 0) {
+      where.OR.push({
+        is_regional: true,
+        OR: [
+          {
+            regions: {
+              some: { id: { in: activeRegionIds } },
+            },
+          },
+          {
+            region_group: {
+              regions: {
+                some: { id: { in: activeRegionIds } },
+              },
+            },
+          },
+        ],
+      });
+    }
+
+    // 🔹 GLOBAL (HAR DOIM)
+    where.OR.push({
+      is_global: true,
+      regions: { none: {} },
+      region_group: null,
+    });
+
+    // 4️⃣ Tariflarni olish
     const tariffs = await this.prisma.tariff.findMany({
       where,
       include: {
-        region_group: {
-          include: { regions: true },
-        },
+        region_group: true,
         regions: true,
       },
       orderBy: { price_sell: 'asc' },
     });
 
+    // 5️⃣ Formatlash
     const result = {
       local: [],
       regional: [],
