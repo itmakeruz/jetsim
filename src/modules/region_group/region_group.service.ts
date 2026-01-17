@@ -138,26 +138,31 @@ export class RegionGroupService {
   }
 
   async getPlansUniversal(groupId: number | null, regionIds: string | null, lang: string) {
-    // 0️⃣ Region ID larni tozalash
+    // 1️⃣ regionIds parse
     const ids = regionIds
-      ? [
-          ...new Set(
+      ? Array.from(
+          new Set(
             regionIds
               .split('-')
               .map(Number)
               .filter((id) => !isNaN(id) && id > 0),
           ),
-        ]
+        )
       : [];
 
     let regions: any[] = [];
     let groupRegionIds: number[] = [];
 
-    // 1️⃣ Aniq regionlar
+    // 2️⃣ Aniq regionlar keldi (LOCAL SAHIFA)
     if (ids.length > 0) {
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
-        select: { id: true, name_ru: true, name_en: true, image: true },
+        select: {
+          id: true,
+          name_ru: true,
+          name_en: true,
+          image: true,
+        },
       });
 
       if (dbRegions.length !== ids.length) {
@@ -171,7 +176,7 @@ export class RegionGroupService {
       }));
     }
 
-    // 2️⃣ Group orqali
+    // 3️⃣ Faqat REGION GROUP keldi (REGIONAL SAHIFA)
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
@@ -193,70 +198,75 @@ export class RegionGroupService {
       groupRegionIds = group.regions.map((r) => r.id);
     }
 
-    const activeRegionIds = ids.length > 0 ? ids : groupRegionIds;
-
-    // 3️⃣ QAT’I WHERE — LOCAL / REGIONAL / GLOBAL TO‘LIQ AJRATILGAN
+    // 4️⃣ QAT’I WHERE
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
-      OR: [],
     };
 
-    // 🔹 LOCAL — faqat LOCAL
-    if (activeRegionIds.length > 0) {
-      where.OR.push({
-        AND: [
-          { is_local: true },
-          { is_regional: false },
-          { is_global: false },
-          {
-            regions: {
-              some: { id: { in: activeRegionIds } },
+    // 🔹 LOCAL SAHIFA (OLDINGI LOGIKA — TEGILMADI)
+    if (ids.length > 0) {
+      where.OR = [
+        {
+          AND: [
+            { is_local: true },
+            { is_regional: false },
+            { is_global: false },
+            {
+              regions: {
+                some: { id: { in: ids } },
+              },
             },
-          },
-        ],
-      });
+          ],
+        },
+      ];
     }
 
-    // 🔹 REGIONAL — LOCAL EMAS
-    if (activeRegionIds.length > 0) {
-      where.OR.push({
-        AND: [
-          { is_regional: true },
-          { is_local: false },
-          { is_global: false },
-          {
-            OR: [
-              {
-                regions: {
-                  some: { id: { in: activeRegionIds } },
-                },
-              },
-              {
-                region_group: {
+    // 🔹 REGIONAL SAHIFA (MUAMMO SHU YERDA YOPILDI)
+    else if (groupId) {
+      where.OR = [
+        {
+          AND: [
+            { is_local: false }, // ❗ LOCAL QAT’I O‘CHDI
+            { is_regional: true },
+            { is_global: false },
+            {
+              OR: [
+                {
                   regions: {
-                    some: { id: { in: activeRegionIds } },
+                    some: { id: { in: groupRegionIds } },
                   },
                 },
-              },
-            ],
-          },
-        ],
-      });
+                {
+                  region_group: {
+                    regions: {
+                      some: { id: { in: groupRegionIds } },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ];
     }
 
-    // 🔹 GLOBAL — hech qachon regionga bog‘liq emas
-    where.OR.push({
-      AND: [
-        { is_global: true },
-        { is_local: false },
-        { is_regional: false },
-        { regions: { none: {} } },
-        { region_group: null },
-      ],
-    });
+    // 🔹 GLOBAL SAHIFA
+    else {
+      where.OR = [
+        {
+          AND: [
+            { is_local: false },
+            { is_regional: false },
+            { is_global: true },
+            { regions: { none: {} } },
+            { region_group: null },
+          ],
+        },
+      ];
+    }
 
-    // 4️⃣ DB’dan olish
+    // 5️⃣ Tarifflarni olish
     const tariffs = await this.prisma.tariff.findMany({
       where,
       include: {
@@ -266,7 +276,7 @@ export class RegionGroupService {
       orderBy: { price_sell: 'asc' },
     });
 
-    // 5️⃣ FORMATLASH — YANA HIMOYA BOR
+    // 6️⃣ Groupga ajratish
     const result = {
       local: [],
       regional: [],
@@ -302,18 +312,9 @@ export class RegionGroupService {
         })),
       };
 
-      // 🔐 QAT’I PUSH
-      if (plan.is_local === true && !plan.is_regional && !plan.is_global) {
-        result.local.push(formatted);
-      }
-
-      if (plan.is_regional === true && !plan.is_local && !plan.is_global) {
-        result.regional.push(formatted);
-      }
-
-      if (plan.is_global === true && !plan.is_local && !plan.is_regional) {
-        result.global.push(formatted);
-      }
+      if (plan.is_local) result.local.push(formatted);
+      else if (plan.is_regional) result.regional.push(formatted);
+      else if (plan.is_global) result.global.push(formatted);
     }
 
     return {
