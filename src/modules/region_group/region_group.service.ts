@@ -138,7 +138,7 @@ export class RegionGroupService {
   }
 
   async getPlansUniversal(groupId: number | null, regionIds: string | null, lang: string) {
-    // 0️⃣ ID larni tozalash
+    // 0️⃣ Region ID larni tozalash
     const ids = regionIds
       ? Array.from(
           new Set(
@@ -151,33 +151,43 @@ export class RegionGroupService {
       : [];
 
     let regions: any[] = [];
-    let groupRegionIds: number[] = []; // Guruh ichidagi davlatlar ID lari
+    let groupRegionIds: number[] = [];
 
-    // 1️⃣ Regionlarni aniqlash (Header qismi uchun)
+    // 1️⃣ Regionlarni olish
     if (ids.length > 0) {
-      // User aniq davlatlarni tanladi
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
-        select: { id: true, name_ru: true, name_en: true, image: true },
+        select: {
+          id: true,
+          name_ru: true,
+          name_en: true,
+          image: true,
+        },
       });
 
-      if (dbRegions.length !== ids.length) throw new NotFoundException(route_not_found[lang]);
+      if (dbRegions.length !== ids.length) {
+        throw new NotFoundException(route_not_found[lang]);
+      }
 
       regions = dbRegions.map((r) => ({
         id: r.id,
         name: r[`name_${lang}`] || r.name_ru,
         image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
       }));
-    } else if (groupId) {
-      // User Guruh tanladi
+    }
+
+    // 2️⃣ Group orqali regionlarni va ko'rsatiladigan "region" obyektini olish (agar faqat groupId bo‘lsa)
+    if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
-        include: { regions: { select: { id: true } } }, // Faqat ID larni olamiz yengil bo'lishi uchun
+        include: { regions: true },
       });
 
-      if (!group) throw new NotFoundException(route_not_found[lang]);
+      if (!group) {
+        throw new NotFoundException(route_not_found[lang]);
+      }
 
-      // Headerga guruhni chiqaramiz
+      // Front uchun "regions" ichida faqat bitta element: tanlangan REGION GROUP ning o'zi
       regions = [
         {
           id: group.id,
@@ -186,75 +196,144 @@ export class RegionGroupService {
         },
       ];
 
-      // Guruh ichidagi barcha region ID larni saqlab olamiz (Local tariflar uchun kerak)
+      // Filtrlash uchun esa shu group tarkibidagi region ID lar kerak bo'ladi
       groupRegionIds = group.regions.map((r) => r.id);
     }
 
-    // 2️⃣ WHERE SHARTINI YASASH (ENG MUHIM JOYI)
+    if (!groupId && ids.length === 0) {
+      regions = [];
+    }
+
+    // 3️⃣ QAT’I WHERE (MUAMMO SHU YERDA YOPILGAN)
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
-      OR: [], // OR massivini toza ochamiz
     };
 
-    // 🅰️ SCENARIO 1: Aniq davlatlar tanlangan (regionIds bor)
     if (ids.length > 0) {
-      where.OR.push(
-        // 1. LOCAL: Shu davlatlarning o'z tariflari
-        { is_local: true, regions: { some: { id: { in: ids } } } },
-
-        // 2. REGIONAL: Shu davlatlar kirgan har qanday regional tarif (Group yoki Custom)
+      where.OR = [
+        // 🔹 LOCAL — faqat region orqali
         {
-          is_regional: true,
-          OR: [
-            { region_group: { regions: { some: { id: { in: ids } } } } },
-            { regions: { some: { id: { in: ids } } } },
+          AND: [
+            { is_local: true },
+            {
+              regions: {
+                some: { id: { in: ids } },
+              },
+            },
           ],
         },
 
-        // 3. GLOBAL: Shu davlatlarda ishlaydigan globallar
-        { is_global: true, regions: { some: { id: { in: ids } } } },
-      );
-    }
-    // 🅱️ SCENARIO 2: Guruh tanlangan (groupId bor)
-    else if (groupId) {
-      where.OR.push(
-        // 1. LOCAL: Guruh ichidagi davlatlarning shaxsiy tariflari
-        // (Masalan: Yevropani tanlasa ham, ichidagi Fransiya tarifini ko'rsatish)
+        // 🔹 REGIONAL — region YOKI group orqali
         {
-          is_local: true,
-          regions: { some: { id: { in: groupRegionIds } } },
+          AND: [
+            { is_regional: true },
+            {
+              OR: [
+                {
+                  regions: {
+                    some: { id: { in: ids } },
+                  },
+                },
+                {
+                  region_group: {
+                    regions: {
+                      some: { id: { in: ids } },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
         },
 
-        // 2. REGIONAL: 🔥 QAT'IY FILTR 🔥
-        // Faqat va faqat tanlangan guruhga tegishli tarif chiqadi.
-        // Boshqa "kesishuvchi" guruhlar chiqmaydi.
+        // 🔹 GLOBAL — faqat agar region bilan bog‘langan bo‘lsa
         {
-          is_regional: true,
-          region_group_id: groupId,
+          AND: [
+            { is_global: true },
+            {
+              regions: {
+                some: { id: { in: ids } },
+              },
+            },
+          ],
+        },
+      ];
+    } else if (groupId) {
+      // Group orqali kelgan bo'lsa, group ichidagi regionlar asosida xuddi ids dagidek filterlaymiz
+      // groupRegionIds yuqorida 2-qadamda to'ldirilgan
+      const regionIdsFromGroup = groupRegionIds;
+      where.OR = [
+        // 🔹 LOCAL — faqat group regionlari orqali
+        {
+          AND: [
+            { is_local: true },
+            {
+              regions: {
+                some: { id: { in: regionIdsFromGroup } },
+              },
+            },
+          ],
         },
 
-        // 3. GLOBAL: Hamma joyda ishlaydigan tariflar
-        { is_global: true },
-      );
-    }
-    // 🅾️ SCENARIO 3: Hech narsa tanlanmagan
-    else {
-      where.OR.push({ is_global: true });
+        // 🔹 REGIONAL — group regionlari orqali (region yoki group-region join orqali)
+        {
+          AND: [
+            { is_regional: true },
+            {
+              OR: [
+                {
+                  regions: {
+                    some: { id: { in: regionIdsFromGroup } },
+                  },
+                },
+                {
+                  region_group: {
+                    regions: {
+                      some: { id: { in: regionIdsFromGroup } },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+
+        // 🔹 GLOBAL — faqat agar group regionlari bilan bog‘langan bo‘lsa
+        {
+          AND: [
+            { is_global: true },
+            {
+              regions: {
+                some: { id: { in: regionIdsFromGroup } },
+              },
+            },
+          ],
+        },
+      ];
+    } else {
+      // faqat global
+      where.OR = [{ is_global: true }];
     }
 
-    // 3️⃣ BAZADAN OLISH
+    // 4️⃣ Tariflarni olish
     const tariffs = await this.prisma.tariff.findMany({
       where,
       include: {
-        region_group: { include: { regions: true } },
+        region_group: {
+          include: { regions: true },
+        },
         regions: true,
       },
       orderBy: { price_sell: 'asc' },
     });
 
-    // 4️⃣ FORMATLASH VA AJRATISH
-    const result = { local: [], regional: [], global: [] };
+    // 5️⃣ Formatlash
+    const result = {
+      local: [],
+      regional: [],
+      global: [],
+    };
 
     for (const plan of tariffs) {
       const formatted = {
