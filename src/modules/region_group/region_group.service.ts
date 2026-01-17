@@ -138,6 +138,7 @@ export class RegionGroupService {
   }
 
   async getPlansUniversal(groupId: number | null, regionIds: string | null, lang: string) {
+    // 0️⃣ Region ID larni tozalash
     const ids = regionIds
       ? Array.from(
           new Set(
@@ -152,7 +153,7 @@ export class RegionGroupService {
     let regions: any[] = [];
     let groupRegionIds: number[] = [];
 
-    // 1️⃣ LOCAL (region orqali)
+    // 1️⃣ Regionlarni olish
     if (ids.length > 0) {
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
@@ -175,7 +176,7 @@ export class RegionGroupService {
       }));
     }
 
-    // 2️⃣ REGIONAL (region group orqali)
+    // 2️⃣ Group orqali regionlarni va ko'rsatiladigan "region" obyektini olish (agar faqat groupId bo‘lsa)
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
@@ -186,6 +187,7 @@ export class RegionGroupService {
         throw new NotFoundException(route_not_found[lang]);
       }
 
+      // Front uchun "regions" ichida faqat bitta element: tanlangan REGION GROUP ning o'zi
       regions = [
         {
           id: group.id,
@@ -194,23 +196,61 @@ export class RegionGroupService {
         },
       ];
 
+      // Filtrlash uchun esa shu group tarkibidagi region ID lar kerak bo'ladi
       groupRegionIds = group.regions.map((r) => r.id);
     }
 
-    // 3️⃣ WHERE
+    if (!groupId && ids.length === 0) {
+      regions = [];
+    }
+
+    // 3️⃣ QAT’I WHERE (MUAMMO SHU YERDA YOPILGAN)
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
     };
 
-    // 🔹 LOCAL SAHIFA — O‘ZGARMAGAN
     if (ids.length > 0) {
       where.OR = [
+        // 🔹 LOCAL — faqat region orqali
         {
           AND: [
             { is_local: true },
-            { is_regional: false },
-            { is_global: false },
+            {
+              regions: {
+                some: { id: { in: ids } },
+              },
+            },
+          ],
+        },
+
+        // 🔹 REGIONAL — region YOKI group orqali
+        {
+          AND: [
+            { is_regional: true },
+            {
+              OR: [
+                {
+                  regions: {
+                    some: { id: { in: ids } },
+                  },
+                },
+                {
+                  region_group: {
+                    regions: {
+                      some: { id: { in: ids } },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+
+        // 🔹 GLOBAL — faqat agar region bilan bog‘langan bo‘lsa
+        {
+          AND: [
+            { is_global: true },
             {
               regions: {
                 some: { id: { in: ids } },
@@ -219,27 +259,38 @@ export class RegionGroupService {
           ],
         },
       ];
-    }
-
-    // 🔹 REGIONAL SAHIFA — GLOBAL QAT’I O‘CHIRILDI
-    else if (groupId) {
+    } else if (groupId) {
+      // Group orqali kelgan bo'lsa, group ichidagi regionlar asosida xuddi ids dagidek filterlaymiz
+      // groupRegionIds yuqorida 2-qadamda to'ldirilgan
+      const regionIdsFromGroup = groupRegionIds;
       where.OR = [
+        // 🔹 LOCAL — faqat group regionlari orqali
+        {
+          AND: [
+            { is_local: true },
+            {
+              regions: {
+                some: { id: { in: regionIdsFromGroup } },
+              },
+            },
+          ],
+        },
+
+        // 🔹 REGIONAL — group regionlari orqali (region yoki group-region join orqali)
         {
           AND: [
             { is_regional: true },
-            { is_local: false },
-            { is_global: false }, // 🔑 MUHIM
             {
               OR: [
                 {
                   regions: {
-                    some: { id: { in: groupRegionIds } },
+                    some: { id: { in: regionIdsFromGroup } },
                   },
                 },
                 {
                   region_group: {
                     regions: {
-                      some: { id: { in: groupRegionIds } },
+                      some: { id: { in: regionIdsFromGroup } },
                     },
                   },
                 },
@@ -247,35 +298,37 @@ export class RegionGroupService {
             },
           ],
         },
-      ];
-    }
 
-    // 🔹 GLOBAL SAHIFA — ASOSIY FIX SHU YERDA
-    else {
-      where.OR = [
+        // 🔹 GLOBAL — faqat agar group regionlari bilan bog‘langan bo‘lsa
         {
           AND: [
             { is_global: true },
-            { is_local: false },
-            { is_regional: false },
-            { regions: { none: {} } }, // ❗ region bo‘lmasligi shart
-            { region_group: null }, // ❗ group bo‘lmasligi shart
+            {
+              regions: {
+                some: { id: { in: regionIdsFromGroup } },
+              },
+            },
           ],
         },
       ];
+    } else {
+      // faqat global
+      where.OR = [{ is_global: true }];
     }
 
-    // 4️⃣ DB query
+    // 4️⃣ Tariflarni olish
     const tariffs = await this.prisma.tariff.findMany({
       where,
       include: {
-        region_group: true,
+        region_group: {
+          include: { regions: true },
+        },
         regions: true,
       },
       orderBy: { price_sell: 'asc' },
     });
 
-    // 5️⃣ Groupga ajratish
+    // 5️⃣ Formatlash
     const result = {
       local: [],
       regional: [],
@@ -311,9 +364,9 @@ export class RegionGroupService {
         })),
       };
 
-      if (plan.is_local) result.local.push(formatted);
+      if (plan.is_global) result.global.push(formatted);
       else if (plan.is_regional) result.regional.push(formatted);
-      else if (plan.is_global) result.global.push(formatted);
+      else if (plan.is_local) result.local.push(formatted);
     }
 
     return {
