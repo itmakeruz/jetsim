@@ -138,7 +138,7 @@ export class RegionGroupService {
   }
 
   async getPlansUniversal(groupId: number | null, regionIds: string | null, lang: string) {
-    // 0️⃣ Region ID larni tozalash
+    // 0️⃣ Region ID larni tozalash va massivga aylantirish
     const ids = regionIds
       ? Array.from(
           new Set(
@@ -153,7 +153,7 @@ export class RegionGroupService {
     let regions: any[] = [];
     let groupRegionIds: number[] = [];
 
-    // 1️⃣ Regionlarni olish
+    // 1️⃣ Agar aniq regionlar tanlangan bo'lsa (Custom Selection)
     if (ids.length > 0) {
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
@@ -165,6 +165,7 @@ export class RegionGroupService {
         },
       });
 
+      // Agar so'ralgan regionlardan birortasi topilmasa 404
       if (dbRegions.length !== ids.length) {
         throw new NotFoundException(route_not_found[lang]);
       }
@@ -176,7 +177,7 @@ export class RegionGroupService {
       }));
     }
 
-    // 2️⃣ Group orqali regionlarni va ko'rsatiladigan "region" obyektini olish (agar faqat groupId bo‘lsa)
+    // 2️⃣ Agar faqat Group tanlangan bo'lsa (ids yo'q, lekin groupId bor)
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
@@ -187,7 +188,7 @@ export class RegionGroupService {
         throw new NotFoundException(route_not_found[lang]);
       }
 
-      // Front uchun "regions" ichida faqat bitta element: tanlangan REGION GROUP ning o'zi
+      // Front uchun bitta obyekt qaytariladi (Groupning o'zi)
       regions = [
         {
           id: group.id,
@@ -196,127 +197,81 @@ export class RegionGroupService {
         },
       ];
 
-      // Filtrlash uchun esa shu group tarkibidagi region ID lar kerak bo'ladi
+      // Filtrlash uchun group tarkibidagi barcha davlatlarning ID lari olinadi
       groupRegionIds = group.regions.map((r) => r.id);
     }
 
+    // Hech narsa tanlanmasa regions bo'sh qoladi
     if (!groupId && ids.length === 0) {
       regions = [];
     }
 
-    // 3️⃣ QAT’I WHERE (MUAMMO SHU YERDA YOPILGAN)
+    // 3️⃣ TARIFLARNI FILTRLASH (ASOSIY TUZATILGAN QISM)
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
     };
 
     if (ids.length > 0) {
+      // 🅰️ SCENARIO: Aniq davlatlar tanlanganda
       where.OR = [
-        // 🔹 LOCAL — faqat region orqali
+        // 🔹 LOCAL: Tanlangan davlatlarning o'z tariflari
         {
-          AND: [
-            { is_local: true },
-            {
-              regions: {
-                some: { id: { in: ids } },
-              },
-            },
-          ],
+          AND: [{ is_local: true }, { regions: { some: { id: { in: ids } } } }],
         },
-
-        // 🔹 REGIONAL — region YOKI group orqali
+        // 🔹 REGIONAL: Tanlangan davlatlarni o'z ichiga olgan har qanday regional tarif
         {
           AND: [
             { is_regional: true },
             {
               OR: [
-                {
-                  regions: {
-                    some: { id: { in: ids } },
-                  },
-                },
-                {
-                  region_group: {
-                    regions: {
-                      some: { id: { in: ids } },
-                    },
-                  },
-                },
+                { regions: { some: { id: { in: ids } } } }, // Regionga to'g'ridan-to'g'ri bog'langan
+                { region_group: { regions: { some: { id: { in: ids } } } } }, // Region guruh orqali bog'langan
               ],
             },
           ],
         },
-
-        // 🔹 GLOBAL — faqat agar region bilan bog‘langan bo‘lsa
+        // 🔹 GLOBAL: Tanlangan davlatlarda ishlaydigan global tariflar
         {
-          AND: [
-            { is_global: true },
-            {
-              regions: {
-                some: { id: { in: ids } },
-              },
-            },
-          ],
+          AND: [{ is_global: true }, { regions: { some: { id: { in: ids } } } }],
         },
       ];
     } else if (groupId) {
-      // Group orqali kelgan bo'lsa, group ichidagi regionlar asosida xuddi ids dagidek filterlaymiz
-      // groupRegionIds yuqorida 2-qadamda to'ldirilgan
-      const regionIdsFromGroup = groupRegionIds;
+      // 🅱️ SCENARIO: Group tanlanganda (FIXED)
+      const regionIdsFromGroup = groupRegionIds; // Yuqorida to'ldirilgan array
+
       where.OR = [
-        // 🔹 LOCAL — faqat group regionlari orqali
+        // 🔹 LOCAL: Guruh ichidagi davlatlarning shaxsiy tariflari (Masalan: Yevropa ichidagi Fransiya tarifi)
         {
-          AND: [
-            { is_local: true },
-            {
-              regions: {
-                some: { id: { in: regionIdsFromGroup } },
-              },
-            },
-          ],
+          AND: [{ is_local: true }, { regions: { some: { id: { in: regionIdsFromGroup } } } }],
         },
 
-        // 🔹 REGIONAL — group regionlari orqali (region yoki group-region join orqali)
+        // 🔹 REGIONAL: Faqat shu guruhga tegishli tariflar!
+        // OLDIN: regionlar orqali qidirilardi va boshqa guruhlar ham qo'shilib ketardi.
+        // HOZIR: Aniq region_group_id orqali qidiramiz.
         {
           AND: [
             { is_regional: true },
-            {
-              OR: [
-                {
-                  regions: {
-                    some: { id: { in: regionIdsFromGroup } },
-                  },
-                },
-                {
-                  region_group: {
-                    regions: {
-                      some: { id: { in: regionIdsFromGroup } },
-                    },
-                  },
-                },
-              ],
-            },
+            { region_group_id: groupId }, // <--- MUHIM FIX
           ],
         },
 
-        // 🔹 GLOBAL — faqat agar group regionlari bilan bog‘langan bo‘lsa
+        // 🔹 GLOBAL: Shu guruhga yoki uning davlatlariga bog'langan global tariflar
         {
           AND: [
             { is_global: true },
             {
-              regions: {
-                some: { id: { in: regionIdsFromGroup } },
-              },
+              OR: [{ region_group_id: groupId }, { regions: { some: { id: { in: regionIdsFromGroup } } } }],
             },
           ],
         },
       ];
     } else {
-      // faqat global
+      // 🅾️ SCENARIO: Hech narsa tanlanmasa (Default Global)
       where.OR = [{ is_global: true }];
     }
 
-    // 4️⃣ Tariflarni olish
+    // 4️⃣ Tariflarni bazadan olish
     const tariffs = await this.prisma.tariff.findMany({
       where,
       include: {
@@ -328,7 +283,7 @@ export class RegionGroupService {
       orderBy: { price_sell: 'asc' },
     });
 
-    // 5️⃣ Formatlash
+    // 5️⃣ Formatlash (Response tayyorlash)
     const result = {
       local: [],
       regional: [],
@@ -339,17 +294,21 @@ export class RegionGroupService {
       const formatted = {
         id: plan.id,
         name: plan[`name_${lang}`] || plan.name_ru,
-        price_sell: plan.price_sell / 100,
+        price_sell: plan.price_sell / 100, // Tiin -> So'm/Dollar
         quantity_internet: plan.quantity_internet,
         quantity_sms: plan.quantity_sms,
         quantity_minute: plan.quantity_minute,
+
         includes_minutes: plan.quantity_minute > 0,
         includes_sms: plan.quantity_sms > 0,
         includes_internet: plan.quantity_internet > 0,
+
         is_4g: plan.is_4g,
         is_5g: plan.is_5g,
         description: plan[`title_${lang}`] || plan.title_ru,
         validity_period: plan.validity_period,
+
+        // Agar tarif region_group ga bog'langan bo'lsa
         region_group: plan.region_group
           ? {
               id: plan.region_group.id,
@@ -357,6 +316,8 @@ export class RegionGroupService {
               image: plan.region_group.image ? `${FilePath.REGION_GROUP_ICON}/${plan.region_group.image}` : null,
             }
           : null,
+
+        // Tarif qaysi davlatlarda ishlashi
         regions: plan.regions.map((r) => ({
           id: r.id,
           name: r[`name_${lang}`] || r.name_ru,
@@ -364,9 +325,14 @@ export class RegionGroupService {
         })),
       };
 
-      if (plan.is_global) result.global.push(formatted);
-      else if (plan.is_regional) result.regional.push(formatted);
-      else if (plan.is_local) result.local.push(formatted);
+      // Kategoriya bo'yicha ajratish
+      if (plan.is_global) {
+        result.global.push(formatted);
+      } else if (plan.is_regional) {
+        result.regional.push(formatted);
+      } else if (plan.is_local) {
+        result.local.push(formatted);
+      }
     }
 
     return {
