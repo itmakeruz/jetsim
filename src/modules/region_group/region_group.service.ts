@@ -137,7 +137,11 @@ export class RegionGroupService {
     };
   }
 
-  async getPlansUniversal(groupId: number | null, regionIds: string | null, lang: string) {
+  async getPlansUniversal(
+    groupId: number | null,
+    regionIds: string | null,
+    lang: string,
+  ) {
     // 0️⃣ Region ID larni tozalash
     const ids = regionIds
       ? Array.from(
@@ -149,10 +153,10 @@ export class RegionGroupService {
           ),
         )
       : [];
-
+  
     let regions: any[] = [];
     let groupRegionIds: number[] = [];
-
+  
     // 1️⃣ Regionlarni olish
     if (ids.length > 0) {
       const dbRegions = await this.prisma.region.findMany({
@@ -164,55 +168,73 @@ export class RegionGroupService {
           image: true,
         },
       });
-
+  
       if (dbRegions.length !== ids.length) {
         throw new NotFoundException(route_not_found[lang]);
       }
-
+  
       regions = dbRegions.map((r) => ({
         id: r.id,
         name: r[`name_${lang}`] || r.name_ru,
         image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
       }));
     }
-
-    // 2️⃣ Group orqali regionlarni va ko'rsatiladigan "region" obyektini olish (agar faqat groupId bo‘lsa)
+  
+    // 2️⃣ Group orqali regionlarni olish
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
         include: { regions: true },
       });
-
+  
       if (!group) {
         throw new NotFoundException(route_not_found[lang]);
       }
-
-      // Front uchun "regions" ichida faqat bitta element: tanlangan REGION GROUP ning o'zi
+  
       regions = [
         {
           id: group.id,
           name: group[`name_${lang}`] || group.name_ru,
-          image: group.image ? `${FilePath.REGION_GROUP_ICON}/${group.image}` : null,
+          image: group.image
+            ? `${FilePath.REGION_GROUP_ICON}/${group.image}`
+            : null,
         },
       ];
-
-      // Filtrlash uchun esa shu group tarkibidagi region ID lar kerak bo'ladi
+  
       groupRegionIds = group.regions.map((r) => r.id);
     }
-
+  
     if (!groupId && ids.length === 0) {
       regions = [];
     }
-
-    // 3️⃣ QAT’I WHERE (MUAMMO SHU YERDA YOPILGAN)
+  
+    // 3️⃣ QAT’I WHERE
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
     };
-
+  
+    // 🔑 TARIF DARAJASINI ANIQLASH
+    const tariffLevel =
+      ids.length > 0
+        ? 'LOCAL'
+        : groupId
+        ? 'REGIONAL'
+        : 'GLOBAL';
+  
+    // ❗ MUAMMONI YOPADIGAN ASOSIY QO‘SHIMCHA
+    if (tariffLevel === 'REGIONAL') {
+      where.is_local = false;
+    }
+  
+    if (tariffLevel === 'GLOBAL') {
+      where.is_local = false;
+      where.is_regional = false;
+    }
+  
     if (ids.length > 0) {
+      // region orqali
       where.OR = [
-        // 🔹 LOCAL — faqat region orqali
         {
           AND: [
             { is_local: true },
@@ -223,8 +245,6 @@ export class RegionGroupService {
             },
           ],
         },
-
-        // 🔹 REGIONAL — region YOKI group orqali
         {
           AND: [
             { is_regional: true },
@@ -246,8 +266,6 @@ export class RegionGroupService {
             },
           ],
         },
-
-        // 🔹 GLOBAL — faqat agar region bilan bog‘langan bo‘lsa
         {
           AND: [
             { is_global: true },
@@ -260,11 +278,10 @@ export class RegionGroupService {
         },
       ];
     } else if (groupId) {
-      // Group orqali kelgan bo'lsa, group ichidagi regionlar asosida xuddi ids dagidek filterlaymiz
-      // groupRegionIds yuqorida 2-qadamda to'ldirilgan
+      // group orqali
       const regionIdsFromGroup = groupRegionIds;
+  
       where.OR = [
-        // 🔹 LOCAL — faqat group regionlari orqali
         {
           AND: [
             { is_local: true },
@@ -275,8 +292,6 @@ export class RegionGroupService {
             },
           ],
         },
-
-        // 🔹 REGIONAL — group regionlari orqali (region yoki group-region join orqali)
         {
           AND: [
             { is_regional: true },
@@ -298,8 +313,6 @@ export class RegionGroupService {
             },
           ],
         },
-
-        // 🔹 GLOBAL — faqat agar group regionlari bilan bog‘langan bo‘lsa
         {
           AND: [
             { is_global: true },
@@ -312,10 +325,9 @@ export class RegionGroupService {
         },
       ];
     } else {
-      // faqat global
       where.OR = [{ is_global: true }];
     }
-
+  
     // 4️⃣ Tariflarni olish
     const tariffs = await this.prisma.tariff.findMany({
       where,
@@ -327,14 +339,14 @@ export class RegionGroupService {
       },
       orderBy: { price_sell: 'asc' },
     });
-
+  
     // 5️⃣ Formatlash
     const result = {
       local: [],
       regional: [],
       global: [],
     };
-
+  
     for (const plan of tariffs) {
       const formatted = {
         id: plan.id,
@@ -353,22 +365,28 @@ export class RegionGroupService {
         region_group: plan.region_group
           ? {
               id: plan.region_group.id,
-              name: plan.region_group[`name_${lang}`] || plan.region_group.name_ru,
-              image: plan.region_group.image ? `${FilePath.REGION_GROUP_ICON}/${plan.region_group.image}` : null,
+              name:
+                plan.region_group[`name_${lang}`] ||
+                plan.region_group.name_ru,
+              image: plan.region_group.image
+                ? `${FilePath.REGION_GROUP_ICON}/${plan.region_group.image}`
+                : null,
             }
           : null,
         regions: plan.regions.map((r) => ({
           id: r.id,
           name: r[`name_${lang}`] || r.name_ru,
-          image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
+          image: r.image
+            ? `${FilePath.REGION_ICON}/${r.image}`
+            : null,
         })),
       };
-
+  
       if (plan.is_global) result.global.push(formatted);
       else if (plan.is_regional) result.regional.push(formatted);
       else if (plan.is_local) result.local.push(formatted);
     }
-
+  
     return {
       success: true,
       data: {
