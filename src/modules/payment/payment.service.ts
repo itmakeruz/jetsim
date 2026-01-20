@@ -245,13 +245,15 @@ export class PaymentService {
       return 'OK';
     }
 
-    const order = await this.prisma.order.create({
-      data: {
-        user_id: existTransaction.user.id,
-        status: OrderStatus.CREATED,
+    const existOrder = await this.prisma.order.findFirst({
+      where: {
         transaction_id: existTransaction.id,
       },
     });
+    
+    if (existOrder) {
+      return 'OK';
+    }
 
     const updatedTransaction = await this.prisma.transaction.update({
       where: {
@@ -266,8 +268,13 @@ export class PaymentService {
 
     await this.socketGateway.sendPaymentStatus(existTransaction.user.id, { status: updatedTransaction.status });
 
-    await this.orderService.create(existTransaction.user.id, updatedTransaction.id);
+    setImmediate(() => {
+      this.orderService.create(existTransaction.user.id, updatedTransaction.id)
+        .catch(err => this.logger.error('ORDER CREATE ERROR', err));
+    });
+    
     return 'OK';
+    
   }
 
   async acceptPaymentTest(id: number, data: any) {

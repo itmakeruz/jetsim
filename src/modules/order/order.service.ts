@@ -477,6 +477,17 @@ export class OrderService {
   async create(user_id: number, transactionId: number) {
     this.logger.log('Creating order for user:', user_id);
 
+    const existOrder = await this.prisma.order.findFirst({
+      where: {
+        transaction_id: transactionId,
+      },
+    });
+
+    if(existOrder) {
+      return 'Order already exists!'
+    }
+    
+
     const basket = await this.prisma.basket.findFirst({
       where: {
         user_id: user_id,
@@ -522,7 +533,7 @@ export class OrderService {
       data: {
         user_id,
         status: OrderStatus.CREATED,
-        transaction_id: transactionId ?? 2010,
+        transaction_id: transactionId,
       },
       select: {
         id: true,
