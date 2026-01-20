@@ -248,46 +248,32 @@ export class RegionGroupService {
       ];
     }
   
-    // 5️⃣ REGION GROUP + TYPE (TO‘G‘RI LOGIKA)
+    // 5️⃣ REGION GROUP + TYPE
     else if (groupId) {
-      // 🔵 LOCAL → local + regional + global
+      const regionIdsFromGroup = groupRegionIds;
+
+      // 🔵 LOCAL → faqat shu group regionlariga biriktirilgan LOCAL tariflar
       if (type === 'local') {
-        where.OR = [
+        where.AND = [
+          { is_local: true },
           {
-            AND: [
-              { is_local: true },
-              { regions: { some: { id: { in: groupRegionIds } } } },
-            ],
+            regions: {
+              some: { id: { in: regionIdsFromGroup } },
+            },
           },
-          {
-            AND: [
-              { is_regional: true },
-              {
-                OR: [
-                  { regions: { some: { id: { in: groupRegionIds } } } },
-                  {
-                    region_group: {
-                      regions: { some: { id: { in: groupRegionIds } } },
-                    },
-                  },
-                ],
-              },
-            ],
-          },
-          { is_global: true }, // global — filtrsiz
         ];
       }
   
-      // 🟡 REGIONAL → faqat regional (FIX)
+      // 🟡 REGIONAL → faqat shu group regionlariga tegishli REGIONAL tariflar
       else if (type === 'regional') {
         where.AND = [
           { is_regional: true },
           {
             OR: [
-              { regions: { some: { id: { in: groupRegionIds } } } },
+              { regions: { some: { id: { in: regionIdsFromGroup } } } },
               {
                 region_group: {
-                  regions: { some: { id: { in: groupRegionIds } } },
+                  regions: { some: { id: { in: regionIdsFromGroup } } },
                 },
               },
             ],
@@ -295,20 +281,25 @@ export class RegionGroupService {
         ];
       }
   
-      // 🔴 GLOBAL → faqat global (FIX)
+      // 🔴 GLOBAL → faqat shu group regionlari qatnashgan GLOBAL tariflar
       else if (type === 'global') {
-        where.is_global = true;
-        delete where.OR;
-        delete where.AND;
+        where.AND = [
+          { is_global: true },
+          {
+            regions: {
+              some: { id: { in: regionIdsFromGroup } },
+            },
+          },
+        ];
       }
   
-      // TYPE yo‘q bo‘lsa (default)
+      // TYPE yo‘q bo‘lsa (default) → LOCAL + REGIONAL + GLOBAL, hammasi shu group regionlari bo‘yicha
       else {
         where.OR = [
           {
             AND: [
               { is_local: true },
-              { regions: { some: { id: { in: groupRegionIds } } } },
+              { regions: { some: { id: { in: regionIdsFromGroup } } } },
             ],
           },
           {
@@ -316,10 +307,10 @@ export class RegionGroupService {
               { is_regional: true },
               {
                 OR: [
-                  { regions: { some: { id: { in: groupRegionIds } } } },
+                  { regions: { some: { id: { in: regionIdsFromGroup } } } },
                   {
                     region_group: {
-                      regions: { some: { id: { in: groupRegionIds } } },
+                      regions: { some: { id: { in: regionIdsFromGroup } } },
                     },
                   },
                 ],
@@ -329,7 +320,7 @@ export class RegionGroupService {
           {
             AND: [
               { is_global: true },
-              { regions: { some: { id: { in: groupRegionIds } } } },
+              { regions: { some: { id: { in: regionIdsFromGroup } } } },
             ],
           },
         ];
