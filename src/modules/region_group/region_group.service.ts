@@ -209,34 +209,13 @@ export class RegionGroupService {
       regions = [];
     }
   
-    // 3️⃣ QAT’I WHERE (ASOSIY)
+    // 3️⃣ ASOSIY WHERE
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
     };
   
-    // 🔴 MUHIM: type FAQAT regionGroup holatda ishlaydi
-    if (groupId && ids.length === 0 && type) {
-      if (type === 'local') {
-        where.is_local = true;
-        where.is_regional = false;
-        where.is_global = false;
-      }
-  
-      if (type === 'regional') {
-        where.is_local = false;
-        where.is_regional = true;
-        where.is_global = false;
-      }
-  
-      if (type === 'global') {
-        where.is_local = false;
-        where.is_regional = false;
-        where.is_global = true;
-      }
-    }
-  
-    // 4️⃣ FILTERLAR (regionIds JOYLARI O‘ZGARMAGAN)
+    // 4️⃣ FILTERLAR (regionIds — O‘ZGARMAGAN)
     if (ids.length > 0) {
       where.OR = [
         {
@@ -267,47 +246,96 @@ export class RegionGroupService {
           ],
         },
       ];
-    } else if (groupId) {
-      where.OR = [
-        {
-          AND: [
-            { is_local: true },
-            { regions: { some: { id: { in: groupRegionIds } } } },
-          ],
-        },
-        {
-          AND: [
-            { is_regional: true },
-            {
-              OR: [
-                {
-                  regions: {
-                    some: { id: { in: groupRegionIds } },
-                  },
-                },
-                {
-                  region_group: {
-                    regions: {
-                      some: { id: { in: groupRegionIds } },
-                    },
-                  },
-                },
-              ],
-            },
-          ],
-        },
-        {
-          AND: [
-            { is_global: true },
-            { regions: { some: { id: { in: groupRegionIds } } } },
-          ],
-        },
-      ];
-    } else {
-      where.OR = [{ is_global: true }];
     }
   
-    // 5️⃣ Tariflarni olish
+    // 5️⃣ REGION GROUP + TYPE (TO‘G‘RILANGAN JOY)
+    else if (groupId) {
+      // 🔵 TYPE = LOCAL → local + regional + global (shu group bilan)
+      if (type === 'local') {
+        where.OR = [
+          {
+            AND: [
+              { is_local: true },
+              { regions: { some: { id: { in: groupRegionIds } } } },
+            ],
+          },
+          {
+            AND: [
+              { is_regional: true },
+              {
+                OR: [
+                  { regions: { some: { id: { in: groupRegionIds } } } },
+                  {
+                    region_group: {
+                      regions: { some: { id: { in: groupRegionIds } } },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+          { is_global: true },
+        ];
+      }
+  
+      // 🟡 TYPE = REGIONAL → faqat regional (shu group bilan)
+      else if (type === 'regional') {
+        where.is_regional = true;
+        where.OR = [
+          { regions: { some: { id: { in: groupRegionIds } } } },
+          {
+            region_group: {
+              regions: { some: { id: { in: groupRegionIds } } },
+            },
+          },
+        ];
+      }
+  
+      // 🔴 TYPE = GLOBAL → faqat global (cheklov yo‘q)
+      else if (type === 'global') {
+        where.is_global = true;
+      }
+  
+      // TYPE yo‘q bo‘lsa — eski xatti-harakat
+      else {
+        where.OR = [
+          {
+            AND: [
+              { is_local: true },
+              { regions: { some: { id: { in: groupRegionIds } } } },
+            ],
+          },
+          {
+            AND: [
+              { is_regional: true },
+              {
+                OR: [
+                  { regions: { some: { id: { in: groupRegionIds } } } },
+                  {
+                    region_group: {
+                      regions: { some: { id: { in: groupRegionIds } } },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            AND: [
+              { is_global: true },
+              { regions: { some: { id: { in: groupRegionIds } } } },
+            ],
+          },
+        ];
+      }
+    }
+  
+    // 6️⃣ DEFAULT — faqat global
+    else {
+      where.is_global = true;
+    }
+  
+    // 7️⃣ Tariflarni olish
     const tariffs = await this.prisma.tariff.findMany({
       where,
       include: {
@@ -317,7 +345,7 @@ export class RegionGroupService {
       orderBy: { price_sell: 'asc' },
     });
   
-    // 6️⃣ FORMAT (O‘ZGARMAGAN)
+    // 8️⃣ FORMAT (O‘ZGARMAGAN)
     const result = {
       local: [],
       regional: [],
@@ -372,6 +400,7 @@ export class RegionGroupService {
       },
     };
   }
+  
   
 
   async findRegionOneRegionGroup(id: number) {
