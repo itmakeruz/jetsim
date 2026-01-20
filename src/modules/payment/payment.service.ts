@@ -250,7 +250,7 @@ export class PaymentService {
         transaction_id: existTransaction.id,
       },
     });
-    
+
     if (existOrder) {
       return 'OK';
     }
@@ -269,12 +269,12 @@ export class PaymentService {
     await this.socketGateway.sendPaymentStatus(existTransaction.user.id, { status: updatedTransaction.status });
 
     setImmediate(() => {
-      this.orderService.create(existTransaction.user.id, updatedTransaction.id)
-        .catch(err => this.logger.error('ORDER CREATE ERROR', err));
+      this.orderService
+        .create(existTransaction.user.id, updatedTransaction.id)
+        .catch((err) => this.logger.error('ORDER CREATE ERROR', err));
     });
-    
+
     return 'OK';
-    
   }
 
   async acceptPaymentTest(id: number, data: any) {

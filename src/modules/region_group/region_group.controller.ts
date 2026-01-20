@@ -46,7 +46,12 @@ export class RegionGroupController {
   @ApiQuery({ name: 'type', required: false, description: 'Type of region Group' })
   @ApiParam({ name: 'id', required: false, description: 'Optional list of plan IDs' })
   @Get('plans/:id')
-  async findPlans(@Param('id') id: number, @HeadersValidation() headers: DeviceHeadersDto, @Query('ids') ids?: string, @Query('type') type?: 'local' | 'regional' | 'global') {
+  async findPlans(
+    @Param('id') id: number,
+    @HeadersValidation() headers: DeviceHeadersDto,
+    @Query('ids') ids?: string,
+    @Query('type') type?: 'local' | 'regional' | 'global',
+  ) {
     return await this.regionGroupService.getPlansUniversal(id, ids, headers.lang, type);
   }
 
