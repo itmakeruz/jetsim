@@ -269,19 +269,15 @@ export class RegionGroupService {
         ];
       }
 
-      // 🟡 REGIONAL → faqat shu group bilan bog'langan regional tariflar
+      // 🟡 REGIONAL → faqat shu groupId ga tegishli regional tariflar
       else if (type === 'regional') {
-        where.AND = [
-          { is_regional: true },
-          {
-            OR: [{ regions: { some: { id: { in: groupRegionIds } } } }, { region_group_id: groupId }],
-          },
-        ];
+        where.AND = [{ is_regional: true }, { region_group_id: groupId }];
       }
 
       // 🔴 GLOBAL → faqat shu group regionlarini o'z ichiga olgan global tariflar
+      // Global tariflar odatda region_group_id ga ega emas, shuning uchun faqat regions orqali tekshiramiz
       else if (type === 'global') {
-        where.AND = [{ is_global: true }, { regions: { some: { id: { in: groupRegionIds } } } }];
+        where.AND = [{ is_global: true }, { region_group_id: groupId }];
       }
 
       // TYPE yo‘q bo‘lsa (default)
