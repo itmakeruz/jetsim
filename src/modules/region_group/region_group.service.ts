@@ -215,7 +215,7 @@ export class RegionGroupService {
       status: 'ACTIVE',
     };
   
-    // 4️⃣ regionIds LOGIKASI (TEGILMADIK ❗)
+    // 4️⃣ regionIds LOGIKASI (TEGILMADI)
     if (ids.length > 0) {
       where.OR = [
         {
@@ -248,7 +248,7 @@ export class RegionGroupService {
       ];
     }
   
-    // 5️⃣ REGION GROUP + TYPE (TO‘G‘RI LOGIKA)
+    // 5️⃣ REGION GROUP + TYPE (TO‘G‘RI VA TOZA LOGIKA)
     else if (groupId) {
       // 🔵 LOCAL → local + regional + global
       if (type === 'local') {
@@ -278,7 +278,7 @@ export class RegionGroupService {
         ];
       }
   
-      // 🟡 REGIONAL → faqat regional (FIX)
+      // 🟡 REGIONAL → FAQAT regional tariflar
       else if (type === 'regional') {
         where.AND = [
           { is_regional: true },
@@ -293,16 +293,19 @@ export class RegionGroupService {
             ],
           },
         ];
+        // Muhim: qo‘shimcha shartlarni tozalash
+        delete where.OR;
       }
   
-      // 🔴 GLOBAL → faqat global (FIX)
+      // 🔴 GLOBAL → FAQAT global tariflar
       else if (type === 'global') {
         where.is_global = true;
+        // Barcha qo‘shimcha shartlarni tozalash
         delete where.OR;
         delete where.AND;
       }
   
-      // TYPE yo‘q bo‘lsa (default)
+      // TYPE yo‘q bo‘lsa (default) → hammasi
       else {
         where.OR = [
           {
@@ -351,7 +354,7 @@ export class RegionGroupService {
       orderBy: { price_sell: 'asc' },
     });
   
-    // 8️⃣ FORMAT (O‘ZGARMAGAN)
+    // 8️⃣ FORMAT (O‘ZGARMADI)
     const result = {
       local: [],
       regional: [],
