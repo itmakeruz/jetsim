@@ -483,10 +483,9 @@ export class OrderService {
       },
     });
 
-    if(existOrder) {
-      return 'Order already exists!'
+    if (existOrder) {
+      return 'Order already exists!';
     }
-    
 
     const basket = await this.prisma.basket.findFirst({
       where: {
