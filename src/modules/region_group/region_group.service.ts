@@ -240,7 +240,7 @@ export class RegionGroupService {
       ];
     }
 
-    // 5️⃣ REGION GROUP + TYPE (TO‘G‘RI LOGIKA)
+    // 5️⃣ REGION GROUP + TYPE
     else if (groupId) {
       // 🔵 LOCAL → local + regional + global
       if (type === 'local') {
@@ -263,7 +263,9 @@ export class RegionGroupService {
               },
             ],
           },
-          { is_global: true }, // global — filtrsiz
+          {
+            AND: [{ is_global: true }, { regions: { some: { id: { in: groupRegionIds } } } }],
+          },
         ];
       }
 
