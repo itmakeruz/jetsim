@@ -219,8 +219,8 @@ export class RegionGroupService {
     if (groupId && ids.length === 0 && type) {
       if (type === 'local') {
         where.is_local = true;
-        where.is_regional = false;
-        where.is_global = false;
+        where.is_regional = true;
+        where.is_global = true;
       }
   
       if (type === 'regional') {
