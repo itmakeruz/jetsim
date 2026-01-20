@@ -143,7 +143,7 @@ export class RegionGroupService {
     lang: string,
     type?: 'local' | 'regional' | 'global',
   ) {
-    // 0️⃣ Region ID larni tozalash (O‘ZGARMAGAN)
+    // 0️⃣ Region ID larni tozalash
     const ids = regionIds
       ? Array.from(
           new Set(
@@ -158,7 +158,7 @@ export class RegionGroupService {
     let regions: any[] = [];
     let groupRegionIds: number[] = [];
   
-    // 1️⃣ Regionlarni olish (O‘ZGARMAGAN)
+    // 1️⃣ Regionlar (regionIds bo‘yicha)
     if (ids.length > 0) {
       const dbRegions = await this.prisma.region.findMany({
         where: { id: { in: ids } },
@@ -181,7 +181,7 @@ export class RegionGroupService {
       }));
     }
   
-    // 2️⃣ RegionGroup orqali (O‘ZGARMAGAN)
+    // 2️⃣ RegionGroup orqali
     if (groupId && ids.length === 0) {
       const group = await this.prisma.regionGroup.findUnique({
         where: { id: groupId },
@@ -215,7 +215,7 @@ export class RegionGroupService {
       status: 'ACTIVE',
     };
   
-    // 4️⃣ FILTERLAR (regionIds — O‘ZGARMAGAN)
+    // 4️⃣ regionIds LOGIKASI (TEGILMADIK ❗)
     if (ids.length > 0) {
       where.OR = [
         {
@@ -248,9 +248,9 @@ export class RegionGroupService {
       ];
     }
   
-    // 5️⃣ REGION GROUP + TYPE (TO‘G‘RILANGAN JOY)
+    // 5️⃣ REGION GROUP + TYPE (TO‘G‘RI LOGIKA)
     else if (groupId) {
-      // 🔵 TYPE = LOCAL → local + regional + global (shu group bilan)
+      // 🔵 LOCAL → local + regional + global
       if (type === 'local') {
         where.OR = [
           {
@@ -274,29 +274,35 @@ export class RegionGroupService {
               },
             ],
           },
-          { is_global: true },
+          { is_global: true }, // global — filtrsiz
         ];
       }
   
-      // 🟡 TYPE = REGIONAL → faqat regional (shu group bilan)
+      // 🟡 REGIONAL → faqat regional (FIX)
       else if (type === 'regional') {
-        where.is_regional = true;
-        where.OR = [
-          { regions: { some: { id: { in: groupRegionIds } } } },
+        where.AND = [
+          { is_regional: true },
           {
-            region_group: {
-              regions: { some: { id: { in: groupRegionIds } } },
-            },
+            OR: [
+              { regions: { some: { id: { in: groupRegionIds } } } },
+              {
+                region_group: {
+                  regions: { some: { id: { in: groupRegionIds } } },
+                },
+              },
+            ],
           },
         ];
       }
   
-      // 🔴 TYPE = GLOBAL → faqat global (cheklov yo‘q)
+      // 🔴 GLOBAL → faqat global (FIX)
       else if (type === 'global') {
         where.is_global = true;
+        delete where.OR;
+        delete where.AND;
       }
   
-      // TYPE yo‘q bo‘lsa — eski xatti-harakat
+      // TYPE yo‘q bo‘lsa (default)
       else {
         where.OR = [
           {
@@ -400,7 +406,6 @@ export class RegionGroupService {
       },
     };
   }
-  
   
 
   async findRegionOneRegionGroup(id: number) {
