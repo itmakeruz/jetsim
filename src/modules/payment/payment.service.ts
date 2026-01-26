@@ -267,12 +267,7 @@ export class PaymentService {
     });
 
     await this.socketGateway.sendPaymentStatus(existTransaction.user.id, { status: updatedTransaction.status });
-
-    setImmediate(() => {
-      this.orderService
-        .create(existTransaction.user.id, updatedTransaction.id)
-        .catch((err) => this.logger.error('ORDER CREATE ERROR', err));
-    });
+    await this.orderService.create(existTransaction.user.id, updatedTransaction.id);
 
     return 'OK';
   }
