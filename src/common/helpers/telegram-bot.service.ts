@@ -119,7 +119,7 @@ ${formattedResponse}
 
   private async send(message: string) {
     try {
-      await this.bot.sendMessage('7646452005', message, {
+      await this.bot.sendMessage('-5179566420', message, {
         parse_mode: 'Markdown',
       });
 
