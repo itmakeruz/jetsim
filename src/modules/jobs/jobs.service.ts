@@ -41,10 +41,8 @@ export class JobsService {
         const response = await this.joyTelService.getUsage({
           coupon: sim.coupon,
         });
-        console.log(response);
 
         const list = response?.dataUsageList;
-        console.log(response, list);
 
         if (!Array.isArray(list) || list.length === 0) {
           console.log('JOYTEL EMPTY USAGE', sim.id, list);
@@ -80,8 +78,6 @@ export class JobsService {
             },
             0,
           );
-
-          console.log(usage);
 
           await this.prisma.sims.update({
             where: {
