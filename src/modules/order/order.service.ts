@@ -477,14 +477,18 @@ export class OrderService {
   async create(user_id: number, transactionId: number) {
     this.logger.log('Creating order for user:', user_id);
 
-    const existOrder = await this.prisma.order.findFirst({
+    const newOrder = await this.prisma.order.findFirst({
       where: {
         transaction_id: transactionId,
       },
+      select: {
+        id: true,
+        user: true,
+      },
     });
 
-    if (existOrder) {
-      return 'Order already exists!';
+    if (!newOrder) {
+      throw new BadRequestException('Order not found for this transaction!');
     }
 
     const basket = await this.prisma.basket.findFirst({
@@ -528,17 +532,17 @@ export class OrderService {
       throw new BadRequestException(user_not_found['ru']);
     }
 
-    const newOrder = await this.prisma.order.create({
-      data: {
-        user_id,
-        status: OrderStatus.CREATED,
-        transaction_id: transactionId,
-      },
-      select: {
-        id: true,
-        user: true,
-      },
-    });
+    // const newOrder = await this.prisma.order.create({
+    //   data: {
+    //     user_id,
+    //     status: OrderStatus.CREATED,
+    //     transaction_id: transactionId,
+    //   },
+    //   select: {
+    //     id: true,
+    //     user: true,
+    //   },
+    // });
 
     for (const item of basket.items) {
       try {
