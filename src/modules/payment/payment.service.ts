@@ -207,13 +207,18 @@ export class PaymentService {
     this.logger.log('TBANK WEBHOOK DATA: ', data);
     console.log(data);
 
+    const existTransactionId = Number(data?.OrderId);
+
+    if (!existTransactionId) {
+      return 'OK';
+    }
+
     const existTransaction = await this.prisma.transaction.findUnique({
       where: {
-        id: Number(data?.OrderId),
+        id: existTransactionId,
       },
       select: {
         id: true,
-        status: true,
         user: {
           select: {
             id: true,
@@ -222,18 +227,31 @@ export class PaymentService {
       },
     });
 
+    // const existTransaction = await this.prisma.transaction.findUnique({
+    //   where: {
+    //     id: Number(data?.OrderId),
+    //   },
+    //   select: {
+    //     id: true,
+    //     status: true,
+    //     user: {
+    //       select: {
+    //         id: true,
+    //       },
+    //     },
+    //   },
+    // });
+
     if (!existTransaction) {
       return 'OK';
     }
 
-    if (existTransaction.status === TransactionStatus.SUCCESS) {
-      return 'OK';
-    }
-
+    // FAILED ham CAS bo‘lishi shart
     if (data.Success === false) {
-      await this.prisma.transaction.update({
+      await this.prisma.transaction.updateMany({
         where: {
-          id: existTransaction.id,
+          id: existTransactionId,
+          status: TransactionStatus.PENDING,
         },
         data: {
           status: TransactionStatus.FAILED,
@@ -245,30 +263,83 @@ export class PaymentService {
       return 'OK';
     }
 
-    const existOrder = await this.prisma.order.findFirst({
-      where: {
-        transaction_id: existTransaction.id,
-      },
-    });
+    if (data.Success === true && data.Status === 'CONFIRMED') {
+      // 🔒 DB-level ATOMIC LOCK
+      const updated = await this.prisma.transaction.updateMany({
+        where: {
+          id: existTransactionId,
+          status: TransactionStatus.PENDING,
+        },
+        data: {
+          status: TransactionStatus.SUCCESS,
+          partner_transaction_id: data.PaymentId,
+          response: JSON.stringify(data),
+          updated_at: new Date(),
+        },
+      });
 
-    if (existOrder) {
-      return 'OK';
+      // Kimdir oldin ishlatib bo‘lgan → chiqamiz
+      if (updated.count === 0) {
+        return 'OK';
+      }
+
+      // 4. Order yaratish (faqat winner keladi bu yerga)
+      if (existTransaction.user?.id) {
+        try {
+          await this.prisma.order.create({
+            data: {
+              transaction_id: existTransaction.id,
+              user_id: existTransaction.user.id,
+              status: OrderStatus.CREATED,
+            },
+          });
+        } catch (error) {
+          // Agar boshqa request yaratib ulgurgan bo‘lsa (paranoid safety)
+          if (error.code !== 'P2002') {
+            this.logger.error('Order create error:', error);
+            throw error;
+          }
+        }
+
+        // 5. Socket faqat real success bo‘lganda
+        await this.socketGateway.sendPaymentStatus(existTransaction.user.id, {
+          status: TransactionStatus.SUCCESS,
+        });
+
+        // 6. Biznes logika
+        await this.orderService.create(existTransaction.user.id, existTransaction.id);
+      }
     }
 
-    const updatedTransaction = await this.prisma.transaction.update({
-      where: {
-        id: existTransaction.id,
-      },
-      data: {
-        status: TransactionStatus.SUCCESS,
-        partner_transaction_id: data.PaymentId,
-        response: JSON.stringify(data),
-      },
-    });
+    // if (existTransaction.status === TransactionStatus.SUCCESS) {
+    //   return 'OK';
+    // }
 
-    await this.socketGateway.sendPaymentStatus(existTransaction.user.id, { status: updatedTransaction.status });
-    await this.orderService.create(existTransaction.user.id, updatedTransaction.id);
+    // const existOrder = await this.prisma.order.findFirst({
+    //   where: {
+    //     transaction_id: existTransaction.id,
+    //   },
+    // });
 
+    // if (existOrder) {
+    //   return 'OK';
+    // }
+
+    // if (data.Success === true && data.Status === 'CONFIRMED') {
+    //   const updatedTransaction = await this.prisma.transaction.update({
+    //     where: {
+    //       id: existTransaction.id,
+    //     },
+    //     data: {
+    //       status: TransactionStatus.SUCCESS,
+    //       partner_transaction_id: data.PaymentId,
+    //       response: JSON.stringify(data),
+    //       updated_at: new Date(),
+    //     },
+    //   });
+    //   await this.socketGateway.sendPaymentStatus(existTransaction.user.id, { status: updatedTransaction.status });
+    //   await this.orderService.create(existTransaction.user.id, updatedTransaction.id);
+    // }
     return 'OK';
   }
 
