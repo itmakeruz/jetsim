@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsIn, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { OperatorTypes, PaginationOptionalDto } from '@enums';
 import { prisma } from '@helpers';
 
@@ -45,8 +45,38 @@ export class GetTransactionDto extends PaginationOptionalDto {
   @ApiProperty({ type: TransactionSort, required: false })
   sort?: TransactionSort;
 
-  @ApiProperty({ type: String, required: false, example: 'john, 1000, SUCCESS' })
+  @ApiProperty({ type: Number, required: false, example: 123, description: 'Transaction ID' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  id?: number;
+
+  @ApiProperty({ type: String, required: false, example: 'user@mail.com' })
   @IsOptional()
   @IsString()
-  search: string;
+  email?: string;
+
+  @ApiProperty({ type: String, required: false, example: '1500' })
+  @IsOptional()
+  @IsString()
+  amount?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    enum: ['PENDING', 'SUCCESS', 'FAILED', 'CANCELED', 'REFUNDED', 'ERROR', 'UNKNOWN'],
+  })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: 'Single date (2026-02-01) or range (2026-02-01_2026-02-07)',
+    example: '2026-02-01',
+  })
+  @IsOptional()
+  @IsString()
+  created_at?: string;
 }

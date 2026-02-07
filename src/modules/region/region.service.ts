@@ -29,7 +29,7 @@ export class RegionService {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
-      sort: query?.sort,
+      sort: query?.sort ?? { column: `name_${lan}`, value: 'asc' },
       where: {
         ...(query?.search && {
           OR: [

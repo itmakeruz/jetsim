@@ -5,9 +5,10 @@ import { WinstonLoggerService } from '@logger';
 import { TBank } from '@http';
 import { basket_empty, TBankWebHookResponse } from '@constants';
 import { TaxValues } from '@constants';
-import { OrderStatus, TransactionStatus } from '@prisma/client';
+import { OrderStatus, Status, TransactionStatus } from '@prisma/client';
 import { OrderService } from '../order/order.service';
 import { GatewayGateway } from '../gateway';
+import { PartnerIds } from '@enums';
 
 @Injectable()
 export class PaymentService {
@@ -100,11 +101,14 @@ export class PaymentService {
             id: true,
             quantity: true,
             price: true,
+            tariff_id: true,
             tariff: {
               select: {
                 id: true,
                 price_sell: true,
                 name_ru: true,
+                partner_id: true,
+                status: true,
               },
             },
           },
@@ -121,6 +125,47 @@ export class PaymentService {
       return sum + itemPrice * item.quantity;
     }, 0);
 
+    // Transaction, Order, SIMlar – bitta basket o‘qishda
+    const transaction = await this.prisma.transaction.create({
+      data: {
+        amount: totalAmount.toString(),
+        user_id: basket.user.id,
+      },
+      select: { id: true },
+    });
+
+    const order = await this.prisma.order.create({
+      data: {
+        transaction_id: transaction.id,
+        user_id: basket.user.id,
+        status: OrderStatus.CREATED,
+      },
+      select: { id: true },
+    });
+
+    await this.prisma.transaction.update({
+      where: { id: transaction.id },
+      data: { order_id: order.id },
+    });
+
+    for (const item of basket.items) {
+      if (!item.tariff || item.tariff.status !== Status.ACTIVE) continue;
+      const partnerId = item.tariff.partner_id;
+      if (partnerId !== PartnerIds.JOYTEL && partnerId !== PartnerIds.BILLION_CONNECT) continue;
+      const quantity = item.quantity ?? 1;
+      for (let q = 0; q < quantity; q++) {
+        await this.prisma.sims.create({
+          data: {
+            user_id: basket.user.id,
+            order_id: order.id,
+            partner_id: partnerId,
+            tariff_id: item.tariff_id,
+            status: OrderStatus.CREATED,
+          },
+        });
+      }
+    }
+
     return {
       data: {
         items: basket?.items?.map((item) => ({
@@ -131,11 +176,14 @@ export class PaymentService {
           Tax: TaxValues.NONE,
         })),
         user: {
-          id: basket?.user?.id,
-          email: basket?.user?.email,
+          id: basket?.user.id,
+          email: basket.user.email,
         },
         order: {
           totalAmount: totalAmount,
+        },
+        transaction: {
+          transactionId: transaction.id,
         },
       },
     };
@@ -143,22 +191,11 @@ export class PaymentService {
 
   async preparePayment(userId: number, lang: string) {
     const { data } = await this.getPaymentInfos(userId, lang);
-    console.log(data.items);
-
-    const transaction = await this.prisma.transaction.create({
-      data: {
-        amount: data?.order?.totalAmount.toString(),
-        user_id: data?.user?.id,
-      },
-      select: {
-        id: true,
-      },
-    });
 
     const paymentPayload = {
       Amount: data?.order?.totalAmount,
-      OrderId: transaction?.id,
-      Description: `Оплата eSIM-карты на ${data?.order?.totalAmount}`,
+      OrderId: data?.transaction.transactionId,
+      Description: `Оплата eSIM-карты на ${data?.order?.totalAmount / 100}`,
       // DATA: {
       //   Email: data?.user?.email,
       // },
@@ -171,21 +208,15 @@ export class PaymentService {
     };
 
     await this.prisma.transaction.update({
-      where: {
-        id: transaction.id,
-      },
-      data: {
-        request: JSON.stringify(paymentPayload),
-      },
+      where: { id: data.transaction.transactionId },
+      data: { request: JSON.stringify(paymentPayload) },
     });
 
     const response = await this.TbankService.initPayment(paymentPayload);
 
     if (response?.Success !== true) {
       await this.prisma.transaction.update({
-        where: {
-          id: transaction.id,
-        },
+        where: { id: data.transaction.transactionId },
         data: {
           status: TransactionStatus.ERROR,
           request: JSON.stringify(paymentPayload),
@@ -306,7 +337,7 @@ export class PaymentService {
           status: TransactionStatus.SUCCESS,
         });
 
-        // 6. Biznes logika
+        // 6. Biznes logika: mavjud SIMlarni partnerlarga jo‘natish (yoki basketdan yaratish)
         await this.orderService.create(existTransaction.user.id, existTransaction.id);
       }
     }

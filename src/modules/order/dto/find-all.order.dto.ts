@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsIn, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { OperatorTypes, PaginationOptionalDto } from '@enums';
 import { prisma } from '@helpers';
 
@@ -44,4 +44,10 @@ export class GetOrderDto extends PaginationOptionalDto {
   @Type(() => OrderSort)
   @ApiProperty({ type: OrderSort, required: false })
   sort?: OrderSort;
+
+  @ApiProperty({ type: Number, required: false, example: 123, description: 'Transaction ID' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  id?: number;
 }

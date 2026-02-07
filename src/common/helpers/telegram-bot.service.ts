@@ -110,6 +110,45 @@ ${formattedResponse}
     await this.send(message);
   }
 
+  /**
+   * QR kod kelganda jo‘natiladi. Format: rasm (QR) yuqorida, matn pastda (rasmdagi kabi).
+   */
+  public async notifySimActivated(params: {
+    orderId: number;
+    esimId: number;
+    date: string;
+    client: { name: string; email: string; phone?: string };
+    sim: { cid: string; snPin: string; snCode: string; status: string };
+    qrBuffer: Buffer;
+  }) {
+    const formattedDate = this.formatDate(params.date);
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const code = (s: string) => `<code>${esc(s)}</code>`;
+
+    const caption = `
+🆕 <b>Новая SIM-карта активирована</b>
+
+📋 <b>Информация о заказе</b>
+• ID заказа: ${code(String(params.orderId))}
+• Дата: ${esc(formattedDate)}
+
+👤 <b>Клиент</b>
+• Имя: ${esc(params.client.name)}
+• Телефон: ${params.client.phone ? code(params.client.phone) : '—'}
+• Email: ${params.client.email ? code(params.client.email) : '—'}
+
+📱 <b>SIM-карта</b>
+• CID: ${code(params.sim.cid)}
+• SN Pin: ${code(params.sim.snPin)}
+• SN Code: ${code(params.sim.snCode)}
+• Статус: ${code(params.sim.status)}
+
+✅ QR-код для активации прикреплен
+`;
+
+    await this.sendPhoto(params.qrBuffer, caption);
+  }
+
   public async notifyNewOrder(orderId: number, customerName?: string) {
     const message =
       `📦 Новый заказ принят!\n` + `ID заказа: ${orderId}\n` + (customerName ? `Клиент: ${customerName}` : '');
@@ -117,15 +156,39 @@ ${formattedResponse}
     await this.send(message);
   }
 
+  private formatDate(isoDate: string): string {
+    const d = new Date(isoDate);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
   private async send(message: string) {
     try {
-      await this.bot.sendMessage('-5179566420', message, {
+      await this.bot.sendMessage('7646452005', message, {
         parse_mode: 'Markdown',
       });
 
       this.logger.log(`Сообщение отправлено администратору.`);
     } catch (error) {
       this.logger.error(`Ошибка отправки сообщения: ${error.message}`);
+    }
+  }
+
+  private async sendPhoto(photo: Buffer, caption: string) {
+    try {
+      await this.bot.sendPhoto(
+        '-5179566420',
+        photo,
+        {
+          caption: caption.trim(),
+          parse_mode: 'HTML',
+        },
+        { filename: 'qr-code.png', contentType: 'image/png' },
+      );
+
+      this.logger.log(`QR-код отправлен администратору.`);
+    } catch (error) {
+      this.logger.error(`Ошибка отправки фото: ${error.message}`);
     }
   }
 }
