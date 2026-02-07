@@ -1,5 +1,6 @@
 export * from './redis.helper';
 export * from './filter.helper';
+export * from './excel-generator.helper';
 export * from './prisma-helper';
 export * from './save-qr-content';
 export * from './day-left.helper';

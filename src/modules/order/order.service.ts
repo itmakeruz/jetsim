@@ -42,6 +42,7 @@ export class OrderService {
       sort: query?.sort,
       select: {
         id: true,
+        status: true,
         sims: {
           select: {
             id: true,
@@ -66,6 +67,9 @@ export class OrderService {
         },
         created_at: true,
       },
+      where: {
+        id: query.id,
+      },
     });
 
     return {
@@ -74,6 +78,7 @@ export class OrderService {
       data: data?.map((order: any) => {
         return {
           id: order?.id,
+          status: order?.status,
           created_at: order?.created_at,
           sims: order?.sims?.map((sim: any) => {
             return {
@@ -484,36 +489,16 @@ export class OrderService {
       select: {
         id: true,
         user: true,
-      },
-    });
-
-    if (!newOrder) {
-      throw new BadRequestException('Order not found for this transaction!');
-    }
-
-    const basket = await this.prisma.basket.findFirst({
-      where: {
-        user_id: user_id,
-      },
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            is_verified: true,
-            email: true,
-          },
-        },
-        items: {
+        sims: {
           select: {
             id: true,
             tariff_id: true,
-            region_id: true,
+            partner_id: true,
             tariff: {
               select: {
                 id: true,
-                status: true,
                 sku_id: true,
+                validity_period: true,
                 partner_id: true,
               },
             },
@@ -522,62 +507,138 @@ export class OrderService {
       },
     });
 
-    this.logger.log(`Bascet items for user ${user_id}: `, basket);
-
-    if (!basket || basket?.items?.length === 0) {
-      throw new BadRequestException(basket_empty['ru']);
+    if (!newOrder) {
+      throw new BadRequestException('Order not found for this transaction!');
     }
 
-    if (!basket.user.is_verified) {
-      throw new BadRequestException(user_not_found['ru']);
-    }
-
-    // const newOrder = await this.prisma.order.create({
-    //   data: {
-    //     user_id,
+    // Prepare paytida yaratilgan SIMlar (CREATED status) – partnerlarga jo‘natamiz
+    // const existingSims = await this.prisma.sims.findMany({
+    //   where: {
+    //     order_id: newOrder.id,
     //     status: OrderStatus.CREATED,
-    //     transaction_id: transactionId,
     //   },
     //   select: {
     //     id: true,
-    //     user: true,
+    //     tariff_id: true,
+    //     partner_id: true,
+    //     tariff: { select: { sku_id: true, validity_period: true } },
     //   },
     // });
 
-    for (const item of basket.items) {
-      try {
-        if (item.tariff.status !== Status.ACTIVE) {
-          throw new ConflictException(`Пакет ${item.tariff.id} неактивен!`);
-        }
+    if (newOrder.sims.length > 0) {
+      for (const sim of newOrder.sims) {
+        console.log(sim, sim.partner_id);
 
-        const partner_id = item.tariff.partner_id;
-
-        if (partner_id === PartnerIds.JOYTEL) {
-          await this.createSimsService.processJoyTel(newOrder.id, newOrder.user.id, item);
+        try {
+          const item = {
+            id: sim.id,
+            tariff_id: sim.tariff_id,
+            tariff: sim.tariff,
+            user: { email: newOrder.user.email },
+          };
+          if (sim.partner_id === PartnerIds.JOYTEL) {
+            await this.createSimsService.processJoyTel(newOrder.id, newOrder.user.id, item);
+          } else if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
+            await this.createSimsService.processBillion(newOrder.id, newOrder.user.id, item);
+          }
+        } catch (error) {
+          this.logger.info('Order item failed', error);
+          await this.socketGateway.sendErrorOrderMessage(user_id, newOrder.id);
         }
-
-        if (partner_id === PartnerIds.BILLION_CONNECT) {
-          await this.createSimsService.processBillion(newOrder.id, newOrder.user.id, item);
-        }
-      } catch (error) {
-        this.logger.info('Order item failed', error);
-        await this.socketGateway.sendErrorOrderMessage(user_id, newOrder.id);
       }
+      await this.prisma.basketItem.deleteMany({
+        where: { basket: { user_id: user_id } },
+      });
+
+      await this.prisma.order.update({
+        where: {
+          id: newOrder.id,
+        },
+        data: {
+          status: OrderStatus.COMPLETED,
+        },
+      });
+      return {
+        success: true,
+        message: 'Заказ оформлен (частичные ошибки возможны).',
+        data: { order_id: newOrder.id },
+      };
     }
 
-    await this.prisma.basketItem.deleteMany({
-      where: {
-        basket_id: basket.id,
-      },
-    });
+    // Eski flow: basketdan SIMlar yaratish (backward compatibility)
+    // const basket = await this.prisma.basket.findFirst({
+    //   where: { user_id: user_id },
+    //   select: {
+    //     id: true,
+    //     user: {
+    //       select: {
+    //         id: true,
+    //         is_verified: true,
+    //         email: true,
+    //       },
+    //     },
+    //     items: {
+    //       select: {
+    //         id: true,
+    //         tariff_id: true,
+    //         region_id: true,
+    //         quantity: true,
+    //         tariff: {
+    //           select: {
+    //             id: true,
+    //             status: true,
+    //             sku_id: true,
+    //             partner_id: true,
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
+    // });
 
-    return {
-      success: true,
-      message: 'Заказ оформлен (частичные ошибки возможны).',
-      data: {
-        order_id: newOrder.id,
-      },
-    };
+    // this.logger.log(`Bascet items for user ${user_id}: `, basket);
+
+    // if (!basket || basket?.items?.length === 0) {
+    //   throw new BadRequestException(basket_empty['ru']);
+    // }
+
+    // if (!basket.user.is_verified) {
+    //   throw new BadRequestException(user_not_found['ru']);
+    // }
+
+    // for (const item of basket.items) {
+    //   try {
+    //     if (item.tariff.status !== Status.ACTIVE) {
+    //       throw new ConflictException(`Пакет ${item.tariff.id} неактивен!`);
+    //     }
+
+    //     const partner_id = item.tariff.partner_id;
+    //     const quantity = item.quantity ?? 1;
+
+    //     for (let q = 0; q < quantity; q++) {
+    //       if (partner_id === PartnerIds.JOYTEL) {
+    //         await this.createSimsService.processJoyTel(newOrder.id, newOrder.user.id, item);
+    //       }
+
+    //       if (partner_id === PartnerIds.BILLION_CONNECT) {
+    //         await this.createSimsService.processBillion(newOrder.id, newOrder.user.id, item);
+    //       }
+    //     }
+    //   } catch (error) {
+    //     this.logger.info('Order item failed', error);
+    //     await this.socketGateway.sendErrorOrderMessage(user_id, newOrder.id);
+    //   }
+    // }
+
+    // await this.prisma.basketItem.deleteMany({
+    //   where: { basket_id: basket.id },
+    // });
+
+    // return {
+    //   success: true,
+    //   message: 'Заказ оформлен (частичные ошибки возможны).',
+    //   data: { order_id: newOrder.id },
+    // };
   }
 
   async getBasket(userId: number, lang: string) {
@@ -917,6 +978,24 @@ export class OrderService {
     await this.socketGateway.sendOrderMessage(sim.user_id, updatedOrder.id, updatedOrder.qrcode);
 
     const qrBuffer = await this.qrService.generateQrWithLogo(updatedOrder.qrcode);
+    await this.telegramBotService.notifySimActivated({
+      orderId: updatedOrder.order_id,
+      esimId: updatedOrder.id,
+      date: new Date().toISOString(),
+      client: {
+        name: updatedOrder.user.name ?? '—',
+        email: updatedOrder.user.email ?? '—',
+        phone: updatedOrder.user.phone_number ?? undefined,
+      },
+      sim: {
+        cid: updatedOrder.cid ?? updatedOrder.iccid ?? '—',
+        snPin: updatedOrder.pin_1 ?? '—',
+        snCode: updatedOrder.sn_code ?? updatedOrder.iccid ?? '—',
+        status: updatedOrder.status,
+      },
+      qrBuffer,
+    });
+
     const fasturl = generateFastEsimInstallmentString(updatedOrder.qrcode);
     const html = newOrderMessage(
       'Клиент',
@@ -985,6 +1064,24 @@ export class OrderService {
     await this.socketGateway.sendOrderMessage(sim.user_id, updatedSim.id, updatedSim.qrcode);
 
     const qrBuffer = await this.qrService.generateQrWithLogo(updatedSim.qrcode);
+    await this.telegramBotService.notifySimActivated({
+      orderId: updatedSim.order_id,
+      esimId: updatedSim.id,
+      date: new Date().toISOString(),
+      client: {
+        name: updatedSim.user.name ?? '—',
+        email: updatedSim.user.email ?? '—',
+        phone: updatedSim.user.phone_number ?? undefined,
+      },
+      sim: {
+        cid: updatedSim.iccid ?? '—',
+        snPin: updatedSim.pin_1 ?? '—',
+        snCode: updatedSim.sn_code ?? updatedSim.iccid ?? '—',
+        status: updatedSim.status,
+      },
+      qrBuffer,
+    });
+
     const fasturl = generateFastEsimInstallmentString(updatedSim.qrcode);
     const html = newOrderMessage(
       'Клиент',

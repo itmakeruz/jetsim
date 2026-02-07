@@ -86,12 +86,16 @@ export class BillionConnectService {
 
     try {
       const response = await this.http.post('', payloadJson, { headers });
+      console.log(response);
+
       // if (!this.isSuccess(response.data)) {
       //   throw new InternalServerErrorException(response.data?.tradeMsg);
       // }
 
       return response.data;
     } catch (err: any) {
+      console.log(err);
+
       const status = err?.response?.status;
       const resp = err?.response?.data;
       const msg = `BillionConnect F040 failed${status ? ` [${status}]` : ''}: ${JSON.stringify(resp || err.message)}`;
