@@ -9,6 +9,7 @@ import { OrderStatus, Status, TransactionStatus } from '@prisma/client';
 import { OrderService } from '../order/order.service';
 import { GatewayGateway } from '../gateway';
 import { PartnerIds } from '@enums';
+import { MyLogger } from 'src/logging/logger.service';
 
 @Injectable()
 export class PaymentService {
@@ -202,7 +203,7 @@ export class PaymentService {
       Receipt: {
         Email: data?.user?.email ?? 'ravshanovtohir11@gmail.com',
         // "Phone": "+79031234567",
-        Taxation: 'osn', //aniqlab to'girlash kere bo'ladi
+        Taxation: 'usn_income_outcome', //aniqlab to'girlash kere bo'ladi
         Items: data?.items,
       },
     };
@@ -212,7 +213,18 @@ export class PaymentService {
       data: { request: JSON.stringify(paymentPayload) },
     });
 
+    // Log request/response as structured objects so they are readable in log dashboard
+    // this.logger.log({
+    //   message: 'REQUEST TO GENERATE PAYMENT URL',
+    //   payload: paymentPayload,
+    // });
+
     const response = await this.TbankService.initPayment(paymentPayload);
+
+    // this.logger.log({
+    //   message: 'RESPONSE FROM GENERATE PAYMENT URL',
+    //   payload: response,
+    // });
 
     if (response?.Success !== true) {
       await this.prisma.transaction.update({

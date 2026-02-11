@@ -2,6 +2,7 @@ import { validate } from '@config';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { WinstonLoggerService } from '@logger';
+import { AsyncLocalStorage } from 'async_hooks';
 import { LoggingInterceptor } from '@interceptors';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import {
@@ -23,7 +24,9 @@ import {
   RegionGroupModule,
   TransactionModule,
 } from '@modules';
+import { LoggerModule } from './logging/logger.module';
 import * as path from 'path';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -32,10 +35,20 @@ import * as path from 'path';
       validate,
       envFilePath: '.env',
     }),
-    ServeStaticModule.forRoot({
-      rootPath: path.join(__dirname, '..', 'uploads'),
-      serveRoot: '/uploads',
-    }),
+    ServeStaticModule.forRoot(
+      {
+        rootPath: path.join(__dirname, '..', 'uploads'),
+        serveRoot: '/uploads',
+      },
+      {
+        rootPath: join(process.cwd(), 'public'),
+        serveRoot: '/',
+      },
+      {
+        rootPath: join(process.cwd(), 'logo_image'),
+        serveRoot: '/logo_image',
+      },
+    ),
     AuthModule,
     FaqsModule,
     JobsModule,
@@ -53,9 +66,12 @@ import * as path from 'path';
     DashboardModule,
     RegionGroupModule,
     TransactionModule,
+    LoggerModule,
   ],
   controllers: [],
   providers: [WinstonLoggerService, LoggingInterceptor],
   exports: [WinstonLoggerService],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(private readonly als: AsyncLocalStorage<Map<string, string>>) {}
+}
