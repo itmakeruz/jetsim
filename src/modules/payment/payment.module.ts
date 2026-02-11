@@ -9,6 +9,7 @@ import { OrderService } from '../order/order.service';
 import { QrService } from '@helpers';
 import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
 import { CreateSimService } from '../order/create-sim/create-sim.service';
+import { LoggerModule } from 'src/logging/logger.module';
 
 @Module({
   controllers: [PaymentController],
@@ -21,6 +22,6 @@ import { CreateSimService } from '../order/create-sim/create-sim.service';
     TelegramBotService,
     CreateSimService,
   ],
-  imports: [PrismaModule, HttpModule, OrderModule],
+  imports: [PrismaModule, HttpModule, OrderModule, LoggerModule],
 })
 export class PaymentModule {}

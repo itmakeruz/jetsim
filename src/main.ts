@@ -9,11 +9,13 @@ import { LoggingInterceptor } from '@interceptors';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AllExceptionFilter, HttpExceptionFilter } from '@exceptions';
+import { MyLogger } from './logging/logger.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = app.get(WinstonLoggerService);
   app.useGlobalInterceptors(new LoggingInterceptor(logger));
+  // app.useLogger(app.get(MyLogger));
 
   app.enableCors({
     origin: '*',
@@ -47,6 +49,18 @@ async function bootstrap() {
       users: {
         '1': '1',
         'jetsim_esim': 'jetsim_esim',
+      },
+    }),
+  );
+
+  // Protect logs dashboard so only you can open it
+  app.use(
+    '/logs',
+    basicAuth({
+      challenge: true,
+      users: {
+        // You can move these to env variables later
+        logs_admin: 'logs_admin',
       },
     }),
   );
