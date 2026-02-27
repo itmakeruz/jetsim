@@ -170,7 +170,7 @@ export class PaymentService {
     return {
       data: {
         items: basket?.items?.map((item) => ({
-          Name: item?.tariff?.name_ru,
+          Name: `Услуга доступа к интернету ${item?.tariff?.name_ru}`,
           Price: item?.tariff?.price_sell,
           Quantity: item?.quantity,
           Amount: item?.tariff?.price_sell * item?.quantity,
