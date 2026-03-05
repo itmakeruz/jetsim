@@ -411,14 +411,14 @@ export class AuthService {
       const ttlMinutes = Math.floor(ttl / 60);
       const html = otpEmailTemplate(email, otp, ttlMinutes);
 
+      await sendMailHelper(email, 'Ваш OTP код', `Ваш OTP код: ${otp}. Действителен ${ttlMinutes} минут.`, html);
+      
       //Voqtinchali ob tashab turamiz
-      // await sendMailHelper(email, 'Ваш OTP код', `Ваш OTP код: ${otp}. Действителен ${ttlMinutes} минут.`, html);
+      // const response = await sendOtpFromAnotherService(email, otp, ttlMinutes);
 
-      const response = await sendOtpFromAnotherService(email, otp, ttlMinutes);
-
-      if (response.data.success !== true) {
-        throw new BadRequestException('Ошибка при генерации или отправке OTP!');
-      }
+      // if (response.data.success !== true) {
+      //   throw new BadRequestException('Ошибка при генерации или отправке OTP!');
+      // }
       return {
         message: `OTP для ${email} успешно сгенерирован и отправлен на email!`,
       };

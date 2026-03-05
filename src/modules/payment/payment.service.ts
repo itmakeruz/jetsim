@@ -328,21 +328,21 @@ export class PaymentService {
 
       // 4. Order yaratish (faqat winner keladi bu yerga)
       if (existTransaction.user?.id) {
-        try {
-          await this.prisma.order.create({
-            data: {
-              transaction_id: existTransaction.id,
-              user_id: existTransaction.user.id,
-              status: OrderStatus.CREATED,
-            },
-          });
-        } catch (error) {
-          // Agar boshqa request yaratib ulgurgan bo‘lsa (paranoid safety)
-          if (error.code !== 'P2002') {
-            this.logger.error('Order create error:', error);
-            throw error;
-          }
-        }
+        // try {
+        //   await this.prisma.order.create({
+        //     data: {
+        //       transaction_id: existTransaction.id,
+        //       user_id: existTransaction.user.id,
+        //       status: OrderStatus.CREATED,
+        //     },
+        //   });
+        // } catch (error) {
+        //   // Agar boshqa request yaratib ulgurgan bo‘lsa (paranoid safety)
+        //   if (error.code !== 'P2002') {
+        //     this.logger.error('Order create error:', error);
+        //     throw error;
+        //   }
+        // }
 
         // 5. Socket faqat real success bo‘lganda
         await this.socketGateway.sendPaymentStatus(existTransaction.user.id, {
