@@ -40,28 +40,28 @@ export class JobsService {
     for (const sim of sims) {
       try {
         /**
-         * =========================
+         * ======================
          * JOYTEL
-         * =========================
+         * ======================
          */
         if (sim.partner_id === PartnerIds.JOYTEL) {
           const response = await this.joyTelService.getUsage({
             coupon: sim.coupon,
           });
 
-          const list = response?.dataUsageList;
+          const usageList = response?.dataUsageList ?? [];
 
-          if (!Array.isArray(list) || list.length === 0) {
+          if (!Array.isArray(usageList) || usageList.length === 0) {
             continue;
           }
 
-          const totalBytes = list.reduce((acc: number, item: { usage: string }) => {
-            return acc + Number(item.usage || 0);
-          }, 0);
+          let totalBytes = 0;
+
+          for (const item of usageList) {
+            totalBytes += Number(item?.usage || 0);
+          }
 
           const totalMb = +(totalBytes / (1024 * 1024)).toFixed(2);
-
-          console.log(`JOYTEL SIM ${sim.id} usage ${totalMb} MB`);
 
           if (sim.last_usage_quantity !== totalMb.toString()) {
             await this.prisma.sims.update({
@@ -70,13 +70,15 @@ export class JobsService {
                 last_usage_quantity: totalMb.toString(),
               },
             });
+
+            this.logger.log(`JOYTEL SIM ${sim.id} → ${totalMb} MB`);
           }
         }
 
         /**
-         * =========================
+         * ======================
          * BILLION CONNECT
-         * =========================
+         * ======================
          */
         if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
           const response = await this.billionConnectService.getUsage({
@@ -84,25 +86,23 @@ export class JobsService {
             orderId: sim.partner_order_id,
           });
 
-          const tradeData = response?.tradeData;
-
-          if (!tradeData || response?.tradeCode !== '1000') {
+          if (response?.tradeCode !== '1000') {
             continue;
           }
 
-          const usageList = tradeData?.subOrderList?.[0]?.usageInfoList ?? [];
+          const subOrders = response?.tradeData?.subOrderList ?? [];
 
-          if (!Array.isArray(usageList) || usageList.length === 0) {
-            continue;
+          let totalKb = 0;
+
+          for (const sub of subOrders) {
+            const usageList = sub?.usageInfoList ?? [];
+
+            for (const usage of usageList) {
+              totalKb += Number(usage?.useageAmt || 0);
+            }
           }
 
-          const totalUsage = usageList.reduce((acc: number, info: { useDate: string; useageAmt: string }) => {
-            return acc + Number(info.useageAmt || 0);
-          }, 0);
-
-          const totalMb = +(totalUsage / 1024).toFixed(2);
-
-          console.log(`BILLION CONNECT SIM ${sim.id} usage ${totalMb} MB`);
+          const totalMb = +(totalKb / 1024).toFixed(2);
 
           if (sim.last_usage_quantity !== totalMb.toString()) {
             await this.prisma.sims.update({
@@ -111,10 +111,12 @@ export class JobsService {
                 last_usage_quantity: totalMb.toString(),
               },
             });
+
+            this.logger.log(`BILLION SIM ${sim.id} → ${totalMb} MB`);
           }
         }
       } catch (error) {
-        this.logger.error(`Usage update error for SIM ${sim.id}`, error);
+        this.logger.error(`SIM usage update failed for SIM ${sim.id}`, error);
       }
     }
   }
