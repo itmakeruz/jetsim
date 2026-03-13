@@ -97,6 +97,8 @@ export class JobsService {
           let totalKb = 0;
 
           for (const sub of subOrders) {
+            console.log(sub, sub.usageInfoList);
+
             const usageList = sub?.usageInfoList ?? [];
 
             for (const usage of usageList) {
