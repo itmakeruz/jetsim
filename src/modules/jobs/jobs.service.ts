@@ -35,6 +35,9 @@ export class JobsService {
         partner_id: true,
         partner_order_id: true,
       },
+      orderBy: {
+        created_at: 'desc',
+      },
     });
 
     for (const sim of sims) {
