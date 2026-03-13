@@ -19,7 +19,7 @@ export class JobsService {
     this.logger.log('Joy Tel Orders Checker CRON is working!');
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async updateUsage() {
     this.logger.log('Update sim usage!');
 
@@ -85,13 +85,14 @@ export class JobsService {
             iccid: sim.iccid,
             orderId: sim.partner_order_id,
           });
-          console.log(response);
 
           if (response?.tradeCode !== '1000') {
             continue;
           }
 
           const subOrders = response?.tradeData?.subOrderList ?? [];
+
+          console.log(response, response?.tradeData?.subOrderList);
 
           let totalKb = 0;
 
