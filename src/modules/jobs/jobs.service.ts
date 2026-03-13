@@ -84,34 +84,31 @@ export class JobsService {
             orderId: sim.partner_order_id,
           });
 
-          const tradeData = response?.tradeData;
-
-          if (!tradeData || response?.tradeCode !== '1000') {
+          if (response?.tradeCode !== '1000') {
             continue;
           }
 
-          const usageList = tradeData?.subOrderList?.[0]?.usageInfoList ?? [];
+          const usageList = response?.tradeData?.subOrderList?.[0]?.usageInfoList ?? [];
 
           if (!Array.isArray(usageList) || usageList.length === 0) {
+            this.logger.warn(`BILLION CONNECT empty usage for SIM ${sim.id}`);
             continue;
           }
 
-          const totalUsage = usageList.reduce((acc: number, info: { useDate: string; useageAmt: string }) => {
-            return acc + Number(info.useageAmt || 0);
+          const totalKb = usageList.reduce((acc: number, item: { useDate: string; useageAmt: string }) => {
+            return acc + Number(item.useageAmt || 0);
           }, 0);
 
-          const totalMb = +(totalUsage / 1024).toFixed(2);
+          const totalMb = +(totalKb / 1024).toFixed(2);
 
-          console.log(`BILLION CONNECT SIM ${sim.id} usage ${totalMb} MB`);
+          this.logger.log(`BILLION CONNECT SIM ${sim.id}: ${totalKb} KB = ${totalMb} MB`);
 
-          if (sim.last_usage_quantity !== totalMb.toString()) {
-            await this.prisma.sims.update({
-              where: { id: sim.id },
-              data: {
-                last_usage_quantity: totalMb.toString(),
-              },
-            });
-          }
+          await this.prisma.sims.update({
+            where: { id: sim.id },
+            data: {
+              last_usage_quantity: totalMb.toString(),
+            },
+          });
         }
       } catch (error) {
         this.logger.error(`Usage update error for SIM ${sim.id}`, error);
