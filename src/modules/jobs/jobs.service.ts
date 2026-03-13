@@ -92,32 +92,26 @@ export class JobsService {
 
           const subOrders = response?.tradeData?.subOrderList ?? [];
 
-          console.log(response, response?.tradeData?.subOrderList);
-
           let totalKb = 0;
 
           for (const sub of subOrders) {
-            console.log(sub, sub.usageInfoList);
-
             const usageList = sub?.usageInfoList ?? [];
 
             for (const usage of usageList) {
-              totalKb += Number(usage?.useageAmt || 0);
+              totalKb += Number(usage?.usageAmt || 0);
             }
           }
 
           const totalMb = +(totalKb / 1024).toFixed(2);
 
-          if (sim.last_usage_quantity !== totalMb.toString()) {
-            await this.prisma.sims.update({
-              where: { id: sim.id },
-              data: {
-                last_usage_quantity: totalMb.toString(),
-              },
-            });
+          console.log(`BILLION SIM ${sim.id}: ${totalKb} KB = ${totalMb} MB`);
 
-            this.logger.log(`BILLION SIM ${sim.id} → ${totalMb} MB`);
-          }
+          await this.prisma.sims.update({
+            where: { id: sim.id },
+            data: {
+              last_usage_quantity: totalMb.toString(),
+            },
+          });
         }
       } catch (error) {
         this.logger.error(`SIM usage update failed for SIM ${sim.id}`, error);
