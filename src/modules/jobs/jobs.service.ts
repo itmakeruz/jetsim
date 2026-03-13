@@ -19,7 +19,7 @@ export class JobsService {
     this.logger.log('Joy Tel Orders Checker CRON is working!');
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron('*/20 * * * *')
   async updateUsage() {
     this.logger.log('Update sim usage!');
 
