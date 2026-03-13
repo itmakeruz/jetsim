@@ -21,7 +21,8 @@ export class JobsService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async updateUsage() {
-    this.logger.log('Update sim balance!');
+    this.logger.log('Update sim usage!');
+
     const sims = await this.prisma.sims.findMany({
       where: {
         status: 'COMPLETED',
@@ -36,58 +37,84 @@ export class JobsService {
       },
     });
 
-    for (let sim of sims) {
-      if (sim.partner_id === PartnerIds.JOYTEL) {
-        const response = await this.joyTelService.getUsage({
-          coupon: sim.coupon,
-        });
-
-        const list = response?.dataUsageList;
-
-        if (!Array.isArray(list) || list.length === 0) {
-          // console.log('JOYTEL EMPTY USAGE', sim.id, list);
-          continue;
-        }
-
-        const totalBytes = list.reduce((acc, item) => acc + Number(item.usage || 0), 0);
-        const totalMb = +(totalBytes / (1024 * 1024)).toFixed(2);
-
-        // console.log(`JOYTEL USAGE: ${totalBytes} bytes = ${totalMb} MB`);
-
-        await this.prisma.sims.update({
-          where: { id: sim.id },
-          data: {
-            last_usage_quantity: totalMb.toString(),
-          },
-        });
-      }
-
-      if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
-        const response = await this.billionConnectService.getUsage({
-          iccid: sim.iccid,
-          orderId: sim?.partner_order_id,
-        });
-        // console.log(response);
-        // responses.push(response);
-        const tradeData = response?.tradeData ?? null;
-
-        if (Array.isArray(tradeData) && response?.tradeCode === '1000') {
-          const usage = response.subOrderList[0].usageInfoList?.reduce(
-            (acc: number, infoList: { usedDate: string; usageAmt: string }) => {
-              acc += Number(infoList.usedDate);
-            },
-            0,
-          );
-
-          await this.prisma.sims.update({
-            where: {
-              id: sim.id,
-            },
-            data: {
-              last_usage_quantity: usage.toString(),
-            },
+    for (const sim of sims) {
+      try {
+        /**
+         * =========================
+         * JOYTEL
+         * =========================
+         */
+        if (sim.partner_id === PartnerIds.JOYTEL) {
+          const response = await this.joyTelService.getUsage({
+            coupon: sim.coupon,
           });
+
+          const list = response?.dataUsageList;
+
+          if (!Array.isArray(list) || list.length === 0) {
+            continue;
+          }
+
+          const totalBytes = list.reduce((acc: number, item: { usage: string }) => {
+            return acc + Number(item.usage || 0);
+          }, 0);
+
+          const totalMb = +(totalBytes / (1024 * 1024)).toFixed(2);
+
+          console.log(`JOYTEL SIM ${sim.id} usage ${totalMb} MB`);
+
+          if (sim.last_usage_quantity !== totalMb.toString()) {
+            await this.prisma.sims.update({
+              where: { id: sim.id },
+              data: {
+                last_usage_quantity: totalMb.toString(),
+              },
+            });
+          }
         }
+
+        /**
+         * =========================
+         * BILLION CONNECT
+         * =========================
+         */
+        if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
+          const response = await this.billionConnectService.getUsage({
+            iccid: sim.iccid,
+            orderId: sim.partner_order_id,
+          });
+
+          const tradeData = response?.tradeData;
+
+          if (!tradeData || response?.tradeCode !== '1000') {
+            continue;
+          }
+
+          const usageList = tradeData?.subOrderList?.[0]?.usageInfoList ?? [];
+
+          if (!Array.isArray(usageList) || usageList.length === 0) {
+            continue;
+          }
+
+          const totalUsage = usageList.reduce((acc: number, info: { useDate: string; useageAmt: string }) => {
+            return acc + Number(info.useageAmt || 0);
+          }, 0);
+
+          const totalMb = +(totalUsage / 1024).toFixed(2);
+
+          console.log(`BILLION CONNECT SIM ${sim.id} usage ${totalMb} MB`);
+
+          if (sim.last_usage_quantity !== totalMb.toString()) {
+            await this.prisma.sims.update({
+              where: { id: sim.id },
+              data: {
+                last_usage_quantity: totalMb.toString(),
+              },
+            });
+          }
+        }
+      } catch (error) {
+        this.logger.error(`Usage update error for SIM ${sim.id}`, error);
       }
     }
   }
