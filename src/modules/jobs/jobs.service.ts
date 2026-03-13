@@ -85,6 +85,7 @@ export class JobsService {
             iccid: sim.iccid,
             orderId: sim.partner_order_id,
           });
+          console.log(response);
 
           if (response?.tradeCode !== '1000') {
             continue;
