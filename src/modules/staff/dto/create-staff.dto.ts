@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Status, UserRoles } from '@prisma/client';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateStaffDto {
   @ApiProperty({ type: String, required: true, example: 'Test test test' })
@@ -18,9 +18,9 @@ export class CreateStaffDto {
   @IsString()
   password: string;
 
-  @ApiProperty({ type: String, required: true, example: 'Test', enum: UserRoles })
+  @ApiProperty({ type: String, required: true, example: UserRoles.AGENT, enum: UserRoles })
   @IsNotEmpty()
-  @IsString()
+  @IsEnum(UserRoles)
   role: UserRoles;
 
   @ApiProperty({ type: String, required: true, example: 'Test', enum: Status })

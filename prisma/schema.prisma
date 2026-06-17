@@ -25,10 +25,11 @@ model User {
   about        String?
   image        String?
 
-  transaction Transaction[]
-  basket      Basket[]
-  orders      Order[]
-  sims        Sims[]
+  transaction  Transaction[]
+  basket       Basket[]
+  orders       Order[]
+  sims         Sims[]
+  promo_usages PromoUsage[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -43,6 +44,10 @@ model Staff {
   password String
   role     UserRoles?
   status   Status
+
+  promo_codes           PromoCode[]          @relation("promo_code_agent")
+  created_promo_codes   PromoCode[]          @relation("promo_code_creator")
+  agent_balance_ledgers AgentBalanceLedger[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -107,8 +112,9 @@ model Transaction {
   user  User?  @relation(fields: [user_id], references: [id])
   order Order? @relation(fields: [order_id], references: [id])
 
-  request  Json?
-  response Json?
+  request     Json?
+  response    Json?
+  promo_usage PromoUsage?
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -235,6 +241,7 @@ model Order {
   user         User          @relation(fields: [user_id], references: [id])
   sims         Sims[]
   transactions Transaction[]
+  promo_usage  PromoUsage?
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -289,6 +296,93 @@ model Faq {
   @@map("faqs")
 }
 
+model PromoSettings {
+  id                             Int                    @id @default(1)
+  default_client_discount_amount Int?
+  default_agent_credit_amount    Int?
+  is_agent_creation_enabled      Boolean?
+  agent_creation_mode            PromoCodeCreationMode?
+  allow_limit_once               Boolean?
+  allow_limit_unlimited          Boolean?
+  allow_limit_custom             Boolean?
+  allow_no_expiry                Boolean?
+  allow_expires_at               Boolean?
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+
+  @@map("promo_settings")
+}
+
+model PromoCode {
+  id                     Int                   @id @default(autoincrement())
+  code                   String                @unique
+  status                 Status                @default(ACTIVE)
+  creation_mode          PromoCodeCreationMode
+  usage_limit            Int?
+  used_count             Int                   @default(0)
+  expires_at             DateTime?             @db.Timestamptz(5)
+  client_discount_amount Int
+  agent_credit_amount    Int                   @default(0)
+  agent_id               Int?
+  created_by_staff_id    Int?
+
+  agent            Staff?       @relation("promo_code_agent", fields: [agent_id], references: [id], onDelete: SetNull)
+  created_by_staff Staff?       @relation("promo_code_creator", fields: [created_by_staff_id], references: [id], onDelete: SetNull)
+  usages           PromoUsage[]
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+
+  @@index([agent_id])
+  @@index([status])
+  @@map("promo_code")
+}
+
+model PromoUsage {
+  id                  Int              @id @default(autoincrement())
+  promo_code_id       Int
+  user_id             Int
+  transaction_id      Int?             @unique
+  order_id            Int?             @unique
+  status              PromoUsageStatus @default(PENDING)
+  discount_amount     Int
+  agent_credit_amount Int              @default(0)
+  confirmed_at        DateTime?        @db.Timestamptz(5)
+  canceled_at         DateTime?        @db.Timestamptz(5)
+
+  promo_code  PromoCode           @relation(fields: [promo_code_id], references: [id])
+  user        User                @relation(fields: [user_id], references: [id])
+  transaction Transaction?        @relation(fields: [transaction_id], references: [id])
+  order       Order?              @relation(fields: [order_id], references: [id])
+  ledger      AgentBalanceLedger?
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+
+  @@index([promo_code_id])
+  @@index([user_id])
+  @@map("promo_usage")
+}
+
+model AgentBalanceLedger {
+  id             Int                      @id @default(autoincrement())
+  agent_id       Int
+  promo_usage_id Int                      @unique
+  amount         Int
+  type           AgentBalanceLedgerType   @default(CREDIT)
+  status         AgentBalanceLedgerStatus @default(CONFIRMED)
+
+  agent       Staff      @relation(fields: [agent_id], references: [id], onDelete: Cascade)
+  promo_usage PromoUsage @relation(fields: [promo_usage_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+
+  @@index([agent_id])
+  @@map("agent_balance_ledger")
+}
+
 enum Status {
   ACTIVE
   INACTIVE
@@ -327,6 +421,28 @@ enum UserRoles {
   ADMIN
   ACCOUNTANT
   PRE_ACCOUNTANT
+  AGENT
+}
+
+enum PromoCodeCreationMode {
+  AUTO
+  MANUAL
+  BOTH
+}
+
+enum PromoUsageStatus {
+  PENDING
+  CONFIRMED
+  CANCELED
+}
+
+enum AgentBalanceLedgerType {
+  CREDIT
+}
+
+enum AgentBalanceLedgerStatus {
+  CONFIRMED
+  CANCELED
 }
 
 enum TariffType {

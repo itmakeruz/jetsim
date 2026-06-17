@@ -79,6 +79,7 @@ export class AuthService {
         role: true,
         name: true,
         password: true,
+        status: true,
       },
     });
 
@@ -92,6 +93,7 @@ export class AuthService {
       name: user?.name,
       password: user?.password,
       role: user?.role,
+      status: user?.status,
     };
   }
 
@@ -100,6 +102,10 @@ export class AuthService {
 
     if (!staff) {
       throw new NotFoundException(invalid_password[lang]);
+    }
+
+    if (staff.status !== 'ACTIVE') {
+      throw new UnauthorizedException(invalid_password[lang]);
     }
 
     const isMatch = await bcrypt.compare(data.password, staff.password);
@@ -111,8 +117,7 @@ export class AuthService {
     const accessToken = this.jwtService.sign(
       {
         id: staff?.id,
-        uuid: staff.id,
-        role: staff?.role,
+        type: 'staff',
       },
       { secret: JWT_ACCESS_SECRET },
     );
@@ -184,8 +189,7 @@ export class AuthService {
     const accessToken = this.jwtService.sign(
       {
         id: user?.id,
-        uuid: user.id,
-        email: user?.email,
+        type: 'user',
       },
       { secret: JWT_ACCESS_SECRET },
     );

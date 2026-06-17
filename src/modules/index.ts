@@ -11,6 +11,7 @@ export * from './prisma';
 export * from './gateway';
 export * from './payment';
 export * from './partner';
+export * from './promocode';
 export * from './support';
 export * from './dashboard';
 export * from './transaction';

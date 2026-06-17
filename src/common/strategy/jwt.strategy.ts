@@ -20,6 +20,34 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
   async validate(payload: IUser) {
+    if (payload?.type === 'staff' || payload?.role) {
+      const staffExists = await this.prisma.staff.findUnique({
+        where: {
+          id: payload.id,
+        },
+        select: {
+          id: true,
+          login: true,
+          role: true,
+          status: true,
+        },
+      });
+
+      if (!staffExists || staffExists.status !== 'ACTIVE') {
+        throw new UnauthorizedException(unauthorized_error['ru']);
+      }
+
+      const role = staffExists.role;
+
+      return {
+        id: staffExists.id,
+        login: staffExists.login,
+        type: 'staff',
+        role,
+        roles: role ? [role] : [],
+      };
+    }
+
     const userExists = await this.prisma.user.findUnique({
       where: {
         id: payload.id,
@@ -32,6 +60,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     return {
       id: userExists.id,
       email: userExists.email,
+      type: 'user',
+      roles: ['USER'],
     };
   }
 

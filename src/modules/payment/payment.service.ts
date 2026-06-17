@@ -9,7 +9,7 @@ import { OrderStatus, Status, TransactionStatus } from '@prisma/client';
 import { OrderService } from '../order/order.service';
 import { GatewayGateway } from '../gateway';
 import { PartnerIds } from '@enums';
-import { MyLogger } from 'src/logging/logger.service';
+import { PromoCodeService } from '../promocode';
 
 @Injectable()
 export class PaymentService {
@@ -19,6 +19,7 @@ export class PaymentService {
     private readonly TbankService: TBank,
     private readonly orderService: OrderService,
     private readonly socketGateway: GatewayGateway,
+    private readonly promoCodeService: PromoCodeService,
   ) {}
 
   async create(userId: number, lang: string) {
@@ -83,7 +84,7 @@ export class PaymentService {
     };
   }
 
-  async getPaymentInfos(userId: number, lang: string) {
+  async getPaymentInfos(userId: number, lang: string, promoCode?: string) {
     const basket = await this.prisma.basket.findFirst({
       where: {
         user_id: userId,
@@ -117,19 +118,23 @@ export class PaymentService {
       },
     });
 
-    if (!basket) {
+    if (!basket || basket.items.length === 0) {
       throw new BadRequestException(basket_empty[lang]);
     }
 
     const totalAmount = basket.items.reduce((sum, item) => {
-      const itemPrice = item.price;
+      const itemPrice = item.price ?? item.tariff?.price_sell ?? 0;
       return sum + itemPrice * item.quantity;
     }, 0);
+    const promo = await this.promoCodeService.validateCodeForPayment(userId, promoCode, totalAmount);
+    const discountAmount = promo?.discount_amount ?? 0;
+    const finalAmount = totalAmount - discountAmount;
+    const receiptItems = this.buildReceiptItems(basket.items, discountAmount, finalAmount);
 
     // Transaction, Order, SIMlar – bitta basket o‘qishda
     const transaction = await this.prisma.transaction.create({
       data: {
-        amount: totalAmount.toString(),
+        amount: finalAmount.toString(),
         user_id: basket.user.id,
       },
       select: { id: true },
@@ -147,6 +152,13 @@ export class PaymentService {
     await this.prisma.transaction.update({
       where: { id: transaction.id },
       data: { order_id: order.id },
+    });
+
+    await this.promoCodeService.createPendingUsage({
+      promo,
+      userId: basket.user.id,
+      transactionId: transaction.id,
+      orderId: order.id,
     });
 
     for (const item of basket.items) {
@@ -169,20 +181,23 @@ export class PaymentService {
 
     return {
       data: {
-        items: basket?.items?.map((item) => ({
-          Name: `Услуга доступа к интернету ${item?.tariff?.name_ru}`,
-          Price: item?.tariff?.price_sell,
-          Quantity: item?.quantity,
-          Amount: item?.tariff?.price_sell * item?.quantity,
-          Tax: TaxValues.NONE,
-        })),
+        items: receiptItems,
         user: {
           id: basket?.user.id,
           email: basket.user.email,
         },
         order: {
-          totalAmount: totalAmount,
+          totalAmount: finalAmount,
+          originalAmount: totalAmount,
+          discountAmount,
         },
+        promo: promo
+          ? {
+              code: promo.code,
+              discount_amount: discountAmount,
+              agent_credit_amount: promo.agent_credit_amount,
+            }
+          : null,
         transaction: {
           transactionId: transaction.id,
         },
@@ -190,27 +205,20 @@ export class PaymentService {
     };
   }
 
-  async preparePayment(userId: number, lang: string) {
-    const { data } = await this.getPaymentInfos(userId, lang);
-
-    const paymentPayload = {
-      Amount: data?.order?.totalAmount,
-      OrderId: data?.transaction.transactionId,
-      Description: `Оплата eSIM-карты на ${data?.order?.totalAmount / 100}`,
-      // DATA: {
-      //   Email: data?.user?.email,
-      // },
-      Receipt: {
-        Email: data?.user?.email ?? 'ravshanovtohir11@gmail.com',
-        // "Phone": "+79031234567",
-        Taxation: 'usn_income_outcome', //aniqlab to'girlash kere bo'ladi
-        Items: data?.items,
-      },
-    };
+  async preparePayment(userId: number, lang: string, promoCode?: string) {
+    const { data } = await this.getPaymentInfos(userId, lang, promoCode);
+    const paymentPayload = this.buildPaymentPayload(data);
 
     await this.prisma.transaction.update({
       where: { id: data.transaction.transactionId },
-      data: { request: JSON.stringify(paymentPayload) },
+      data: {
+        request: JSON.stringify({
+          ...paymentPayload,
+          promo: data.promo,
+          originalAmount: data.order.originalAmount,
+          discountAmount: data.order.discountAmount,
+        }),
+      },
     });
 
     // Log request/response as structured objects so they are readable in log dashboard
@@ -219,7 +227,20 @@ export class PaymentService {
     //   payload: paymentPayload,
     // });
 
-    const response = await this.TbankService.initPayment(paymentPayload);
+    let response;
+    try {
+      response = await this.TbankService.initPayment(paymentPayload);
+    } catch (error) {
+      await this.prisma.transaction.update({
+        where: { id: data.transaction.transactionId },
+        data: {
+          status: TransactionStatus.ERROR,
+          updated_at: new Date(),
+        },
+      });
+      await this.promoCodeService.cancelUsageByTransaction(data.transaction.transactionId);
+      throw error;
+    }
 
     // this.logger.log({
     //   message: 'RESPONSE FROM GENERATE PAYMENT URL',
@@ -231,10 +252,10 @@ export class PaymentService {
         where: { id: data.transaction.transactionId },
         data: {
           status: TransactionStatus.ERROR,
-          request: JSON.stringify(paymentPayload),
           updated_at: new Date(),
         },
       });
+      await this.promoCodeService.cancelUsageByTransaction(data.transaction.transactionId);
       throw new BadRequestException(response?.Details ? response?.Details : response?.Message);
     }
     return {
@@ -303,6 +324,7 @@ export class PaymentService {
           updated_at: new Date(),
         },
       });
+      await this.promoCodeService.cancelUsageByTransaction(existTransactionId);
       return 'OK';
     }
 
@@ -328,6 +350,8 @@ export class PaymentService {
 
       // 4. Order yaratish (faqat winner keladi bu yerga)
       if (existTransaction.user?.id) {
+        await this.promoCodeService.confirmUsageByTransaction(existTransaction.id);
+
         // try {
         //   await this.prisma.order.create({
         //     data: {
@@ -399,5 +423,43 @@ export class PaymentService {
 
   remove(id: number) {
     return `This action removes a #${id} payment`;
+  }
+
+  private buildReceiptItems(items: any[], discountAmount: number, finalAmount: number) {
+    if (discountAmount > 0) {
+      return [
+        {
+          Name: 'Услуга доступа к интернету eSIM',
+          Price: finalAmount,
+          Quantity: 1,
+          Amount: finalAmount,
+          Tax: TaxValues.NONE,
+        },
+      ];
+    }
+
+    return items.map((item) => {
+      const price = item.price ?? item?.tariff?.price_sell ?? 0;
+      return {
+        Name: `Услуга доступа к интернету ${item?.tariff?.name_ru}`,
+        Price: price,
+        Quantity: item?.quantity,
+        Amount: price * item?.quantity,
+        Tax: TaxValues.NONE,
+      };
+    });
+  }
+
+  private buildPaymentPayload(data: any) {
+    return {
+      Amount: data?.order?.totalAmount,
+      OrderId: data?.transaction.transactionId,
+      Description: `Оплата eSIM-карты на ${data?.order?.totalAmount / 100}`,
+      Receipt: {
+        Email: data?.user?.email ?? 'ravshanovtohir11@gmail.com',
+        Taxation: 'usn_income_outcome',
+        Items: data?.items,
+      },
+    };
   }
 }

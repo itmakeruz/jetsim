@@ -1,11 +1,12 @@
 import { Controller, Post, Body, Patch, Param, Delete, Req, UseGuards } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { UpdatePaymentDto } from './dto';
-import { ParamId } from '@enums';
+import { DeviceHeadersDto, ParamId } from '@enums';
 import { IRequest } from '@interfaces';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { TBankWebHookResponse } from '@constants';
+import { HeadersValidation } from '@decorators';
 
 @Controller('payment')
 export class PaymentController {
@@ -30,8 +31,12 @@ export class PaymentController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Post('prepare-payment')
-  async preparePayment(@Req() request: IRequest, @Body() data: any) {
-    return this.paymentService.preparePayment(request?.user?.id, data);
+  async preparePayment(
+    @Req() request: IRequest,
+    @Body() data: { promo_code?: string },
+    @HeadersValidation() headers: DeviceHeadersDto,
+  ) {
+    return this.paymentService.preparePayment(request?.user?.id, headers.lang, data?.promo_code);
   }
 
   // @Post('accept-payment-test')

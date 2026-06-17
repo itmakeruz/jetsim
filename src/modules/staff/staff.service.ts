@@ -1,6 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateStaffDto, UpdateStaffDto } from './dto';
-import { prisma } from '@helpers';
 import { PrismaService } from '@prisma';
 import * as bcrypt from 'bcrypt';
 import { Status } from '@prisma/client';
@@ -10,7 +9,7 @@ export class StaffService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll() {
-    const staffs = await prisma.staff.findMany();
+    const staffs = await this.prisma.staff.findMany();
     return {
       success: true,
       message: '',
@@ -19,7 +18,7 @@ export class StaffService {
   }
 
   async findOne(id: number) {
-    const staff = await prisma.staff.findUnique({
+    const staff = await this.prisma.staff.findUnique({
       where: {
         id: id,
       },
@@ -38,7 +37,7 @@ export class StaffService {
 
   async create(data: CreateStaffDto) {
     const saltOrRounds = 10;
-    const staffExists = await prisma.staff.findFirst({
+    const staffExists = await this.prisma.staff.findFirst({
       where: {
         login: data?.login,
       },
