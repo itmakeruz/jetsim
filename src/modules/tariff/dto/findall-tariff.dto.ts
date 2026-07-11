@@ -32,6 +32,15 @@ class TariffSort {
 }
 
 export class GetTarifftDto extends PaginationOptionalDto {
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: 'Search by tariff name/title/sku in admin list',
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

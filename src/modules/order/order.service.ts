@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
 import { PrismaService } from '@prisma';
-import { OrderStatus, Status } from '@prisma/client';
+import { OrderStatus, Prisma, Status, TransactionStatus } from '@prisma/client';
 import { BillionConnectService, JoyTel } from '@http';
 import { PartnerIds } from '@enums';
 import {
@@ -35,75 +35,170 @@ export class OrderService {
     private readonly createSimsService: CreateSimService,
   ) {}
   async findAll(query: GetOrderDto) {
+    const select = this.getAdminOrderSelect();
+    const where = this.buildAdminOrderWhere(query);
+
     const { data, ...meta } = await paginate('order', {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
       sort: query?.sort,
-      select: {
-        id: true,
-        status: true,
-        sims: {
-          select: {
-            id: true,
-            iccid: true,
-            pin_1: true,
-            puk_1: true,
-            qrcode: true,
-            tariff: {
-              select: {
-                id: true,
-                name_en: true,
-                name_ru: true,
-                quantity_sms: true,
-                quantity_minute: true,
-                quantity_internet: true,
-                validity_period: true,
-                price_sell: true,
-              },
-            },
-            created_at: true,
-          },
-        },
-        created_at: true,
-      },
-      where: {
-        id: query.id,
-      },
+      select,
+      where,
     });
 
     return {
       success: true,
       message: 'success',
-      data: data?.map((order: any) => {
+      data: data?.map((order: any) => this.mapAdminOrder(order)),
+      ...meta,
+    };
+  }
+
+  private getAdminOrderSelect(): Prisma.OrderSelect {
+    return {
+      id: true,
+      status: true,
+      transactions: {
+        select: {
+          id: true,
+          amount: true,
+          status: true,
+          created_at: true,
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+      },
+      sims: {
+        select: {
+          id: true,
+          iccid: true,
+          pin_1: true,
+          puk_1: true,
+          qrcode: true,
+          status: true,
+          tariff: {
+            select: {
+              id: true,
+              name_en: true,
+              name_ru: true,
+              quantity_sms: true,
+              quantity_minute: true,
+              quantity_internet: true,
+              validity_period: true,
+              price_sell: true,
+            },
+          },
+          created_at: true,
+        },
+      },
+      created_at: true,
+    };
+  }
+
+  private buildAdminOrderWhere(query: GetOrderDto): Prisma.OrderWhereInput {
+    const where: Prisma.OrderWhereInput = {};
+
+    if (query?.id) {
+      where.id = query.id;
+    }
+
+    if (query?.status) {
+      where.status = query.status;
+    }
+
+    const createdAt = this.buildCreatedAtFilter(query);
+    if (createdAt) {
+      where.created_at = createdAt;
+    }
+
+    return where;
+  }
+
+  private buildCreatedAtFilter(query: GetOrderDto): Prisma.DateTimeFilter | null {
+    if (!query?.date_from && !query?.date_to) {
+      return null;
+    }
+
+    const createdAt: Prisma.DateTimeFilter = {};
+
+    if (query.date_from) {
+      createdAt.gte = this.parseDateFilter(query.date_from, false);
+    }
+
+    if (query.date_to) {
+      createdAt.lte = this.parseDateFilter(query.date_to, true);
+    }
+
+    if (createdAt.gte && createdAt.lte && createdAt.gte > createdAt.lte) {
+      throw new BadRequestException('date_from must be less than or equal to date_to');
+    }
+
+    return createdAt;
+  }
+
+  private parseDateFilter(value: string, endOfDay: boolean): Date {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const time = endOfDay ? '23:59:59.999' : '00:00:00.000';
+      return new Date(`${value}T${time}+05:00`);
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestException('Invalid date filter');
+    }
+
+    return date;
+  }
+
+  private getOrderTotalAmount(order: any): number {
+    const transaction =
+      order?.transactions?.find((item: any) => item?.status === TransactionStatus.SUCCESS) || order?.transactions?.[0];
+    const amount = Number(transaction?.amount || 0);
+
+    return Number.isFinite(amount) ? amount / 100 : 0;
+  }
+
+  private mapAdminOrder(order: any) {
+    const transaction =
+      order?.transactions?.find((item: any) => item?.status === TransactionStatus.SUCCESS) || order?.transactions?.[0];
+
+    return {
+      id: order?.id,
+      status: order?.status,
+      sim_count: order?.sims?.length ?? 0,
+      total_amount: this.getOrderTotalAmount(order),
+      transaction: transaction
+        ? {
+            id: transaction?.id,
+            status: transaction?.status,
+            amount: this.getOrderTotalAmount({ transactions: [transaction] }),
+            created_at: transaction?.created_at,
+          }
+        : null,
+      created_at: order?.created_at,
+      sims: order?.sims?.map((sim: any) => {
         return {
-          id: order?.id,
-          status: order?.status,
-          created_at: order?.created_at,
-          sims: order?.sims?.map((sim: any) => {
-            return {
-              id: sim?.id,
-              iccid: sim?.iccid,
-              pin_1: sim?.pin_1,
-              puk_1: sim?.puk_1,
-              status: sim?.status,
-              tariff: {
-                id: sim?.tariff?.id,
-                name_ru: sim?.tariff?.name_ru,
-                name_en: sim?.tariff?.name_en,
-                quantity_sms: sim?.tariff?.quantity_sms,
-                quantity_minute: sim?.tariff?.quantity_minute,
-                quantity_internet: sim?.tariff?.quantity_internet,
-                validity_period: sim?.tariff?.validity_period,
-                price_sell: sim?.tariff?.price_sell / 100,
-              },
-              created_at: sim?.created_at,
-              day_left: getRemainingDays(sim?.created_at, sim?.tariff?.validity_period),
-            };
-          }),
+          id: sim?.id,
+          iccid: sim?.iccid,
+          pin_1: sim?.pin_1,
+          puk_1: sim?.puk_1,
+          status: sim?.status,
+          tariff: {
+            id: sim?.tariff?.id,
+            name_ru: sim?.tariff?.name_ru,
+            name_en: sim?.tariff?.name_en,
+            quantity_sms: sim?.tariff?.quantity_sms,
+            quantity_minute: sim?.tariff?.quantity_minute,
+            quantity_internet: sim?.tariff?.quantity_internet,
+            validity_period: sim?.tariff?.validity_period,
+            price_sell: sim?.tariff?.price_sell / 100,
+          },
+          created_at: sim?.created_at,
+          day_left: getRemainingDays(sim?.created_at, sim?.tariff?.validity_period),
         };
       }),
-      ...meta,
     };
   }
 

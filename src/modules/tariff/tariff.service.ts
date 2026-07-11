@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CreateTariffDto, GetTarifftDto, UpdateTariffDto } from './dto';
 import { paginate } from '@helpers';
 import { PrismaService } from '@prisma';
-import { Status } from '@prisma/client';
+import { Prisma, Status } from '@prisma/client';
 import {
   tariff_not_found,
   tariff_create_success,
@@ -104,16 +104,28 @@ export class TariffService {
   }
 
   async findAllAdmin(query: GetTarifftDto) {
+    const search = query?.search?.trim();
+    const where: Prisma.TariffWhereInput = {
+      deleted_at: {
+        equals: null,
+      },
+      ...(search && {
+        OR: [
+          { name_ru: { contains: search, mode: 'insensitive' } },
+          { name_en: { contains: search, mode: 'insensitive' } },
+          { title_ru: { contains: search, mode: 'insensitive' } },
+          { title_en: { contains: search, mode: 'insensitive' } },
+          { sku_id: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
     const tariffs = await paginate('tariff', {
       page: query?.page,
       size: query?.size,
       filter: query?.filters,
       sort: query?.sort,
-      where: {
-        deleted_at: {
-          equals: null,
-        },
-      },
+      where,
       select: {
         id: true,
         name_ru: true,

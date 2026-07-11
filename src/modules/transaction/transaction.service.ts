@@ -9,6 +9,31 @@ import { Prisma } from '@prisma/client';
 export class TransactionService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private formatTashkentDate(value?: Date | string | null): string {
+    if (!value) {
+      return '';
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    return new Intl.DateTimeFormat('ru-RU', {
+      timeZone: 'Asia/Tashkent',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+      .format(date)
+      .replace(',', '');
+  }
+
   private buildWhereFromQuery(query: GetTransactionDto): Prisma.TransactionWhereInput {
     const andConditions: Prisma.TransactionWhereInput[] = [];
 
@@ -110,7 +135,7 @@ export class TransactionService {
       user_phone: item.user?.phone_number ?? '',
       order_id: item.order_id ?? '',
       partner_transaction_id: item.partner_transaction_id ?? '',
-      created_at: item.created_at ? new Date(item.created_at).toISOString() : '',
+      created_at: this.formatTashkentDate(item.created_at),
     }));
 
     const columns = [
@@ -122,7 +147,7 @@ export class TransactionService {
       { header: 'Телефон', key: 'user_phone', width: 18 },
       { header: 'Order ID', key: 'order_id', width: 10 },
       { header: 'Partner Transaction ID', key: 'partner_transaction_id', width: 22 },
-      { header: 'Дата', key: 'created_at', width: 22 },
+      { header: 'Дата (Ташкент)', key: 'created_at', width: 24 },
     ];
 
     return generateExcel(excelData, columns, 'Оч');
