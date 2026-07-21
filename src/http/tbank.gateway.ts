@@ -56,6 +56,10 @@ export class TBank {
 
     // Token faqat primitive root-level maydonlar bo‘yicha yaratiladi
     for (const key of Object.keys(payload)) {
+      if (key === 'Token') {
+        continue;
+      }
+
       const val = payload[key];
 
       if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
