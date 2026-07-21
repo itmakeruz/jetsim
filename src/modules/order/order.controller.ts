@@ -9,8 +9,6 @@ import {
   Req,
   Query,
   UseGuards,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
@@ -124,7 +122,6 @@ export class OrderController {
    * Joytel callback endpoint
    */
   @Post('joytel/callback')
-  @HttpCode(HttpStatus.OK)
   async redeemCoupon(@Body() data: any) {
     return this.orderService.redeemCoupon(data);
   }
@@ -133,13 +130,11 @@ export class OrderController {
    * Joytel Notify callback endpoint
    */
   @Post('notify/coupon/redeem')
-  @HttpCode(HttpStatus.OK)
   async notifyCoupon(@Body() data: any) {
     return this.orderService.notifyCoupon(data);
   }
 
   @Post('bc/callback')
-  @HttpCode(HttpStatus.OK)
   async bcCallback(@Body() data: BillionConnectCallbackResponse) {
     return this.orderService.bcCallback(data);
   }
