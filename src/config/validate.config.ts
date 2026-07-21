@@ -111,15 +111,15 @@ class EnvironmentVariables {
   @IsString()
   TBANK_URL: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   TBANK_TERMINAL_ID: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   TBANK_WEBHOOK_URL: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   TBANK_PASSWORD: string;
 

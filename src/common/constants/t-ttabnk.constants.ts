@@ -32,5 +32,5 @@ export interface TBankWebHookResponse {
   CardId: number;
   Pan: string;
   ExpDate: string;
-  Token: ['REDACTED'];
+  Token: string;
 }

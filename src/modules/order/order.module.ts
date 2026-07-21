@@ -12,5 +12,6 @@ import { CreateSimService } from './create-sim/create-sim.service';
   imports: [PrismaModule, HttpModule],
   controllers: [OrderController],
   providers: [OrderService, JoyTel, QrService, WinstonLoggerService, TelegramBotService, CreateSimService],
+  exports: [OrderService],
 })
 export class OrderModule {}

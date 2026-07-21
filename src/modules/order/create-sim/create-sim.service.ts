@@ -18,7 +18,12 @@ export class CreateSimService {
   ) {}
 
   async processJoyTel(order_id: number, user_id: number, item: any) {
-    let error: any;
+    const claimed = await this.claimSim(item.id);
+    if (!claimed) {
+      return true;
+    }
+
+    let providerResponse: any;
     // const sim = await this.prisma.sims.create({
     //   data: {
     //     user_id: user_id,
@@ -52,8 +57,8 @@ export class CreateSimService {
       console.log(response);
 
       if (response?.code !== 0) {
-        error = response;
-        throw new Error();
+        providerResponse = response;
+        throw new Error(response?.message ?? response?.mesg ?? 'JoyTel order request failed');
       }
 
       await this.prisma.sims.update({
@@ -82,13 +87,21 @@ export class CreateSimService {
       //   providerOrderId: response?.data?.orderTid,
       //   response,
       // });
+      return true;
     } catch (e) {
-      await this.failSim(item.id, error, PartnerIds.JOYTEL, item.order_id);
+      const errorResponse = this.normalizeProviderError(e, providerResponse);
+      await this.failSim(item.id, errorResponse, PartnerIds.JOYTEL);
+      return false;
     }
   }
 
   async processBillion(order_id: number, user_id: number, item) {
-    let error: any;
+    const claimed = await this.claimSim(item.id);
+    if (!claimed) {
+      return true;
+    }
+
+    let providerResponse: any;
     // const sim = await this.prisma.sims.create({
     //   data: {
     //     user_id: user_id,
@@ -136,9 +149,9 @@ export class CreateSimService {
 
       this.logger.log('BC INIT ORDER RESPONSE: ', response);
 
-      if (response.tradeCode !== '1000' && response.tradeData?.successFlag !== 'true') {
-        error = response;
-        throw new Error();
+      if (response?.tradeCode !== '1000' || response?.tradeData?.successFlag !== 'true') {
+        providerResponse = response;
+        throw new Error(response?.tradeMsg ?? 'BillionConnect order request failed');
       }
 
       await this.prisma.sims.update({
@@ -164,14 +177,44 @@ export class CreateSimService {
       //   providerOrderId: response?.tradeData?.orderId ?? response?.data?.orderTid,
       //   response,
       // });
+      return true;
     } catch (e) {
-      console.log(error ?? e);
-
-      await this.failSim(item.id, error, PartnerIds.BILLION_CONNECT, item.order_id);
+      const errorResponse = this.normalizeProviderError(e, providerResponse);
+      console.log(errorResponse);
+      await this.failSim(item.id, errorResponse, PartnerIds.BILLION_CONNECT);
+      return false;
     }
   }
 
-  private async failSim(simId: number, response: any, partnerId: number, orderId: number) {
+  private async claimSim(simId: number) {
+    const claimed = await this.prisma.sims.updateMany({
+      where: {
+        id: simId,
+        status: OrderStatus.CREATED,
+      },
+      data: {
+        status: OrderStatus.PENDING,
+        updated_at: new Date(),
+      },
+    });
+
+    return claimed.count === 1;
+  }
+
+  private normalizeProviderError(error: any, response?: any) {
+    if (response) {
+      return response;
+    }
+
+    return {
+      name: error?.name ?? 'ProviderError',
+      message: error?.message ?? String(error ?? 'Unknown provider error'),
+      code: error?.code ?? error?.response?.status ?? null,
+      details: error?.response?.data ?? null,
+    };
+  }
+
+  private async failSim(simId: number, response: any, partnerId: number) {
     const sim = await this.prisma.sims.update({
       where: {
         id: simId,
@@ -202,7 +245,7 @@ export class CreateSimService {
         name: sim.user.name,
         email: sim.user.email,
       },
-      errorCode: response?.tradeCode ?? response?.code,
+      errorCode: response?.tradeCode ?? response?.code ?? 'PROVIDER_ERROR',
       providerOrderId: response?.tradeData?.orderId,
       response,
     });

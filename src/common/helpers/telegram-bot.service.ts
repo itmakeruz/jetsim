@@ -11,6 +11,7 @@ export enum PartnerIds {
 export class TelegramBotService {
   private readonly bot: TelegramBotAPI;
   private readonly logger = new Logger(TelegramBotService.name);
+  private readonly notificationChatId = '-5179566420';
 
   constructor() {
     this.bot = new TelegramBotAPI(TELEGRAM_BOT_TOKEN, { polling: false });
@@ -69,7 +70,7 @@ export class TelegramBotService {
 ${formattedResponse}
 `;
 
-    await this.send(message);
+    await this.send(message, 'Markdown');
   }
 
   public async notifyOrderError(params: {
@@ -100,11 +101,10 @@ ${formattedResponse}
 ⚠️ Ошибка:
 • Error Code: ${params.errorCode}
 • Order ID: ${params.providerOrderId ?? '—'}
-• Error Message: ${params.response?.tradeMsg ?? '—'}
+• Error Message: ${params.response?.tradeMsg ?? params.response?.message ?? '—'}
 
 📄 Ответ:
 ${formattedResponse}
-'
 `;
 
     await this.send(message);
@@ -162,11 +162,9 @@ ${formattedResponse}
     return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
-  private async send(message: string) {
+  private async send(message: string, parseMode?: 'Markdown' | 'HTML') {
     try {
-      await this.bot.sendMessage('7646452005', message, {
-        parse_mode: 'Markdown',
-      });
+      await this.bot.sendMessage(this.notificationChatId, message, parseMode ? { parse_mode: parseMode } : {});
 
       this.logger.log(`Сообщение отправлено администратору.`);
     } catch (error) {
@@ -177,7 +175,7 @@ ${formattedResponse}
   private async sendPhoto(photo: Buffer, caption: string) {
     try {
       await this.bot.sendPhoto(
-        '-5179566420',
+        this.notificationChatId,
         photo,
         {
           caption: caption.trim(),

@@ -4,6 +4,8 @@ import { WinstonLoggerService } from '@logger';
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@prisma';
+import { OrderStatus, TransactionStatus } from '@prisma/client';
+import { OrderService } from '../order/order.service';
 
 @Injectable()
 export class JobsService {
@@ -12,11 +14,57 @@ export class JobsService {
     private readonly prisma: PrismaService,
     private readonly joyTelService: JoyTel,
     private readonly billionConnectService: BillionConnectService,
+    private readonly orderService: OrderService,
   ) {}
+
+  private isProcessingConfirmedPayments = false;
 
   @Cron(CronExpression.EVERY_12_HOURS)
   async updateBalance() {
     this.logger.log('Joy Tel Orders Checker CRON is working!');
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async processPendingConfirmedPayments() {
+    if (this.isProcessingConfirmedPayments) {
+      return;
+    }
+
+    this.isProcessingConfirmedPayments = true;
+
+    try {
+      const transactions = await this.prisma.transaction.findMany({
+        where: {
+          status: TransactionStatus.SUCCESS,
+          user_id: { not: null },
+          order: {
+            sims: {
+              some: {
+                status: OrderStatus.CREATED,
+              },
+            },
+          },
+        },
+        select: {
+          id: true,
+          user_id: true,
+        },
+        orderBy: {
+          created_at: 'asc',
+        },
+        take: 20,
+      });
+
+      for (const transaction of transactions) {
+        try {
+          await this.orderService.create(transaction.user_id, transaction.id);
+        } catch (error) {
+          this.logger.error(`Confirmed payment recovery failed for transaction ${transaction.id}`, error);
+        }
+      }
+    } finally {
+      this.isProcessingConfirmedPayments = false;
+    }
   }
 
   @Cron('*/20 * * * *')

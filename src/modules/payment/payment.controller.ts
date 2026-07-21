@@ -1,4 +1,16 @@
-import { Controller, Post, Body, Patch, Param, Delete, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Req,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Header,
+} from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { UpdatePaymentDto } from './dto';
 import { DeviceHeadersDto, ParamId } from '@enums';
@@ -45,6 +57,8 @@ export class PaymentController {
   // }
 
   @Post('accept-transaction-status')
+  @HttpCode(HttpStatus.OK)
+  @Header('Content-Type', 'text/plain')
   acceptTransactionStatus(@Body() data: TBankWebHookResponse) {
     return this.paymentService.acceptTransactionStatus(data);
   }

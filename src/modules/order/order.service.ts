@@ -585,8 +585,12 @@ export class OrderService {
         id: true,
         user: true,
         sims: {
+          where: {
+            status: OrderStatus.CREATED,
+          },
           select: {
             id: true,
+            status: true,
             tariff_id: true,
             partner_id: true,
             tariff: {
@@ -621,6 +625,8 @@ export class OrderService {
     // });
 
     if (newOrder.sims.length > 0) {
+      let hasFailedSims = false;
+
       for (const sim of newOrder.sims) {
         console.log(sim, sim.partner_id);
 
@@ -632,13 +638,15 @@ export class OrderService {
             user: { email: newOrder.user.email },
           };
           if (sim.partner_id === PartnerIds.JOYTEL) {
-            await this.createSimsService.processJoyTel(newOrder.id, newOrder.user.id, item);
+            const success = await this.createSimsService.processJoyTel(newOrder.id, newOrder.user.id, item);
+            hasFailedSims = hasFailedSims || !success;
           } else if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
-            await this.createSimsService.processBillion(newOrder.id, newOrder.user.id, item);
+            const success = await this.createSimsService.processBillion(newOrder.id, newOrder.user.id, item);
+            hasFailedSims = hasFailedSims || !success;
           }
         } catch (error) {
+          hasFailedSims = true;
           this.logger.info('Order item failed', error);
-          await this.socketGateway.sendErrorOrderMessage(user_id, newOrder.id);
         }
       }
       await this.prisma.basketItem.deleteMany({
@@ -650,12 +658,17 @@ export class OrderService {
           id: newOrder.id,
         },
         data: {
-          status: OrderStatus.COMPLETED,
+          status: hasFailedSims ? OrderStatus.FAILED : OrderStatus.COMPLETED,
         },
       });
+
+      if (hasFailedSims) {
+        await this.socketGateway.sendErrorOrderMessage(user_id, newOrder.id);
+      }
+
       return {
-        success: true,
-        message: 'Заказ оформлен (частичные ошибки возможны).',
+        success: !hasFailedSims,
+        message: hasFailedSims ? 'При оформлении заказа произошла ошибка.' : 'Заказ оформлен.',
         data: { order_id: newOrder.id },
       };
     }

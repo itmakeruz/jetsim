@@ -101,6 +101,25 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1",
+      "^@config$": "<rootDir>/config",
+      "^@enums$": "<rootDir>/common/enums",
+      "^@guards$": "<rootDir>/common/guards",
+      "^@logger$": "<rootDir>/common/logger",
+      "^@prisma$": "<rootDir>/modules/prisma",
+      "^@helpers$": "<rootDir>/common/helpers",
+      "^@constants$": "<rootDir>/common/constants",
+      "^@decorators$": "<rootDir>/common/decorators",
+      "^@interfaces$": "<rootDir>/common/interfaces",
+      "^@exceptions$": "<rootDir>/common/exceptions",
+      "^@middlewares$": "<rootDir>/common/middleweares",
+      "^@interceptors$": "<rootDir>/common/interceptors",
+      "^@strategy$": "<rootDir>/common/strategy",
+      "^@pipes$": "<rootDir>/common/pipes",
+      "^@http$": "<rootDir>/http",
+      "^@modules$": "<rootDir>/modules"
+    },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

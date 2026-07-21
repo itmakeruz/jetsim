@@ -5,24 +5,12 @@ import { PrismaModule } from '@prisma';
 import { WinstonLoggerService } from '@logger';
 import { HttpModule, TBank } from '@http';
 import { OrderModule } from '../order';
-import { OrderService } from '../order/order.service';
-import { QrService } from '@helpers';
-import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
-import { CreateSimService } from '../order/create-sim/create-sim.service';
 import { LoggerModule } from 'src/logging/logger.module';
 import { PromoCodeModule } from '../promocode';
 
 @Module({
   controllers: [PaymentController],
-  providers: [
-    PaymentService,
-    WinstonLoggerService,
-    TBank,
-    OrderService,
-    QrService,
-    TelegramBotService,
-    CreateSimService,
-  ],
+  providers: [PaymentService, WinstonLoggerService, TBank],
   imports: [PrismaModule, HttpModule, OrderModule, LoggerModule, PromoCodeModule],
 })
 export class PaymentModule {}

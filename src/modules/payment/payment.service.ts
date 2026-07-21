@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UpdatePaymentDto } from './dto';
 import { PrismaService } from '@prisma';
 import { WinstonLoggerService } from '@logger';
@@ -268,8 +268,21 @@ export class PaymentService {
   }
 
   async acceptTransactionStatus(data: TBankWebHookResponse) {
-    this.logger.log('TBANK WEBHOOK DATA: ', data);
-    console.log(data);
+    this.logger.log('TBANK WEBHOOK RECEIVED', {
+      orderId: data?.OrderId,
+      paymentId: data?.PaymentId,
+      status: data?.Status,
+      success: data?.Success,
+    });
+
+    if (!this.TbankService.verifyNotification(data)) {
+      this.logger.error('TBANK WEBHOOK TOKEN INVALID', {
+        orderId: data?.OrderId,
+        paymentId: data?.PaymentId,
+        status: data?.Status,
+      });
+      throw new UnauthorizedException('Invalid T-Bank notification token');
+    }
 
     const existTransactionId = Number(data?.OrderId);
 
@@ -348,33 +361,11 @@ export class PaymentService {
         return 'OK';
       }
 
-      // 4. Order yaratish (faqat winner keladi bu yerga)
+      // T-Bank acknowledgement provider jarayonini kutmasligi kerak.
+      // Payment allaqachon SUCCESS qilib saqlandi; downstream order/provider
+      // jarayoni alohida davom etadi, webhook esa darhol HTTP 200 qaytaradi.
       if (existTransaction.user?.id) {
-        await this.promoCodeService.confirmUsageByTransaction(existTransaction.id);
-
-        // try {
-        //   await this.prisma.order.create({
-        //     data: {
-        //       transaction_id: existTransaction.id,
-        //       user_id: existTransaction.user.id,
-        //       status: OrderStatus.CREATED,
-        //     },
-        //   });
-        // } catch (error) {
-        //   // Agar boshqa request yaratib ulgurgan bo‘lsa (paranoid safety)
-        //   if (error.code !== 'P2002') {
-        //     this.logger.error('Order create error:', error);
-        //     throw error;
-        //   }
-        // }
-
-        // 5. Socket faqat real success bo‘lganda
-        await this.socketGateway.sendPaymentStatus(existTransaction.user.id, {
-          status: TransactionStatus.SUCCESS,
-        });
-
-        // 6. Biznes logika: mavjud SIMlarni partnerlarga jo‘natish (yoki basketdan yaratish)
-        await this.orderService.create(existTransaction.user.id, existTransaction.id);
+        void this.processConfirmedPayment(existTransaction.user.id, existTransaction.id);
       }
     }
 
@@ -408,6 +399,28 @@ export class PaymentService {
     //   await this.orderService.create(existTransaction.user.id, updatedTransaction.id);
     // }
     return 'OK';
+  }
+
+  private async processConfirmedPayment(userId: number, transactionId: number) {
+    try {
+      await this.promoCodeService.confirmUsageByTransaction(transactionId);
+    } catch (error) {
+      this.logger.error(`Promo confirmation failed for transaction ${transactionId}`, error);
+    }
+
+    try {
+      await this.socketGateway.sendPaymentStatus(userId, {
+        status: TransactionStatus.SUCCESS,
+      });
+    } catch (error) {
+      this.logger.error(`Payment socket notification failed for transaction ${transactionId}`, error);
+    }
+
+    try {
+      await this.orderService.create(userId, transactionId);
+    } catch (error) {
+      this.logger.error(`Order processing failed for confirmed transaction ${transactionId}`, error);
+    }
   }
 
   async acceptPaymentTest(id: number, data: any) {
