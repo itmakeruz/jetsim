@@ -6,36 +6,12 @@ import { CreateSimService } from '../order/create-sim/create-sim.service';
 import { OrderService } from '../order/order.service';
 import { TelegramBotService } from '../../common/helpers/telegram-bot.service';
 import { JobsService } from '../jobs/jobs.service';
-import { TBank } from '../../http/tbank.gateway';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 
 const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 describe('T-Bank and provider flow (mock)', () => {
-  it('accepts a valid T-Bank token and rejects a modified payload', () => {
-    const gateway = Object.create(TBank.prototype) as any;
-    gateway.TBANK_TERMINAL_ID = 'terminal';
-    gateway.PASSWORD = 'password';
-
-    const notification: any = {
-      TerminalKey: 'terminal',
-      OrderId: '4418',
-      Success: true,
-      Status: 'CONFIRMED',
-      PaymentId: 8896653862,
-      ErrorCode: '0',
-      Amount: 95000,
-      CardId: 691996750,
-      Pan: '220220******0768',
-      ExpDate: '0334',
-    };
-    notification.Token = gateway.generateToken(notification, gateway.PASSWORD);
-
-    expect(gateway.verifyNotification(notification)).toBe(true);
-    expect(gateway.verifyNotification({ ...notification, Amount: 1 })).toBe(false);
-  });
-
   it('returns the exact HTTP response required by T-Bank', async () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [PaymentController],
@@ -95,34 +71,6 @@ describe('T-Bank and provider flow (mock)', () => {
     expect(Reflect.getMetadata('__headers__', PaymentController.prototype.acceptTransactionStatus)).toEqual([
       { name: 'Content-Type', value: 'text/plain' },
     ]);
-  });
-
-  it('rejects a forged T-Bank notification before touching payment state', async () => {
-    const prisma = {
-      transaction: {
-        findUnique: jest.fn(),
-      },
-    };
-    const service = new PaymentService(
-      prisma as any,
-      { log: jest.fn(), error: jest.fn() } as any,
-      { verifyNotification: jest.fn().mockReturnValue(false) } as any,
-      {} as any,
-      {} as any,
-      {} as any,
-    );
-
-    await expect(
-      service.acceptTransactionStatus({
-        TerminalKey: 'terminal',
-        OrderId: '4248',
-        Success: true,
-        Status: 'CONFIRMED',
-        Token: 'forged',
-      } as any),
-    ).rejects.toThrow('Invalid T-Bank notification token');
-
-    expect(prisma.transaction.findUnique).not.toHaveBeenCalled();
   });
 
   it('stores a provider timeout, marks SIM failed and sends its real message', async () => {

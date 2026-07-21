@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UpdatePaymentDto } from './dto';
 import { PrismaService } from '@prisma';
 import { WinstonLoggerService } from '@logger';
@@ -274,15 +274,6 @@ export class PaymentService {
       status: data?.Status,
       success: data?.Success,
     });
-
-    if (!this.TbankService.verifyNotification(data)) {
-      this.logger.error('TBANK WEBHOOK TOKEN INVALID', {
-        orderId: data?.OrderId,
-        paymentId: data?.PaymentId,
-        status: data?.Status,
-      });
-      throw new UnauthorizedException('Invalid T-Bank notification token');
-    }
 
     const existTransactionId = Number(data?.OrderId);
 

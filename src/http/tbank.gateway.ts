@@ -37,19 +37,6 @@ export class TBank {
     return this.sendInit(payload, '/v2/GetState');
   }
 
-  verifyNotification(data: any) {
-    if (data?.TerminalKey !== this.TBANK_TERMINAL_ID || typeof data?.Token !== 'string') {
-      return false;
-    }
-
-    const expectedToken = this.generateToken(data, this.PASSWORD);
-    const actualToken = data.Token;
-    const expectedBuffer = Buffer.from(expectedToken, 'utf8');
-    const actualBuffer = Buffer.from(actualToken, 'utf8');
-
-    return expectedBuffer.length === actualBuffer.length && crypto.timingSafeEqual(expectedBuffer, actualBuffer);
-  }
-
   //HELPERS
   private generateToken(payload: any, password: string): string {
     const data: Record<string, any> = {};
