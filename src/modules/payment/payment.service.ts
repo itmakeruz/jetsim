@@ -275,14 +275,14 @@ export class PaymentService {
       success: data?.Success,
     });
 
-    // if (!this.TbankService.verifyNotification(data)) {
-    //   this.logger.error('TBANK WEBHOOK TOKEN INVALID', {
-    //     orderId: data?.OrderId,
-    //     paymentId: data?.PaymentId,
-    //     status: data?.Status,
-    //   });
-    //   throw new UnauthorizedException('Invalid T-Bank notification token');
-    // }
+    if (!this.TbankService.verifyNotification(data)) {
+      this.logger.error('TBANK WEBHOOK TOKEN INVALID', {
+        orderId: data?.OrderId,
+        paymentId: data?.PaymentId,
+        status: data?.Status,
+      });
+      throw new UnauthorizedException('Invalid T-Bank notification token');
+    }
 
     const existTransactionId = Number(data?.OrderId);
 
