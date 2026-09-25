@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, TransactionStatus } from '@prisma/client';
+import { Prisma, SimStatus, TransactionStatus } from '@prisma/client';
 import { PrismaService } from '@prisma';
 import { dateConverter, generateExcel, paginate, ExcelColumn } from '@helpers';
 import { GetSalesReportDto } from './dto';
@@ -10,6 +10,7 @@ const EXCEL_ROW_LIMIT = 50_000;
 const EXCEL_COLUMNS: ExcelColumn[] = [
   { header: 'ID eSIM', key: 'id', width: 10 },
   { header: 'Дата', key: 'date', width: 20 },
+  { header: 'ICCID', key: 'iccid', width: 24 },
   { header: 'Тариф', key: 'tariff', width: 30 },
   { header: 'Объём, ГБ', key: 'internet', width: 12 },
   { header: 'Кем куплено', key: 'buyer', width: 32 },
@@ -27,18 +28,66 @@ export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getSales(query: GetSalesReportDto) {
-    const { data, meta } = await paginate('sims', {
-      page: query?.page,
-      size: query?.size,
-      where: this.buildWhere(query),
-      select: this.getSelect(),
-    });
+    const where = this.buildWhere(query);
+
+    const [{ data, meta }, summary] = await Promise.all([
+      paginate('sims', {
+        page: query?.page,
+        size: query?.size,
+        where,
+        select: this.getSelect(),
+      }),
+      this.buildSummary(where),
+    ]);
 
     return {
       success: true,
       message: '',
       data: (data as any[]).map((sim) => this.mapRow(sim)),
+      summary,
       meta,
+    };
+  }
+
+  /**
+   * Итоги считаем по тем же фильтрам, что и таблицу.
+   * Выручку берём через группировку по тарифам, а не выгрузкой всех строк:
+   * тарифов десятки, а проданных eSIM — десятки тысяч.
+   */
+  private async buildSummary(where: Prisma.SimsWhereInput) {
+    const [byTariff, byStatus] = await Promise.all([
+      this.prisma.sims.groupBy({ by: ['tariff_id'], where, _count: { _all: true } }),
+      this.prisma.sims.groupBy({ by: ['sim_status'], where, _count: { _all: true } }),
+    ]);
+
+    const tariffIds = byTariff.map((row) => row.tariff_id).filter((id): id is number => id !== null);
+
+    const tariffs = tariffIds.length
+      ? await this.prisma.tariff.findMany({
+          where: { id: { in: tariffIds } },
+          select: { id: true, price_sell: true },
+        })
+      : [];
+
+    const priceById = new Map(tariffs.map((t) => [t.id, t.price_sell ?? 0]));
+
+    const totalKopecks = byTariff.reduce(
+      (sum, row) => sum + (priceById.get(row.tariff_id as number) ?? 0) * row._count._all,
+      0,
+    );
+
+    const countBy = (status: SimStatus | null) =>
+      byStatus.find((row) => row.sim_status === status)?._count._all ?? 0;
+
+    const total = byStatus.reduce((sum, row) => sum + row._count._all, 0);
+
+    return {
+      total_count: total,
+      total_amount: totalKopecks / 100,
+      average_amount: total > 0 ? Math.round(totalKopecks / total) / 100 : 0,
+      activated: countBy(SimStatus.ACTIVATED),
+      expired: countBy(SimStatus.EXPIRED),
+      not_activated: countBy(null),
     };
   }
 
@@ -56,6 +105,7 @@ export class ReportsService {
       return {
         id: row.id,
         date: row.created_at ? new Date(row.created_at).toLocaleString('ru-RU') : '',
+        iccid: row.iccid ?? '—',
         tariff: row.tariff_name,
         internet: row.quantity_internet,
         buyer: row.buyer_name ? `${row.buyer_name} (${row.buyer_email ?? '—'})` : (row.buyer_email ?? '—'),
@@ -81,6 +131,57 @@ export class ReportsService {
       where.created_at = { gte: startDate, lte: endDate };
     }
 
+    // Фильтры тарифа складываем в один объект: несколько присваиваний
+    // where.tariff перетёрли бы друг друга
+    const tariffFilter: Prisma.TariffWhereInput = {};
+
+    const tariff = query?.tariff?.trim();
+    if (tariff) {
+      tariffFilter.OR = [
+        { name_ru: { contains: tariff, mode: 'insensitive' } },
+        { name_en: { contains: tariff, mode: 'insensitive' } },
+      ];
+    }
+
+    if (query?.internet !== undefined) {
+      tariffFilter.quantity_internet = query.internet;
+    }
+
+    // В отчёте сумма показывается в рублях, а price_sell хранится в копейках
+    const priceFilter: Prisma.IntNullableFilter = {};
+    if (query?.amount_from !== undefined) {
+      priceFilter.gte = Math.round(query.amount_from * 100);
+    }
+    if (query?.amount_to !== undefined) {
+      priceFilter.lte = Math.round(query.amount_to * 100);
+    }
+    if (Object.keys(priceFilter).length > 0) {
+      tariffFilter.price_sell = priceFilter;
+    }
+
+    if (Object.keys(tariffFilter).length > 0) {
+      where.tariff = tariffFilter;
+    }
+
+    const buyer = query?.buyer?.trim();
+    if (buyer) {
+      where.user = {
+        OR: [
+          { name: { contains: buyer, mode: 'insensitive' } },
+          { email: { contains: buyer, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    const iccid = query?.iccid?.trim();
+    if (iccid) {
+      where.iccid = { contains: iccid, mode: 'insensitive' };
+    }
+
+    if (query?.sim_status) {
+      where.sim_status = query.sim_status;
+    }
+
     const search = query?.search?.trim();
     if (search) {
       where.OR = [
@@ -97,6 +198,7 @@ export class ReportsService {
   private getSelect(): Prisma.SimsSelect {
     return {
       id: true,
+      iccid: true,
       status: true,
       sim_status: true,
       created_at: true,
@@ -108,6 +210,7 @@ export class ReportsService {
   private mapRow(sim: any) {
     return {
       id: sim?.id,
+      iccid: sim?.iccid ?? null,
       created_at: sim?.created_at,
       tariff_name: sim?.tariff?.name_ru || sim?.tariff?.name_en || '—',
       quantity_internet: sim?.tariff?.quantity_internet ?? 0,
