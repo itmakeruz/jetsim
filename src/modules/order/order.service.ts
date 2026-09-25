@@ -129,6 +129,16 @@ export class OrderService {
       where.created_at = createdAt;
     }
 
+    const email = query?.email?.trim();
+    if (email) {
+      where.user = { email: { contains: email, mode: 'insensitive' } };
+    }
+
+    const iccid = query?.iccid?.trim();
+    if (iccid) {
+      where.sims = { some: { iccid: { contains: iccid, mode: 'insensitive' } } };
+    }
+
     const search = query?.search?.trim();
     if (search) {
       const or: Prisma.OrderWhereInput[] = [
