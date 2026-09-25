@@ -11,11 +11,13 @@ import {
 } from '@helpers';
 import { BillionConnectService, JoyTel } from '@http';
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '@prisma';
 import { FilePath, sim_not_found } from '@constants';
 import { OrderStatus, Prisma, SimStatus } from '@prisma/client';
 import { WinstonLoggerService } from '@logger';
 import { FindAllSimsDto } from './dto';
+import { resolveSimStatus } from './sim-status.resolver';
 
 @Injectable()
 export class SimsService {
@@ -26,6 +28,8 @@ export class SimsService {
     private readonly logger: WinstonLoggerService,
     private readonly qrService: QrService,
   ) {}
+
+  private isCheckingSimStatuses = false;
 
   async findAll(query: FindAllSimsDto) {
     const search = query?.search?.trim();
@@ -203,81 +207,93 @@ export class SimsService {
     };
   }
 
+  /**
+   * Синхронизация статуса eSIM с партнёром.
+   *
+   * Раньше метод висел только на ручном `GET /sims/status`, а крон в
+   * jobs.service.ts был закомментирован (и даже в нём тела записи не было —
+   * только console.log). Из-за этого `sim_status` оставался `null` с момента
+   * создания симки, и CRM показывала «Не активирована» вообще для всех.
+   */
+  @Cron('*/30 * * * *')
   async checkSimStatusOnPartnerSide() {
-    this.logger.log('Sim Status on partner side CRON is working!');
-    const sims = await this.prisma.sims.findMany({
-      where: {
-        status: OrderStatus.COMPLETED,
-        sim_status: null,
-      },
-      select: {
-        id: true,
-        coupon: true,
-        partner_id: true,
-        channel_order_id: true,
-        iccid: true,
-      },
-    });
-
-    if (!sims || sims.length === 0) {
-      this.logger.log('Sims not found for update status');
-      return;
+    if (this.isCheckingSimStatuses) {
+      this.logger.warn('Проверка статусов eSIM ещё не завершилась — пропускаем запуск');
+      return { sims: [], data: [] };
     }
 
-    let responses: any[] = [];
+    this.isCheckingSimStatuses = true;
+    this.logger.log('Sim Status on partner side CRON is working!');
 
-    for (let sim of sims) {
-      // JOYTEL partneri uchun status tekshirish
-      if (sim.partner_id === PartnerIds.JOYTEL) {
-        const response: any = await this.joyTelService.getStatus({ coupon: sim?.coupon });
-        console.log('Joytel check status response: ', response);
+    try {
+      const sims = await this.prisma.sims.findMany({
+        where: {
+          status: OrderStatus.COMPLETED,
+          // Берём «ещё не активирована» (null) и «активирована» — последние нужны,
+          // чтобы поймать переход в EXPIRED. Сам EXPIRED терминален.
+          // Пишем условие через OR, а не `not: EXPIRED`: на nullable-поле
+          // отрицание в SQL отбрасывает NULL, то есть ровно те строки,
+          // ради которых крон и заводится.
+          OR: [{ sim_status: null }, { sim_status: SimStatus.ACTIVATED }],
+        },
+        select: {
+          id: true,
+          coupon: true,
+          partner_id: true,
+          channel_order_id: true,
+          iccid: true,
+          sim_status: true,
+        },
+        orderBy: { created_at: 'desc' },
+      });
 
-        responses.push(response);
+      if (sims.length === 0) {
+        this.logger.log('Sims not found for update status');
+        return { sims: [], data: [] };
+      }
 
-        // Kutilgan response:
-        // {
-        //   code: "000",
-        //   mesg: "success",
-        //   data: { status: "1", statusTime: "1653546537101" }
-        // }
-        const statusCode = response?.data?.status;
+      const responses: any[] = [];
+      let updated = 0;
 
-        if (statusCode === '1') {
+      for (const sim of sims) {
+        // BillionConnect умеем только повышать статус — уже активированные
+        // симки этого партнёра дёргать незачем
+        if (sim.partner_id === PartnerIds.BILLION_CONNECT && sim.sim_status === SimStatus.ACTIVATED) {
+          continue;
+        }
+
+        try {
+          const response =
+            sim.partner_id === PartnerIds.JOYTEL
+              ? await this.joyTelService.getStatus({ coupon: sim.coupon })
+              : await this.billionConnectService.getStatus({ iccid: sim.iccid });
+
+          responses.push(response);
+
+          const nextStatus = resolveSimStatus(sim.partner_id, response);
+
+          if (nextStatus === undefined || nextStatus === sim.sim_status) {
+            continue;
+          }
+
           await this.prisma.sims.update({
             where: { id: sim.id },
-            data: { sim_status: SimStatus.ACTIVATED },
+            data: { sim_status: nextStatus },
           });
-        } else if (statusCode === '2') {
-          await this.prisma.sims.update({
-            where: { id: sim.id },
-            data: { sim_status: SimStatus.EXPIRED },
-          });
+
+          updated += 1;
+          this.logger.log(`SIM ${sim.id} (${sim.iccid ?? sim.coupon}) → ${nextStatus}`);
+        } catch (error) {
+          this.logger.error(`Не удалось проверить статус SIM ${sim.id}`, error);
         }
       }
 
-      // BILLION_CONNECT partneri uchun status tekshirish
-      if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
-        const response = await this.billionConnectService.getStatus({ iccid: sim?.iccid });
-        console.log(response);
+      this.logger.info(`Finish update partner status: обновлено ${updated} из ${sims.length}`);
 
-        const esimStatus = response.tradeData?.some((el) => el?.status === 2);
-        await this.prisma.sims.update({
-          where: {
-            id: sim?.id,
-          },
-          data: {
-            sim_status: esimStatus ? SimStatus.ACTIVATED : null,
-          },
-        });
-        console.log('BC CHECK status cron response: ', response);
-      }
+      return { sims, data: responses };
+    } finally {
+      this.isCheckingSimStatuses = false;
     }
-    this.logger.info('Finish update partner status in partner side');
-
-    return {
-      sims: sims,
-      data: responses,
-    };
   }
 
   async staticSims(userId: number, lang: string) {
