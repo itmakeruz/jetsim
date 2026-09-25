@@ -15,8 +15,6 @@ export class TBank {
   }
 
   async sendInit(payload: any, endpoint: string) {
-    console.log(payload);
-
     return this.http
       .setUrl(this.URL + endpoint)
       .setMethod('POST')
@@ -35,6 +33,24 @@ export class TBank {
     };
 
     return this.sendInit(payload, '/v2/GetState');
+  }
+
+  verifyNotification(payload: Record<string, any>): boolean {
+    const received = payload?.Token;
+
+    if (typeof received !== 'string' || !received) {
+      return false;
+    }
+
+    const expected = this.generateToken(payload, this.PASSWORD);
+    const expectedBuffer = Buffer.from(expected, 'utf8');
+    const receivedBuffer = Buffer.from(received.toLowerCase(), 'utf8');
+
+    if (expectedBuffer.length !== receivedBuffer.length) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
   }
 
   //HELPERS

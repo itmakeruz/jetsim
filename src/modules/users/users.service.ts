@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto, UpdateProfileDto } from './dto';
+import { Prisma } from '@prisma/client';
+import { CreateUserDto, GetUsersDto, UpdateProfileDto } from './dto';
 import { PrismaService } from '@prisma';
 import { FilePath, profile_image_deleted, user_not_found } from '@constants';
 import { paginate } from '@helpers';
@@ -10,12 +11,30 @@ import * as fs from 'fs';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: any) {
+  async findAll(query: GetUsersDto) {
+    const search = query?.search?.trim();
+    const where: Prisma.UserWhereInput = {};
+
+    if (search) {
+      const or: Prisma.UserWhereInput[] = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone_number: { contains: search, mode: 'insensitive' } },
+      ];
+
+      // id числовой — ищем по нему только когда запрос действительно число
+      const asNumber = Number(search);
+      if (Number.isInteger(asNumber) && asNumber > 0) {
+        or.push({ id: asNumber });
+      }
+
+      where.OR = or;
+    }
+
     const users = await paginate('user', {
       page: query?.page,
       size: query?.size,
-      filter: query?.filters,
-      sort: query?.sort,
+      where,
       select: {
         id: true,
         name: true,

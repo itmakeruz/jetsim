@@ -59,6 +59,14 @@ export class OrderService {
     return {
       id: true,
       status: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone_number: true,
+        },
+      },
       transactions: {
         select: {
           id: true,
@@ -78,6 +86,7 @@ export class OrderService {
           puk_1: true,
           qrcode: true,
           status: true,
+          sim_status: true,
           tariff: {
             select: {
               id: true,
@@ -106,11 +115,37 @@ export class OrderService {
 
     if (query?.status) {
       where.status = query.status;
+    } else {
+      // Прячем брошенные корзины, которые крон отменил по таймауту: FAILED и денег не было.
+      // Настоящие сбои выдачи (оплата прошла, провижининг упал) остаются в списке.
+      where.NOT = {
+        status: OrderStatus.FAILED,
+        transactions: { none: { status: TransactionStatus.SUCCESS } },
+      };
     }
 
     const createdAt = this.buildCreatedAtFilter(query);
     if (createdAt) {
       where.created_at = createdAt;
+    }
+
+    const search = query?.search?.trim();
+    if (search) {
+      const or: Prisma.OrderWhereInput[] = [
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+        { user: { phone_number: { contains: search, mode: 'insensitive' } } },
+        { sims: { some: { iccid: { contains: search, mode: 'insensitive' } } } },
+      ];
+
+      // id числовой — ищем по нему только когда запрос действительно число,
+      // иначе Prisma упадёт на несоответствии типа
+      const asNumber = Number(search);
+      if (Number.isInteger(asNumber) && asNumber > 0) {
+        or.push({ id: asNumber });
+      }
+
+      where.OR = or;
     }
 
     return where;
@@ -178,6 +213,14 @@ export class OrderService {
           }
         : null,
       created_at: order?.created_at,
+      user: order?.user
+        ? {
+            id: order?.user?.id,
+            name: order?.user?.name,
+            email: order?.user?.email,
+            phone_number: order?.user?.phone_number,
+          }
+        : null,
       sims: order?.sims?.map((sim: any) => {
         return {
           id: sim?.id,
@@ -185,6 +228,9 @@ export class OrderService {
           pin_1: sim?.pin_1,
           puk_1: sim?.puk_1,
           status: sim?.status,
+          sim_status: sim?.sim_status,
+          qr_code: sim?.qrcode ? `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png` : null,
+          activation_code: sim?.qrcode ?? null,
           tariff: {
             id: sim?.tariff?.id,
             name_ru: sim?.tariff?.name_ru,

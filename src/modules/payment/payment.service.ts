@@ -10,6 +10,7 @@ import { OrderService } from '../order/order.service';
 import { GatewayGateway } from '../gateway';
 import { PartnerIds } from '@enums';
 import { PromoCodeService } from '../promocode';
+import { TBANK_VERIFY_WEBHOOK } from '@config';
 
 @Injectable()
 export class PaymentService {
@@ -275,6 +276,22 @@ export class PaymentService {
       success: data?.Success,
     });
 
+    // Подпись считаем всегда, но отклоняем только при TBANK_VERIFY_WEBHOOK=true.
+    // Пока флаг выключен — копим в логах статистику совпадений на живом трафике:
+    // если сразу включить отклонение и алгоритм не сойдётся, платежи встанут молча.
+    if (!this.TbankService.verifyNotification(data as unknown as Record<string, any>)) {
+      const meta = { orderId: data?.OrderId, paymentId: data?.PaymentId };
+
+      if (TBANK_VERIFY_WEBHOOK) {
+        this.logger.error('TBANK WEBHOOK REJECTED: invalid signature', meta);
+        return 'OK';
+      }
+
+      this.logger.warn(
+        `TBANK WEBHOOK SIGNATURE MISMATCH (проверка выключена, заказ обработан) | orderId=${meta.orderId} paymentId=${meta.paymentId}`,
+      );
+    }
+
     const existTransactionId = Number(data?.OrderId);
 
     if (!existTransactionId) {
@@ -455,12 +472,18 @@ export class PaymentService {
   }
 
   private buildPaymentPayload(data: any) {
+    const email = data?.user?.email;
+
+    if (!email) {
+      throw new BadRequestException('Не указан email пользователя для формирования чека');
+    }
+
     return {
       Amount: data?.order?.totalAmount,
       OrderId: data?.transaction.transactionId,
       Description: `Оплата eSIM-карты на ${data?.order?.totalAmount / 100}`,
       Receipt: {
-        Email: data?.user?.email ?? 'ravshanovtohir11@gmail.com',
+        Email: email,
         Taxation: 'usn_income_outcome',
         Items: data?.items,
       },

@@ -1,11 +1,21 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { PartnerIds } from '@enums';
-import { paginate, dayAfterNConverter, generateFastEsimInstallmentString, getRemainingDays } from '@helpers';
+import {
+  paginate,
+  dayAfterNConverter,
+  generateFastEsimInstallmentString,
+  getRemainingDays,
+  QrService,
+  saveQrCode,
+} from '@helpers';
 import { BillionConnectService, JoyTel } from '@http';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
 import { FilePath, sim_not_found } from '@constants';
-import { OrderStatus, SimStatus } from '@prisma/client';
+import { OrderStatus, Prisma, SimStatus } from '@prisma/client';
 import { WinstonLoggerService } from '@logger';
+import { FindAllSimsDto } from './dto';
 
 @Injectable()
 export class SimsService {
@@ -14,16 +24,50 @@ export class SimsService {
     private readonly joyTelService: JoyTel,
     private readonly billionConnectService: BillionConnectService,
     private readonly logger: WinstonLoggerService,
+    private readonly qrService: QrService,
   ) {}
 
-  async findAll(query: any) {
-    const sims = await paginate('sims', {
+  async findAll(query: FindAllSimsDto) {
+    const search = query?.search?.trim();
+    const where: Prisma.SimsWhereInput = {};
+
+    if (search) {
+      const or: Prisma.SimsWhereInput[] = [
+        { iccid: { contains: search, mode: 'insensitive' } },
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+      ];
+
+      // id числовой — ищем по нему только когда запрос действительно число
+      const asNumber = Number(search);
+      if (Number.isInteger(asNumber) && asNumber > 0) {
+        or.push({ id: asNumber });
+      }
+
+      where.OR = or;
+    }
+
+    return paginate('sims', {
       page: query?.page,
       size: query?.size,
-      filter: query?.filters,
-      sort: query?.sort,
+      where,
+      select: {
+        id: true,
+        iccid: true,
+        status: true,
+        sim_status: true,
+        partner_id: true,
+        order_id: true,
+        last_usage_quantity: true,
+        created_at: true,
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+        tariff: {
+          select: { id: true, name_ru: true, name_en: true, quantity_internet: true, price_sell: true },
+        },
+      },
     });
-    return sims;
   }
 
   async findOne(id: number) {
@@ -37,6 +81,33 @@ export class SimsService {
       throw new BadRequestException(sim_not_found['ru']);
     }
     return sim;
+  }
+
+  async getQrCode(id: number): Promise<Buffer> {
+    const sim = await this.prisma.sims.findUnique({
+      where: { id },
+      select: { id: true, qrcode: true },
+    });
+
+    if (!sim) {
+      throw new BadRequestException(sim_not_found['ru']);
+    }
+
+    if (!sim.qrcode) {
+      throw new BadRequestException('QR-код этой eSIM ещё не получен от партнёра');
+    }
+
+    const filePath = path.join('uploads', 'qr', `qr_content_${sim.id}.png`);
+
+    if (fs.existsSync(filePath)) {
+      return fs.readFileSync(filePath);
+    }
+
+    // Файла нет, если колбэк партнёра не дошёл — собираем картинку заново из строки активации
+    const buffer = await this.qrService.generateQrWithLogo(sim.qrcode);
+    saveQrCode(sim.id, buffer);
+
+    return buffer;
   }
 
   async checkBalance(id: number) {
@@ -189,9 +260,7 @@ export class SimsService {
         const response = await this.billionConnectService.getStatus({ iccid: sim?.iccid });
         console.log(response);
 
-        const esimStatus = response.tradeData?.find((el) => {
-          el?.status === 2;
-        });
+        const esimStatus = response.tradeData?.some((el) => el?.status === 2);
         await this.prisma.sims.update({
           where: {
             id: sim?.id,
@@ -562,24 +631,25 @@ export class SimsService {
         });
         console.log(response);
         responses.push(response);
-        const tradeData = response?.tradeData ?? null;
+        if (response?.tradeCode === '1000') {
+          // Тот же разбор, что в кроне jobs.service.ts — оба писателя кладут в колонку мегабайты
+          const subOrders = response?.tradeData?.subOrderList ?? [];
 
-        if (Array.isArray(tradeData) && response?.tradeCode === '1000') {
-          const usage = response.subOrderList[0].usageInfoList?.reduce(
-            (acc: number, infoList: { usedDate: string; usageAmt: string }) => {
-              acc += Number(infoList.usedDate);
-            },
-            0,
-          );
+          let totalKb = 0;
+          for (const sub of subOrders) {
+            for (const usage of sub?.usageInfoList ?? []) {
+              totalKb += Number(usage?.usageAmt || 0);
+            }
+          }
 
-          console.log(usage);
+          const totalMb = +(totalKb / 1024).toFixed(2);
 
           await this.prisma.sims.update({
             where: {
               id: sim.id,
             },
             data: {
-              last_usage_quantity: usage.toString(),
+              last_usage_quantity: totalMb.toString(),
             },
           });
         }

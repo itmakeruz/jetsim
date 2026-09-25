@@ -45,6 +45,16 @@ export class GetOrderDto extends PaginationOptionalDto {
   @ApiProperty({ type: OrderSort, required: false })
   sort?: OrderSort;
 
+  @ApiProperty({
+    type: String,
+    required: false,
+    example: '8931080019',
+    description: 'Поиск по ID заказа, ICCID, имени, email или телефону клиента',
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
   @ApiProperty({ type: Number, required: false, example: 3458, description: 'Order ID' })
   @IsOptional()
   @Type(() => Number)

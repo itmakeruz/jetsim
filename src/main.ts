@@ -1,6 +1,5 @@
-import { APP_PORT } from './config';
+import { APP_PORT, DOCS_PASS, DOCS_USER, LOGS_PASS, LOGS_USER } from './config';
 import { AppModule } from './app.module';
-import { ParseFiltersPipe } from '@pipes';
 import { NestFactory } from '@nestjs/core';
 import { globalHeaderParametrs } from '@enums';
 import { WinstonLoggerService } from '@logger';
@@ -28,57 +27,47 @@ async function bootstrap() {
     prefix: 'api/v',
   });
 
-  new ParseFiltersPipe(),
-    app.useGlobalPipes(
-      new ValidationPipe({
-        transform: true,
-        whitelist: true,
-        transformOptions: {
-          enableImplicitConversion: true,
-        },
-      }),
-    );
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
 
   app.useGlobalFilters(new AllExceptionFilter());
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  app.use(
-    '/docs',
-    basicAuth({
-      challenge: true,
-      users: {
-        '1': '1',
-        'jetsim_esim': 'jetsim_esim',
-      },
-    }),
-  );
+  if (DOCS_USER && DOCS_PASS) {
+    app.use('/docs', basicAuth({ challenge: true, users: { [DOCS_USER]: DOCS_PASS } }));
 
-  // Protect logs dashboard so only you can open it
-  app.use(
-    '/logs',
-    basicAuth({
-      challenge: true,
-      users: {
-        // You can move these to env variables later
-        logs_admin: 'logs_admin',
-      },
-    }),
-  );
+    const config = new DocumentBuilder()
+      .setTitle('Jetsim API')
+      .setDescription('The Jetsim API description')
+      .setVersion('1.0')
+      .addBearerAuth({
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      })
+      .addGlobalParameters(...globalHeaderParametrs)
+      .build();
 
-  const config = new DocumentBuilder()
-    .setTitle('Jetsim API')
-    .setDescription('The Jetsim API description')
-    .setVersion('1.0')
-    .addBearerAuth({
-      type: 'http',
-      scheme: 'bearer',
-      bearerFormat: 'JWT',
-    })
-    .addGlobalParameters(...globalHeaderParametrs)
-    .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+  } else {
+    logger.warn('Swagger /docs не смонтирован: не заданы DOCS_USER и DOCS_PASS');
+  }
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  if (LOGS_USER && LOGS_PASS) {
+    app.use('/logs', basicAuth({ challenge: true, users: { [LOGS_USER]: LOGS_PASS } }));
+  } else {
+    // Без учётных данных дашборд логов закрываем полностью, а не оставляем открытым
+    app.use('/logs', (_req, res) => res.sendStatus(404));
+    logger.warn('Дашборд /logs отключён: не заданы LOGS_USER и LOGS_PASS');
+  }
 
   await app.listen(APP_PORT);
 }

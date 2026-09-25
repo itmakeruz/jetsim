@@ -14,5 +14,6 @@ export * from './partner';
 export * from './promocode';
 export * from './support';
 export * from './dashboard';
+export * from './reports';
 export * from './transaction';
 export * from './region_group';

@@ -22,6 +22,7 @@ import {
   PromoCodeModule,
   SupportModule,
   DashboardModule,
+  ReportsModule,
   RegionGroupModule,
   TransactionModule,
 } from '@modules';
@@ -66,6 +67,7 @@ import { join } from 'path';
     SupportModule,
     PromoCodeModule,
     DashboardModule,
+    ReportsModule,
     RegionGroupModule,
     TransactionModule,
     LoggerModule,

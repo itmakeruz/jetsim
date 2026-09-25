@@ -46,9 +46,18 @@ const TBANK_URL = config.get<string>('TBANK_URL') ?? '';
 const TBANK_TERMINAL_ID = config.get<string>('TBANK_TERMINAL_ID') ?? '';
 const TBANK_WEBHOOK_URL = config.get<string>('TBANK_WEBHOOK_URL') ?? '';
 const TBANK_PASSWORD = config.get<string>('TBANK_PASSWORD') ?? '';
+// Отклонять webhook с неверной подписью. Пока false — только пишем в лог,
+// чтобы сначала убедиться на живом трафике, что подпись сходится
+const TBANK_VERIFY_WEBHOOK = config.get<string>('TBANK_VERIFY_WEBHOOK') === 'true';
 
 // TELEGRAM BOT
 const TELEGRAM_BOT_TOKEN = config.get<string>('TELEGRAM_BOT_TOKEN') ?? '';
+
+// BASIC AUTH для /docs и /logs — если не заданы, эндпоинты не монтируются
+const DOCS_USER = config.get<string>('DOCS_USER') ?? '';
+const DOCS_PASS = config.get<string>('DOCS_PASS') ?? '';
+const LOGS_USER = config.get<string>('LOGS_USER') ?? '';
+const LOGS_PASS = config.get<string>('LOGS_PASS') ?? '';
 
 //export
 export {
@@ -81,5 +90,10 @@ export {
   TBANK_TERMINAL_ID,
   TBANK_WEBHOOK_URL,
   TBANK_PASSWORD,
+  TBANK_VERIFY_WEBHOOK,
   TELEGRAM_BOT_TOKEN,
+  DOCS_USER,
+  DOCS_PASS,
+  LOGS_USER,
+  LOGS_PASS,
 };

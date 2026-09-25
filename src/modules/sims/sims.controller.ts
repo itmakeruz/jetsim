@@ -1,6 +1,8 @@
-import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Response } from 'express';
 import { SimsService } from './sims.service';
 import { DeviceHeadersDto, ParamId } from '@enums';
+import { FindAllSimsDto } from './dto';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { IRequest } from '@interfaces';
 import { HeadersValidation } from '@decorators';
@@ -15,9 +17,10 @@ export class SimsController {
 
   @ApiOperation({ summary: 'Get all sims' })
   @Get()
-  // @UseGuards(AtGuard, RolesGuard)
-  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
-  async findAll(@Query() query: any) {
+  @ApiBearerAuth()
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  async findAll(@Query() query: FindAllSimsDto) {
     return this.simsService.findAll(query);
   }
 
@@ -47,8 +50,9 @@ export class SimsController {
 
   @ApiOperation({ summary: 'Get all sims' })
   @Get('status')
-  // @UseGuards(AtGuard, RolesGuard)
-  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  @ApiBearerAuth()
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async findAllStatuses() {
     return this.simsService.checkSimStatusOnPartnerSide();
   }
@@ -57,10 +61,21 @@ export class SimsController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get('usage')
-  // @UseGuards(AtGuard, RolesGuard)
-  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async getUsage(@Req() request: IRequest) {
     return this.simsService.getUsage(request.user.id);
+  }
+
+  @ApiOperation({ summary: 'QR-код eSIM в PNG; генерируется на лету, если файл не сохранился' })
+  @Get(':id/qr')
+  @ApiBearerAuth()
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  async getQrCode(@Param() param: ParamId, @Res() res: Response) {
+    const buffer = await this.simsService.getQrCode(param.id);
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    res.send(buffer);
   }
 
   @ApiOperation({ summary: 'Get sim by id' })

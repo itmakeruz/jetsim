@@ -126,6 +126,26 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   TELEGRAM_BOT_TOKEN: string;
+
+  @IsOptional()
+  @IsString()
+  TBANK_VERIFY_WEBHOOK: string;
+
+  @IsOptional()
+  @IsString()
+  DOCS_USER: string;
+
+  @IsOptional()
+  @IsString()
+  DOCS_PASS: string;
+
+  @IsOptional()
+  @IsString()
+  LOGS_USER: string;
+
+  @IsOptional()
+  @IsString()
+  LOGS_PASS: string;
 }
 
 export function validate(config: Record<string, unknown>) {

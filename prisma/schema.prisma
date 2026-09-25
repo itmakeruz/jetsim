@@ -34,6 +34,8 @@ model User {
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
 
+  @@index([email])
+  @@index([phone_number])
   @@map("user")
 }
 
@@ -210,6 +212,11 @@ model Sims {
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
 
+  @@index([iccid])
+  @@index([order_id])
+  @@index([user_id])
+  @@index([status])
+  @@index([created_at])
   @@map("sims")
 }
 
@@ -246,6 +253,9 @@ model Order {
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
 
+  @@index([status])
+  @@index([user_id])
+  @@index([created_at])
   @@map("order")
 }
 

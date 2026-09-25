@@ -2,12 +2,12 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString } from 'class-validator';
 import { PaginationOptionalDto } from '@enums';
 
-export class FindAllSimsDto extends PaginationOptionalDto {
+export class GetUsersDto extends PaginationOptionalDto {
   @ApiProperty({
     type: String,
     required: false,
-    example: '8931080019',
-    description: 'Поиск по ID, ICCID, имени или email клиента',
+    example: 'client@example.com',
+    description: 'Поиск по ID, имени, email или телефону',
   })
   @IsOptional()
   @IsString()

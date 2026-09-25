@@ -1,5 +1,7 @@
 import 'reflect-metadata';
-import { OrderStatus } from '@prisma/client';
+import * as crypto from 'crypto';
+import { OrderStatus, TransactionStatus } from '@prisma/client';
+import { TBank } from '../../http/tbank.gateway';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 import { CreateSimService } from '../order/create-sim/create-sim.service';
@@ -71,6 +73,70 @@ describe('T-Bank and provider flow (mock)', () => {
     expect(Reflect.getMetadata('__headers__', PaymentController.prototype.acceptTransactionStatus)).toEqual([
       { name: 'Content-Type', value: 'text/plain' },
     ]);
+  });
+
+  it('accepts a correctly signed notification and rejects forged or unsigned ones', () => {
+    const password = 'test-password';
+    const gateway = Object.create(TBank.prototype) as TBank;
+    Object.assign(gateway as any, { PASSWORD: password });
+
+    const notification = {
+      TerminalKey: 'TinkoffBankTest',
+      OrderId: '4248',
+      Success: true,
+      Status: 'CONFIRMED',
+      PaymentId: 8833175602,
+      Amount: 19200,
+    };
+
+    const signed: Record<string, any> = { ...notification, Password: password };
+    const expectedToken = crypto
+      .createHash('sha256')
+      .update(
+        Object.keys(signed)
+          .sort()
+          .map((key) => String(signed[key]))
+          .join(''),
+      )
+      .digest('hex');
+
+    expect(gateway.verifyNotification({ ...notification, Token: expectedToken })).toBe(true);
+    expect(gateway.verifyNotification({ ...notification, Token: 'a'.repeat(64) })).toBe(false);
+    expect(gateway.verifyNotification({ ...notification })).toBe(false);
+    expect(gateway.verifyNotification({ ...notification, Amount: 1, Token: expectedToken })).toBe(false);
+  });
+
+  it('logs a signature mismatch but still processes while TBANK_VERIFY_WEBHOOK is off', async () => {
+    // Флаг выключен по умолчанию: сначала копим статистику на живом трафике,
+    // чтобы включение отклонения не остановило платежи молча
+    const prisma = {
+      transaction: {
+        findUnique: jest.fn().mockResolvedValue({ id: 4248, user: { id: 2918 } }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    const logger = { log: jest.fn(), warn: jest.fn(), error: jest.fn() };
+    const service = new PaymentService(
+      prisma as any,
+      logger as any,
+      { verifyNotification: jest.fn().mockReturnValue(false) } as any,
+      { create: jest.fn() } as any,
+      { sendPaymentStatus: jest.fn() } as any,
+      { confirmUsageByTransaction: jest.fn(), cancelUsageByTransaction: jest.fn() } as any,
+    );
+
+    await expect(
+      service.acceptTransactionStatus({
+        OrderId: '4248',
+        Success: true,
+        Status: 'CONFIRMED',
+        PaymentId: 8833175602,
+        Token: 'forged',
+      } as any),
+    ).resolves.toBe('OK');
+
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('SIGNATURE MISMATCH'));
+    expect(prisma.transaction.findUnique).toHaveBeenCalled();
   });
 
   it('stores a provider timeout, marks SIM failed and sends its real message', async () => {
@@ -246,9 +312,75 @@ describe('T-Bank and provider flow (mock)', () => {
       {} as any,
       {} as any,
       orderService as any,
+      { cancelUsageByTransaction: jest.fn() } as any,
     );
 
     await jobs.processPendingConfirmedPayments();
     expect(orderService.create).toHaveBeenCalledWith(2918, 4248);
+  });
+
+  it('never cancels a stale order whose payment arrived before the update', async () => {
+    const tx = {
+      transaction: { count: jest.fn().mockResolvedValue(1), updateMany: jest.fn() },
+      order: { updateMany: jest.fn() },
+      sims: { updateMany: jest.fn() },
+    };
+    const promoCodeService = { cancelUsageByTransaction: jest.fn() };
+    const jobs = new JobsService(
+      { log: jest.fn(), error: jest.fn() } as any,
+      {
+        order: {
+          findMany: jest.fn().mockResolvedValue([{ id: 3641, transactions: [{ id: 4248 }] }]),
+        },
+        $transaction: jest.fn(async (cb: any) => cb(tx)),
+      } as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      promoCodeService as any,
+    );
+
+    await jobs.cancelStaleOrders();
+
+    expect(tx.order.updateMany).not.toHaveBeenCalled();
+    expect(tx.sims.updateMany).not.toHaveBeenCalled();
+    expect(tx.transaction.updateMany).not.toHaveBeenCalled();
+    expect(promoCodeService.cancelUsageByTransaction).not.toHaveBeenCalled();
+  });
+
+  it('cancels an abandoned order and releases its promo code', async () => {
+    const tx = {
+      transaction: {
+        count: jest.fn().mockResolvedValue(0),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      order: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      sims: { updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
+    };
+    const promoCodeService = { cancelUsageByTransaction: jest.fn() };
+    const jobs = new JobsService(
+      { log: jest.fn(), error: jest.fn() } as any,
+      {
+        order: {
+          findMany: jest.fn().mockResolvedValue([{ id: 3641, transactions: [{ id: 4248 }] }]),
+        },
+        $transaction: jest.fn(async (cb: any) => cb(tx)),
+      } as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      promoCodeService as any,
+    );
+
+    await jobs.cancelStaleOrders();
+
+    expect(tx.order.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: OrderStatus.FAILED } }),
+    );
+    expect(tx.sims.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { status: OrderStatus.FAILED } }));
+    expect(tx.transaction.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: TransactionStatus.CANCELED } }),
+    );
+    expect(promoCodeService.cancelUsageByTransaction).toHaveBeenCalledWith(4248);
   });
 });

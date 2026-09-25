@@ -6,6 +6,13 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@prisma';
 import { OrderStatus, TransactionStatus } from '@prisma/client';
 import { OrderService } from '../order/order.service';
+import { PromoCodeService } from '../promocode';
+
+/** Через сколько брошенный заказ в статусе CREATED считается протухшим */
+const STALE_ORDER_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** Статусы, при которых деньги уже в системе — такие заказы отменять нельзя */
+const PAID_TRANSACTION_STATUSES = [TransactionStatus.SUCCESS, TransactionStatus.WAITING_ORDER_CONFIRMATION];
 
 @Injectable()
 export class JobsService {
@@ -15,9 +22,11 @@ export class JobsService {
     private readonly joyTelService: JoyTel,
     private readonly billionConnectService: BillionConnectService,
     private readonly orderService: OrderService,
+    private readonly promoCodeService: PromoCodeService,
   ) {}
 
   private isProcessingConfirmedPayments = false;
+  private isCancellingStaleOrders = false;
 
   @Cron(CronExpression.EVERY_12_HOURS)
   async updateBalance() {
@@ -65,6 +74,91 @@ export class JobsService {
     } finally {
       this.isProcessingConfirmedPayments = false;
     }
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async cancelStaleOrders() {
+    if (this.isCancellingStaleOrders) {
+      return;
+    }
+
+    this.isCancellingStaleOrders = true;
+
+    try {
+      const cutoff = new Date(Date.now() - STALE_ORDER_TTL_MS);
+
+      const staleOrders = await this.prisma.order.findMany({
+        where: {
+          status: OrderStatus.CREATED,
+          created_at: { lt: cutoff },
+          // Заказы с пришедшими деньгами не трогаем ни при каких условиях
+          transactions: { none: { status: { in: PAID_TRANSACTION_STATUSES } } },
+        },
+        select: {
+          id: true,
+          transactions: { select: { id: true } },
+        },
+        orderBy: { created_at: 'asc' },
+        take: 20,
+      });
+
+      for (const order of staleOrders) {
+        try {
+          const cancelled = await this.cancelStaleOrder(order.id);
+
+          if (!cancelled) {
+            continue;
+          }
+
+          for (const transaction of order.transactions) {
+            await this.promoCodeService.cancelUsageByTransaction(transaction.id);
+          }
+
+          this.logger.log(`Stale order ${order.id} cancelled after ${STALE_ORDER_TTL_MS / 3600000}h`);
+        } catch (error) {
+          this.logger.error(`Stale order cancellation failed for order ${order.id}`, error);
+        }
+      }
+    } finally {
+      this.isCancellingStaleOrders = false;
+    }
+  }
+
+  private async cancelStaleOrder(orderId: number): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      // Оплата могла прийти между выборкой и этим обновлением — перепроверяем под транзакцией
+      const paid = await tx.transaction.count({
+        where: {
+          order_id: orderId,
+          status: { in: PAID_TRANSACTION_STATUSES },
+        },
+      });
+
+      if (paid > 0) {
+        return false;
+      }
+
+      const updated = await tx.order.updateMany({
+        where: { id: orderId, status: OrderStatus.CREATED },
+        data: { status: OrderStatus.FAILED },
+      });
+
+      if (updated.count === 0) {
+        return false;
+      }
+
+      await tx.sims.updateMany({
+        where: { order_id: orderId, status: OrderStatus.CREATED },
+        data: { status: OrderStatus.FAILED },
+      });
+
+      await tx.transaction.updateMany({
+        where: { order_id: orderId, status: TransactionStatus.PENDING },
+        data: { status: TransactionStatus.CANCELED },
+      });
+
+      return true;
+    });
   }
 
   @Cron('*/20 * * * *')
