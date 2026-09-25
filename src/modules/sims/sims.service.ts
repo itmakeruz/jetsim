@@ -302,8 +302,12 @@ export class SimsService {
     // });
     const sims = await paginate('sims', {
       where: {
+        // Никакого фильтра по sim_status: это личный кабинет, клиент должен
+        // видеть все свои eSIM. Раньше фильтр стоял, но был незаметен —
+        // sim_status у всех был null, потому что его никто не заполнял.
+        // Как только статусы начали проставляться, активированные симки
+        // пропали из «Мои eSIM».
         user_id: userId,
-        sim_status: null,
       },
       select: {
         id: true,
@@ -314,6 +318,7 @@ export class SimsService {
         puk_1: true,
         qrcode: true,
         status: true,
+        sim_status: true,
         last_usage_quantity: true,
         created_at: true,
         tariff: {
@@ -356,6 +361,7 @@ export class SimsService {
           tariff_id: sim?.tariff?.id,
           tariff_name: sim?.tariff?.[`name_${lang}`],
           status: sim?.status,
+          sim_status: sim?.sim_status,
           day_left: getRemainingDays(sim?.created_at, sim?.tariff?.validity_period),
           usage: Number(sim?.last_usage_quantity) ?? 0,
           quantity_internet: sim?.tariff?.quantity_internet * 1024,
