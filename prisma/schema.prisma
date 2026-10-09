@@ -173,6 +173,7 @@ model Sims {
   order_code           String?
   sn_code              String?
   sn_pin               String?
+  sn_puk               String?
   product_expire_date  String?
   coupon               String?
   qrcode_type          Int?

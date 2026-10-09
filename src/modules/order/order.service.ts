@@ -84,6 +84,11 @@ export class OrderService {
           iccid: true,
           pin_1: true,
           puk_1: true,
+          // Серийная пара JoyTel: по ней поддержка ищет eSIM в кабинете партнёра.
+          // pin_1 — это обычный PIN симки (0000), для проверки у партнёра не годится.
+          sn_pin: true,
+          sn_code: true,
+          sn_puk: true,
           qrcode: true,
           status: true,
           sim_status: true,
@@ -237,6 +242,9 @@ export class OrderService {
           iccid: sim?.iccid,
           pin_1: sim?.pin_1,
           puk_1: sim?.puk_1,
+          sn_pin: sim?.sn_pin,
+          sn_code: sim?.sn_code,
+          sn_puk: sim?.sn_puk,
           status: sim?.status,
           sim_status: sim?.sim_status,
           qr_code: sim?.qrcode ? `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png` : null,
@@ -1087,6 +1095,9 @@ export class OrderService {
       data: {
         sn_code: firstSn.snCode,
         sn_pin: firstSn.snPin,
+        // Серийный PUK JoyTel хранится отдельно: puk_1 ниже перезапишет
+        // колбэк notifyCoupon обычным PUK симки, и значение потеряется.
+        sn_puk: firstSn.snPuk || null,
         pin_1: firstSn.snPin,
         puk_1: firstSn.snPuk || null,
         uid: firstSn.snCode,
@@ -1153,8 +1164,9 @@ export class OrderService {
       },
       sim: {
         cid: updatedOrder.cid ?? updatedOrder.iccid ?? '—',
-        snPin: updatedOrder.pin_1 ?? '—',
+        snPin: updatedOrder.sn_pin ?? '—',
         snCode: updatedOrder.sn_code ?? updatedOrder.iccid ?? '—',
+        snPuk: updatedOrder.sn_puk,
         status: updatedOrder.status,
       },
       qrBuffer,
@@ -1239,8 +1251,9 @@ export class OrderService {
       },
       sim: {
         cid: updatedSim.iccid ?? '—',
-        snPin: updatedSim.pin_1 ?? '—',
+        snPin: updatedSim.sn_pin ?? '—',
         snCode: updatedSim.sn_code ?? updatedSim.iccid ?? '—',
+        snPuk: updatedSim.sn_puk,
         status: updatedSim.status,
       },
       qrBuffer,

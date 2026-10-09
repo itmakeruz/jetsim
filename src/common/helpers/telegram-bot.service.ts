@@ -118,7 +118,7 @@ ${formattedResponse}
     esimId: number;
     date: string;
     client: { name: string; email: string; phone?: string };
-    sim: { cid: string; snPin: string; snCode: string; status: string };
+    sim: { cid: string; snPin: string; snCode: string; snPuk?: string | null; status: string };
     qrBuffer: Buffer;
   }) {
     const formattedDate = this.formatDate(params.date);
@@ -140,7 +140,8 @@ ${formattedResponse}
 📱 <b>SIM-карта</b>
 • CID: ${code(params.sim.cid)}
 • SN Pin: ${code(params.sim.snPin)}
-• SN Code: ${code(params.sim.snCode)}
+• SN Code: ${code(params.sim.snCode)}${params.sim.snPuk ? `
+• SN Puk: ${code(params.sim.snPuk)}` : ''}
 • Статус: ${code(params.sim.status)}
 
 ✅ QR-код для активации прикреплен
