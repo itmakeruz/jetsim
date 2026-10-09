@@ -19,10 +19,18 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: 22
+          # Без этого скрипт идёт дальше по упавшему шагу: провалившийся build
+          # всё равно доходил до pm2 restart и ронял живой процесс.
+          # С остановкой по ошибке деплой просто не проходит, прод остаётся на старом коде.
+          script_stop: true
           script: |
             cd /var/www/jetsim
             git pull origin main
             pnpm install
+            # Клиент Prisma обязан пересобираться после каждого изменения схемы:
+            # postinstall-хука у нас нет, а pnpm не запускает build-скрипты
+            # зависимостей — без этого шага nest start падает на несуществующих полях
+            pnpm prisma generate
             pnpm build
             pm2 restart jetsim-api
 
