@@ -51,17 +51,6 @@ export class TelegramBotService {
     this.logger.log('Телеграм бот инициализирован.');
   }
 
-  private getPartnerName(partnerId: PartnerIds): string {
-    switch (partnerId) {
-      case PartnerIds.JOYTEL:
-        return 'Joytel';
-      case PartnerIds.BILLION_CONNECT:
-        return 'BillionConnect';
-      default:
-        return 'Неизвестный партнер';
-    }
-  }
-
   public async notifyOrderSuccess(params: {
     partnerId: PartnerIds;
     orderId: number;
@@ -72,7 +61,8 @@ export class TelegramBotService {
     providerOrderId: string | number;
     response: any;
   }) {
-    const partnerName = this.getPartnerName(params.partnerId);
+    // Имя провайдера (JoyTel/BillionConnect) намеренно не упоминаем в тексте —
+    // только внутри сырого JSON-ответа, который и так нужен для отладки.
     const formattedDate = this.formatDate(params.date);
     const esc = (s: unknown) => String(s ?? '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const code = (s: unknown) => `<code>${esc(s)}</code>`;
@@ -80,7 +70,7 @@ export class TelegramBotService {
     const formattedResponse = esc(JSON.stringify(params.response, null, 2));
 
     const message = `
-✅ <b>${esc(partnerName)} — заказ принят</b>
+✅ <b>Провайдер принял заказ</b>
 
 📋 <b>Информация о заказе</b>
 • ID заказа: ${code(params.orderId)}
@@ -91,7 +81,7 @@ export class TelegramBotService {
 • Имя: ${esc(params.client.name)}
 • Email: ${esc(params.client.email)}
 
-🔄 <b>Ответ от ${esc(partnerName)}</b>
+🔄 <b>Ответ провайдера</b>
 • Trade Code: ${code(params.tradeCode)}
 • Order ID: ${code(params.providerOrderId)}
 
@@ -113,7 +103,7 @@ export class TelegramBotService {
     providerOrderId?: string | number;
     response: any;
   }) {
-    const partnerName = this.getPartnerName(params.partnerId);
+    // Имя провайдера намеренно не упоминаем в тексте — см. notifyOrderSuccess.
     const formattedDate = this.formatDate(params.date);
     const esc = (s: unknown) => String(s ?? '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const code = (s: unknown) => `<code>${esc(s)}</code>`;
@@ -121,7 +111,7 @@ export class TelegramBotService {
     const formattedResponse = esc(JSON.stringify(params.response, null, 2));
 
     const message = `
-⛔ <b>Ошибка активации — ${esc(partnerName)}</b>
+⛔ <b>Ошибка активации заказа</b>
 
 📋 <b>Данные заказа</b>
 • ID заказа: ${code(params.orderId)}
