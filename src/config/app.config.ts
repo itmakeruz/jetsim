@@ -55,6 +55,11 @@ const TELEGRAM_BOT_TOKEN = config.get<string>('TELEGRAM_BOT_TOKEN') ?? '';
 // Чат, куда шлём уведомления о заказах/ошибках партнёров. Раньше был
 // захардкожен в коде — вынесен в env, чтобы его можно было сменить без деплоя.
 const TELEGRAM_ADMIN_CHAT_ID = config.get<string>('TELEGRAM_ADMIN_CHAT_ID') ?? '';
+// Отдельный чат для уведомлений о каждой отправке заказа партнёру (JoyTel/BC) —
+// их много и по делу интересны не всем, поэтому идут не в общую группу, а личным
+// сообщением тому, кто задал этот chat_id. Финальное "eSIM активирована" с QR
+// по-прежнему уходит в общий TELEGRAM_ADMIN_CHAT_ID.
+const TELEGRAM_PERSONAL_CHAT_ID = config.get<string>('TELEGRAM_PERSONAL_CHAT_ID') ?? '';
 
 // BASIC AUTH для /docs и /logs — если не заданы, эндпоинты не монтируются
 const DOCS_USER = config.get<string>('DOCS_USER') ?? '';
@@ -96,6 +101,7 @@ export {
   TBANK_VERIFY_WEBHOOK,
   TELEGRAM_BOT_TOKEN,
   TELEGRAM_ADMIN_CHAT_ID,
+  TELEGRAM_PERSONAL_CHAT_ID,
   DOCS_USER,
   DOCS_PASS,
   LOGS_USER,

@@ -133,6 +133,10 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  TELEGRAM_PERSONAL_CHAT_ID: string;
+
+  @IsOptional()
+  @IsString()
   TBANK_VERIFY_WEBHOOK: string;
 
   @IsOptional()

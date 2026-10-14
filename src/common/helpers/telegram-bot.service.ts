@@ -1,4 +1,4 @@
-import { TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_CHAT_ID } from '@config';
+import { TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_CHAT_ID, TELEGRAM_PERSONAL_CHAT_ID } from '@config';
 import { Injectable, Logger } from '@nestjs/common';
 import * as TelegramBotAPI from 'node-telegram-bot-api';
 
@@ -16,6 +16,10 @@ export class TelegramBotService {
   private readonly bot: TelegramBotAPI;
   private readonly logger = new Logger(TelegramBotService.name);
   private readonly notificationChatId: string;
+  // Для уведомлений о каждой отправке заказа партнёру — отдельно от общей
+  // группы. Пока не задан, такие уведомления просто не уходят (а не падают
+  // в общий чат): их много, и до явной настройки это новый, необязательный канал.
+  private readonly personalChatId: string | null;
 
   constructor() {
     this.bot = new TelegramBotAPI(TELEGRAM_BOT_TOKEN, { polling: false });
@@ -26,6 +30,15 @@ export class TelegramBotService {
       this.notificationChatId = FALLBACK_ADMIN_CHAT_ID;
       this.logger.warn(
         `TELEGRAM_ADMIN_CHAT_ID не задан в .env — уведомления уходят в старый захардкоженный чат ${FALLBACK_ADMIN_CHAT_ID}`,
+      );
+    }
+
+    if (TELEGRAM_PERSONAL_CHAT_ID) {
+      this.personalChatId = TELEGRAM_PERSONAL_CHAT_ID;
+    } else {
+      this.personalChatId = null;
+      this.logger.warn(
+        'TELEGRAM_PERSONAL_CHAT_ID не задан в .env — уведомления об отправке заказа партнёру не отправляются никуда',
       );
     }
 
@@ -86,7 +99,8 @@ export class TelegramBotService {
 <code>${formattedResponse}</code>
 `;
 
-    await this.send(message, 'HTML');
+    if (!this.personalChatId) return;
+    await this.send(message, 'HTML', this.personalChatId);
   }
 
   public async notifyOrderError(params: {
@@ -183,13 +197,14 @@ export class TelegramBotService {
     return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
-  private async send(message: string, parseMode?: 'Markdown' | 'HTML') {
+  private async send(message: string, parseMode?: 'Markdown' | 'HTML', chatId?: string) {
+    const targetChatId = chatId ?? this.notificationChatId;
     try {
-      await this.bot.sendMessage(this.notificationChatId, message, parseMode ? { parse_mode: parseMode } : {});
+      await this.bot.sendMessage(targetChatId, message, parseMode ? { parse_mode: parseMode } : {});
 
-      this.logger.log(`Сообщение отправлено администратору.`);
+      this.logger.log(`Сообщение отправлено в чат ${targetChatId}.`);
     } catch (error) {
-      this.logger.error(`Ошибка отправки сообщения: ${error.message}`);
+      this.logger.error(`Ошибка отправки сообщения в чат ${targetChatId}: ${error.message}`);
     }
   }
 
