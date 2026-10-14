@@ -33,6 +33,18 @@ export class OrderController {
     return this.orderService.findAll(query);
   }
 
+  @ApiOperation({
+    summary: 'Order delivery history',
+    description: 'Пошаговая история выдачи: что отправили партнёру, что он ответил, где застряло',
+  })
+  @Get('admin/:id/history')
+  @ApiBearerAuth()
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  async getOrderHistory(@Param('id') id: string) {
+    return this.orderService.getOrderHistory(+id);
+  }
+
   @ApiOperation({ summary: 'Get orders admin', description: 'Get orders admin' })
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))

@@ -32,6 +32,27 @@ export interface CreateOrderResponseJoyTel {
   };
 }
 
+/**
+ * Ответ эндпоинта /customerApi/customerOrder/query — синхронный опрос
+ * статуса заказа тем же методом, что и в колбэке orderTid/orderCode,
+ * но под оберткой data (в отличие от «плоского» JoyTelCallbackResponse,
+ * который JoyTel присылает сам, без этой обёртки).
+ */
+export interface QueryOrderResponseJoyTel {
+  code: number;
+  message?: string;
+  data?: {
+    orderTid: string;
+    orderCode: string;
+    itemList?: {
+      productName?: string;
+      quantity?: number;
+      productCode?: string;
+      snList?: { snCode: string; snPin: string; snPuk?: string; productExpireDate?: string }[];
+    }[];
+  };
+}
+
 export interface NotifyResponseJoyTel {
   transId: string;
   resultCode: string;

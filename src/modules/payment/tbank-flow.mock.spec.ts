@@ -56,6 +56,7 @@ describe('T-Bank and provider flow (mock)', () => {
       orderService as any,
       { sendPaymentStatus: jest.fn() } as any,
       { confirmUsageByTransaction: jest.fn(), cancelUsageByTransaction: jest.fn() } as any,
+      { record: jest.fn() } as any,
     );
 
     const startedAt = Date.now();
@@ -123,6 +124,7 @@ describe('T-Bank and provider flow (mock)', () => {
       { create: jest.fn() } as any,
       { sendPaymentStatus: jest.fn() } as any,
       { confirmUsageByTransaction: jest.fn(), cancelUsageByTransaction: jest.fn() } as any,
+      { record: jest.fn() } as any,
     );
 
     await expect(
@@ -157,6 +159,7 @@ describe('T-Bank and provider flow (mock)', () => {
       { log: jest.fn(), error: jest.fn() } as any,
       {} as any,
       telegram as any,
+      { record: jest.fn() } as any,
     );
 
     await expect(
@@ -206,6 +209,7 @@ describe('T-Bank and provider flow (mock)', () => {
         }),
       } as any,
       { notifyOrderError: jest.fn() } as any,
+      { record: jest.fn() } as any,
     );
 
     await expect(
@@ -225,6 +229,7 @@ describe('T-Bank and provider flow (mock)', () => {
       { log: jest.fn(), error: jest.fn() } as any,
       provider as any,
       { notifyOrderError: jest.fn() } as any,
+      { record: jest.fn() } as any,
     );
 
     await expect(
@@ -259,6 +264,7 @@ describe('T-Bank and provider flow (mock)', () => {
       { log: jest.fn(), info: jest.fn() } as any,
       {} as any,
       { processBillion: jest.fn().mockResolvedValue(false), processJoyTel: jest.fn() } as any,
+      { record: jest.fn() } as any,
     );
 
     await expect(service.create(2918, 4248)).resolves.toEqual(expect.objectContaining({ success: false }));

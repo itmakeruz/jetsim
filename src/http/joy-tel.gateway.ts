@@ -10,7 +10,7 @@ import {
 import * as crypto from 'crypto';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { CouponRequest, CidRequest } from '@interfaces';
+import { CouponRequest, CidRequest, QueryOrderResponseJoyTel } from '@interfaces';
 import { WinstonLoggerService } from '@logger';
 
 @Injectable()
@@ -98,6 +98,39 @@ export class JoyTel {
       console.error('JoyTel RAW ERROR >>>', error?.response?.data || error.message);
       throw new InternalServerErrorException('JoyTel order failed');
     }
+  }
+
+  /**
+   * Синхронный опрос статуса заказа — тот же snPin/snCode, что приходит
+   * колбэком на /order/joytel/callback, но без ожидания, пока JoyTel сам
+   * решит его прислать. Дергаем сразу после submitEsimOrder: если к этому
+   * моменту snPin уже готов на их стороне, получаем QR на шаг раньше, не
+   * дожидаясь отдельного вебхука. Если не готов — ничего страшного,
+   * пассивный колбэк отработает как раньше.
+   */
+  async queryOrderStatus(orderTid: string, orderCode?: string): Promise<QueryOrderResponseJoyTel> {
+    const url = `${this.orderUrl}/query`;
+    const timestamp = this.generateTimeStamp();
+
+    const plainStr =
+      this.customerCode + this.customerAuth + (orderCode ?? '') + orderTid + timestamp;
+    const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
+
+    const body: Record<string, any> = {
+      customerCode: this.customerCode,
+      orderTid,
+      timestamp,
+      autoGraph,
+    };
+    if (orderCode) body.orderCode = orderCode;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    const response = await this.httpService.setUrl(url).setHeaders(headers).setBody(body).send();
+    return response;
   }
 
   async redeemCouponForQrCode(snPin: string): Promise<any> {

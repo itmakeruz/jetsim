@@ -7,9 +7,10 @@ import { QrService } from '@helpers';
 import { WinstonLoggerService } from '@logger';
 import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
 import { CreateSimService } from './create-sim/create-sim.service';
+import { OrderEventsModule } from 'src/modules/order-events/order-events.module';
 
 @Module({
-  imports: [PrismaModule, HttpModule],
+  imports: [PrismaModule, HttpModule, OrderEventsModule],
   controllers: [OrderController],
   providers: [OrderService, JoyTel, QrService, WinstonLoggerService, TelegramBotService, CreateSimService],
   exports: [OrderService],

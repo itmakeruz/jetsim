@@ -42,35 +42,38 @@ export class TelegramBotService {
     esimId: number;
     date: string;
     client: { name: string; email: string };
-    tradeCode: string;
-    providerOrderId: number;
+    tradeCode: string | number;
+    providerOrderId: string | number;
     response: any;
   }) {
     const partnerName = this.getPartnerName(params.partnerId);
+    const formattedDate = this.formatDate(params.date);
+    const esc = (s: unknown) => String(s ?? '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const code = (s: unknown) => `<code>${esc(s)}</code>`;
 
-    const formattedResponse = '```json\n' + JSON.stringify(params.response, null, 2) + '\n```';
+    const formattedResponse = esc(JSON.stringify(params.response, null, 2));
 
     const message = `
-✅ ${partnerName} - Заказ успешно оформлен!
+✅ <b>${esc(partnerName)} — заказ принят</b>
 
-📋 Информация о заказе:
-• ID заказа: ${params.orderId}
-• ID ESIM: ${params.esimId}
-• Дата: ${params.date}
+📋 <b>Информация о заказе</b>
+• ID заказа: ${code(params.orderId)}
+• ID eSIM: ${code(params.esimId)}
+• Дата: ${esc(formattedDate)}
 
-👤 Клиент:
-• Имя: ${params.client.name}
-• Электронная почта: ${params.client.email}
+👤 <b>Клиент</b>
+• Имя: ${esc(params.client.name)}
+• Email: ${esc(params.client.email)}
 
-🔄 Ответ от ${partnerName}:
-• Trade Code: ${params.tradeCode ?? '—'}
-• Order ID: ${params.providerOrderId ?? '—'}
+🔄 <b>Ответ от ${esc(partnerName)}</b>
+• Trade Code: ${code(params.tradeCode)}
+• Order ID: ${code(params.providerOrderId)}
 
-📄 Ответ:
-${formattedResponse}
+📄 <b>Ответ</b>
+<code>${formattedResponse}</code>
 `;
 
-    await this.send(message, 'Markdown');
+    await this.send(message, 'HTML');
   }
 
   public async notifyOrderError(params: {
@@ -79,35 +82,39 @@ ${formattedResponse}
     esimId: number;
     date: string;
     client: { name: string; email: string };
-    errorCode: string;
-    providerOrderId?: number;
+    errorCode: string | number;
+    providerOrderId?: string | number;
     response: any;
   }) {
     const partnerName = this.getPartnerName(params.partnerId);
-    const formattedResponse = '```json\n' + JSON.stringify(params.response, null, 2) + '\n```';
+    const formattedDate = this.formatDate(params.date);
+    const esc = (s: unknown) => String(s ?? '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const code = (s: unknown) => `<code>${esc(s)}</code>`;
+
+    const formattedResponse = esc(JSON.stringify(params.response, null, 2));
 
     const message = `
-⛔ Ошибка активации — ${partnerName}
+⛔ <b>Ошибка активации — ${esc(partnerName)}</b>
 
-📋 Данные заказа:
-• ID заказа: ${params.orderId}
-• ID ESIM: ${params.esimId}
-• Дата: ${params.date}
+📋 <b>Данные заказа</b>
+• ID заказа: ${code(params.orderId)}
+• ID eSIM: ${code(params.esimId)}
+• Дата: ${esc(formattedDate)}
 
-👤 Клиент:
-• Имя: ${params.client.name}
-• Электронная почта: ${params.client.email}
+👤 <b>Клиент</b>
+• Имя: ${esc(params.client.name)}
+• Email: ${esc(params.client.email)}
 
-⚠️ Ошибка:
-• Error Code: ${params.errorCode}
-• Order ID: ${params.providerOrderId ?? '—'}
-• Error Message: ${params.response?.tradeMsg ?? params.response?.message ?? '—'}
+⚠️ <b>Ошибка</b>
+• Error Code: ${code(params.errorCode)}
+• Order ID: ${code(params.providerOrderId)}
+• Error Message: ${esc(params.response?.tradeMsg ?? params.response?.message ?? '—')}
 
-📄 Ответ:
-${formattedResponse}
+📄 <b>Ответ</b>
+<code>${formattedResponse}</code>
 `;
 
-    await this.send(message);
+    await this.send(message, 'HTML');
   }
 
   /**

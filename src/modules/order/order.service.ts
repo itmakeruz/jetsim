@@ -21,6 +21,7 @@ import { basket_empty, user_not_found, order_not_found, FilePath, partner_not_fo
 import { MAIL_USER } from '@config';
 import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
 import { CreateSimService } from './create-sim/create-sim.service';
+import { OrderEventsService } from 'src/modules/order-events/order-events.service';
 
 @Injectable()
 export class OrderService {
@@ -33,7 +34,81 @@ export class OrderService {
     private readonly logger: WinstonLoggerService,
     private readonly telegramBotService: TelegramBotService,
     private readonly createSimsService: CreateSimService,
+    private readonly orderEvents: OrderEventsService,
   ) {}
+  /**
+   * Полная история выдачи заказа: что отправили партнёру, что он ответил,
+   * на каком шаге всё остановилось. Нужна, чтобы отвечать на «почему eSIM
+   * не вышла» без похода в логи контейнера — раньше этого не было видно
+   * нигде, кроме Sims.response (и то только последний снимок, без истории).
+   */
+  async getOrderHistory(orderId: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, status: true, created_at: true, updated_at: true },
+    });
+
+    if (!order) {
+      throw new NotFoundException(order_not_found['ru']);
+    }
+
+    const [sims, transactions, events] = await Promise.all([
+      this.prisma.sims.findMany({
+        where: { order_id: orderId },
+        select: {
+          id: true,
+          partner_id: true,
+          status: true,
+          sim_status: true,
+          iccid: true,
+          order_tid: true,
+          order_code: true,
+          response: true,
+          created_at: true,
+          updated_at: true,
+        },
+        orderBy: { id: 'asc' },
+      }),
+      this.prisma.transaction.findMany({
+        where: { order_id: orderId },
+        select: { id: true, status: true, amount: true, created_at: true, updated_at: true },
+        orderBy: { id: 'asc' },
+      }),
+      // Ось таймлайна — order_id: сюда попадают и события уровня заказа
+      // (создан, оплата запрошена, вебхук пришёл), у которых sim_id нет, и
+      // партнёрские шаги по конкретным eSIM.
+      this.prisma.orderEvent.findMany({
+        where: { order_id: orderId },
+        orderBy: { created_at: 'asc' },
+        select: {
+          id: true,
+          sim_id: true,
+          partner_id: true,
+          event: true,
+          severity: true,
+          message: true,
+          meta: true,
+          created_at: true,
+        },
+      }),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        order,
+        transactions,
+        // Единый хронологический таймлайн — то, что в первую очередь
+        // показывает CRM. sim_id проставлен только у событий конкретной eSIM.
+        timeline: events,
+        // Текущий снимок по каждой eSIM — нужен как запасной вариант для
+        // заказов, оформленных до появления этой истории: тогда events будет
+        // пуст, но хотя бы видно последний сохранённый ответ партнёра.
+        sims,
+      },
+    };
+  }
+
   async findAll(query: GetOrderDto) {
     const select = this.getAdminOrderSelect();
     const where = this.buildAdminOrderWhere(query);
@@ -674,6 +749,12 @@ export class OrderService {
       throw new BadRequestException('Order not found for this transaction!');
     }
 
+    await this.orderEvents.record({
+      orderId: newOrder.id,
+      event: 'order_processing_started',
+      message: `Оплата подтверждена, начинаем выдачу (${newOrder.sims.length} eSIM)`,
+    });
+
     // Prepare paytida yaratilgan SIMlar (CREATED status) – partnerlarga jo‘natamiz
     // const existingSims = await this.prisma.sims.findMany({
     //   where: {
@@ -697,9 +778,10 @@ export class OrderService {
         try {
           const item = {
             id: sim.id,
+            order_id: newOrder.id,
             tariff_id: sim.tariff_id,
             tariff: sim.tariff,
-            user: { email: newOrder.user.email },
+            user: { name: newOrder.user.name, email: newOrder.user.email },
           };
           if (sim.partner_id === PartnerIds.JOYTEL) {
             const success = await this.createSimsService.processJoyTel(newOrder.id, newOrder.user.id, item);
@@ -724,6 +806,15 @@ export class OrderService {
         data: {
           status: hasFailedSims ? OrderStatus.FAILED : OrderStatus.COMPLETED,
         },
+      });
+
+      await this.orderEvents.record({
+        orderId: newOrder.id,
+        event: hasFailedSims ? 'order_has_failed_sims' : 'order_completed',
+        severity: hasFailedSims ? 'warning' : 'info',
+        message: hasFailedSims
+          ? 'Не все eSIM выданы успешно — часть заказа упала на стороне партнёра'
+          : 'Все eSIM заказа выданы',
       });
 
       if (hasFailedSims) {
@@ -1075,6 +1166,15 @@ export class OrderService {
       throw new BadRequestException('Order not found');
     }
 
+    await this.orderEvents.record({
+      simId: sim.id,
+      orderId: sim.order_id,
+      partnerId: sim.partner_id,
+      event: 'joytel_snpin_callback_received',
+      message: 'JoyTel прислал колбэк с snPin (/order/joytel/callback)',
+      meta: { orderTid: data.orderTid, orderCode: data.orderCode },
+    });
+
     const items = data.itemList ? Object.values(data.itemList) : [];
 
     if (items.length === 0) {
@@ -1090,8 +1190,16 @@ export class OrderService {
     const firstSn = snList[0];
     const productCode = items[0].productCode;
 
-    await this.prisma.sims.update({
-      where: { id: sim.id },
+    /**
+     * Атомарный захват шага REDEEM_COUPON -> NOTIFY_COUPON.
+     * Этот же snPin может прийти раньше проактивным запросом сразу после
+     * отправки заказа (см. CreateSimService.processJoyTel) — если статус уже
+     * ушёл дальше, этот колбэк просто опоздал, и повторно запрашивать QR не нужно
+     * (JoyTel может расценить повторный /coupon/redeem как ошибку или отдать
+     * тот же купон второй раз впустую).
+     */
+    const claimed = await this.prisma.sims.updateMany({
+      where: { id: sim.id, status: OrderStatus.REDEEM_COUPON },
       data: {
         sn_code: firstSn.snCode,
         sn_pin: firstSn.snPin,
@@ -1106,7 +1214,39 @@ export class OrderService {
       },
     });
 
-    await this.joyTel.redeemCouponForQrCode(firstSn.snPin);
+    if (claimed.count === 0) {
+      await this.orderEvents.record({
+        simId: sim.id,
+        orderId: sim.order_id,
+        partnerId: sim.partner_id,
+        event: 'joytel_snpin_callback_raced_query',
+        message: 'snPin уже был применён раньше (проактивный запрос опередил колбэк) — повторный запрос QR пропущен',
+      });
+      return { code: '000', mesg: 'Success' };
+    }
+
+    try {
+      await this.joyTel.redeemCouponForQrCode(firstSn.snPin);
+      await this.orderEvents.record({
+        simId: sim.id,
+        orderId: sim.order_id,
+        partnerId: sim.partner_id,
+        event: 'joytel_qr_requested',
+        message: 'Запрос QR отправлен в JoyTel (/coupon/redeem)',
+      });
+    } catch (error) {
+      // Не бросаем дальше: JoyTel получил бы 500 на свой же колбэк о snPin и,
+      // вероятно, повторил бы его — а snPin уже сохранён. Фиксируем ошибку в
+      // истории, чтобы было видно, что заказ встал именно на этом шаге.
+      await this.orderEvents.record({
+        simId: sim.id,
+        orderId: sim.order_id,
+        partnerId: sim.partner_id,
+        event: 'joytel_qr_request_failed',
+        severity: 'error',
+        message: error?.message ?? String(error),
+      });
+    }
 
     return {
       code: '000',
@@ -1150,44 +1290,68 @@ export class OrderService {
       },
     });
 
-    await this.socketGateway.sendOrderMessage(sim.user_id, updatedOrder.id, updatedOrder.qrcode);
-
-    const qrBuffer = await this.qrService.generateQrWithLogo(updatedOrder.qrcode);
-    await this.telegramBotService.notifySimActivated({
+    await this.orderEvents.record({
+      simId: updatedOrder.id,
       orderId: updatedOrder.order_id,
-      esimId: updatedOrder.id,
-      date: new Date().toISOString(),
-      client: {
-        name: updatedOrder.user.name ?? '—',
-        email: updatedOrder.user.email ?? '—',
-        phone: updatedOrder.user.phone_number ?? undefined,
-      },
-      sim: {
-        cid: updatedOrder.cid ?? updatedOrder.iccid ?? '—',
-        snPin: updatedOrder.sn_pin ?? '—',
-        snCode: updatedOrder.sn_code ?? updatedOrder.iccid ?? '—',
-        snPuk: updatedOrder.sn_puk,
-        status: updatedOrder.status,
-      },
-      qrBuffer,
+      partnerId: updatedOrder.partner_id,
+      event: 'joytel_qr_callback_received',
+      message: 'JoyTel прислал QR-код (/order/notify/coupon/redeem) — eSIM готова',
+      meta: { cid: data.data.cid, qrcodeType: data.data.qrcodeType },
     });
 
-    const fasturl = generateFastEsimInstallmentString(updatedOrder.qrcode);
-    const html = newOrderMessage(
-      'Клиент',
-      updatedOrder.id,
-      fasturl,
-      updatedOrder.tariff.name_ru,
-      updatedOrder.tariff.quantity_internet,
-      updatedOrder.tariff.quantity_minute,
-      updatedOrder.tariff.quantity_sms,
-      updatedOrder?.pin_1,
-      updatedOrder?.pin_2,
-      updatedOrder?.puk_1,
-      updatedOrder?.puk_2,
-    );
-    // await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
-    saveQrCode(updatedOrder.id, qrBuffer);
+    try {
+      await this.socketGateway.sendOrderMessage(sim.user_id, updatedOrder.id, updatedOrder.qrcode);
+
+      const qrBuffer = await this.qrService.generateQrWithLogo(updatedOrder.qrcode);
+      await this.telegramBotService.notifySimActivated({
+        orderId: updatedOrder.order_id,
+        esimId: updatedOrder.id,
+        date: new Date().toISOString(),
+        client: {
+          name: updatedOrder.user.name ?? '—',
+          email: updatedOrder.user.email ?? '—',
+          phone: updatedOrder.user.phone_number ?? undefined,
+        },
+        sim: {
+          cid: updatedOrder.cid ?? updatedOrder.iccid ?? '—',
+          snPin: updatedOrder.sn_pin ?? '—',
+          snCode: updatedOrder.sn_code ?? updatedOrder.iccid ?? '—',
+          snPuk: updatedOrder.sn_puk,
+          status: updatedOrder.status,
+        },
+        qrBuffer,
+      });
+
+      const fasturl = generateFastEsimInstallmentString(updatedOrder.qrcode);
+      const html = newOrderMessage(
+        'Клиент',
+        updatedOrder.id,
+        fasturl,
+        updatedOrder.tariff.name_ru,
+        updatedOrder.tariff.quantity_internet,
+        updatedOrder.tariff.quantity_minute,
+        updatedOrder.tariff.quantity_sms,
+        updatedOrder?.pin_1,
+        updatedOrder?.pin_2,
+        updatedOrder?.puk_1,
+        updatedOrder?.puk_2,
+      );
+      // await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+      saveQrCode(updatedOrder.id, qrBuffer);
+    } catch (error) {
+      // БД уже обновлена в COMPLETED — это сбой в уведомлениях/сохранении QR,
+      // а не в самой выдаче. Если бросить исключение, JoyTel получит 500 на
+      // уже успешно обработанный колбэк и будет повторять его бесконечно.
+      this.logger.error('JoyTel notifyCoupon: пост-обработка после выдачи упала', error);
+      await this.orderEvents.record({
+        simId: updatedOrder.id,
+        orderId: updatedOrder.order_id,
+        partnerId: updatedOrder.partner_id,
+        event: 'joytel_qr_callback_post_processing_failed',
+        severity: 'error',
+        message: error?.message ?? String(error),
+      });
+    }
 
     return {
       code: '000',
@@ -1237,44 +1401,67 @@ export class OrderService {
         tariff: true,
       },
     });
-    await this.socketGateway.sendOrderMessage(sim.user_id, updatedSim.id, updatedSim.qrcode);
 
-    const qrBuffer = await this.qrService.generateQrWithLogo(updatedSim.qrcode);
-    await this.telegramBotService.notifySimActivated({
+    await this.orderEvents.record({
+      simId: updatedSim.id,
       orderId: updatedSim.order_id,
-      esimId: updatedSim.id,
-      date: new Date().toISOString(),
-      client: {
-        name: updatedSim.user.name ?? '—',
-        email: updatedSim.user.email ?? '—',
-        phone: updatedSim.user.phone_number ?? undefined,
-      },
-      sim: {
-        cid: updatedSim.iccid ?? '—',
-        snPin: updatedSim.sn_pin ?? '—',
-        snCode: updatedSim.sn_code ?? updatedSim.iccid ?? '—',
-        snPuk: updatedSim.sn_puk,
-        status: updatedSim.status,
-      },
-      qrBuffer,
+      partnerId: updatedSim.partner_id,
+      event: 'billionconnect_callback_received',
+      message: 'BillionConnect прислал финальный колбэк (/order/bc/callback) — eSIM готова',
+      meta: { channelOrderId: data?.tradeData?.channelOrderId, orderId: data?.tradeData?.orderId },
     });
 
-    const fasturl = generateFastEsimInstallmentString(updatedSim.qrcode);
-    const html = newOrderMessage(
-      'Клиент',
-      updatedSim.id,
-      fasturl,
-      updatedSim.tariff.name_ru,
-      updatedSim.tariff.quantity_internet,
-      updatedSim.tariff.quantity_minute,
-      updatedSim.tariff.quantity_sms,
-      updatedSim?.pin_1,
-      updatedSim?.pin_2,
-      updatedSim?.puk_1,
-      updatedSim?.puk_2,
-    );
-    // await sendMailHelper(updatedSim.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
-    saveQrCode(updatedSim.id, qrBuffer);
+    try {
+      await this.socketGateway.sendOrderMessage(sim.user_id, updatedSim.id, updatedSim.qrcode);
+
+      const qrBuffer = await this.qrService.generateQrWithLogo(updatedSim.qrcode);
+      await this.telegramBotService.notifySimActivated({
+        orderId: updatedSim.order_id,
+        esimId: updatedSim.id,
+        date: new Date().toISOString(),
+        client: {
+          name: updatedSim.user.name ?? '—',
+          email: updatedSim.user.email ?? '—',
+          phone: updatedSim.user.phone_number ?? undefined,
+        },
+        sim: {
+          cid: updatedSim.iccid ?? '—',
+          snPin: updatedSim.sn_pin ?? '—',
+          snCode: updatedSim.sn_code ?? updatedSim.iccid ?? '—',
+          snPuk: updatedSim.sn_puk,
+          status: updatedSim.status,
+        },
+        qrBuffer,
+      });
+
+      const fasturl = generateFastEsimInstallmentString(updatedSim.qrcode);
+      const html = newOrderMessage(
+        'Клиент',
+        updatedSim.id,
+        fasturl,
+        updatedSim.tariff.name_ru,
+        updatedSim.tariff.quantity_internet,
+        updatedSim.tariff.quantity_minute,
+        updatedSim.tariff.quantity_sms,
+        updatedSim?.pin_1,
+        updatedSim?.pin_2,
+        updatedSim?.puk_1,
+        updatedSim?.puk_2,
+      );
+      // await sendMailHelper(updatedSim.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+      saveQrCode(updatedSim.id, qrBuffer);
+    } catch (error) {
+      // БД уже обновлена в COMPLETED — см. аналогичный комментарий в notifyCoupon.
+      this.logger.error('BillionConnect bcCallback: пост-обработка после выдачи упала', error);
+      await this.orderEvents.record({
+        simId: updatedSim.id,
+        orderId: updatedSim.order_id,
+        partnerId: updatedSim.partner_id,
+        event: 'billionconnect_callback_post_processing_failed',
+        severity: 'error',
+        message: error?.message ?? String(error),
+      });
+    }
 
     return {
       tradeCode: '1000',

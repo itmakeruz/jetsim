@@ -201,11 +201,12 @@ model Sims {
   sim_status           SimStatus?
   last_usage_quantity  String?
 
-  user        User    @relation(fields: [user_id], references: [id])
-  partner     Partner @relation(fields: [partner_id], references: [id])
-  tariff      Tariff  @relation(fields: [tariff_id], references: [id])
-  order       Order?  @relation(fields: [order_id], references: [id])
-  main_region Region? @relation(fields: [main_region_id], references: [id])
+  user        User         @relation(fields: [user_id], references: [id])
+  partner     Partner      @relation(fields: [partner_id], references: [id])
+  tariff      Tariff       @relation(fields: [tariff_id], references: [id])
+  order       Order?       @relation(fields: [order_id], references: [id])
+  main_region Region?      @relation(fields: [main_region_id], references: [id])
+  events      OrderEvent[]
 
   request  Json?
   response Json?
@@ -250,6 +251,7 @@ model Order {
   sims         Sims[]
   transactions Transaction[]
   promo_usage  PromoUsage?
+  events       OrderEvent[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -419,6 +421,34 @@ enum OrderStatus {
 enum SimStatus {
   ACTIVATED
   EXPIRED
+}
+
+/**
+ * Полная история заказа от создания до выдачи: создан, оплата запрошена,
+ * вебхук от Т-Банка пришёл, заявка ушла партнёру (JoyTel/BillionConnect),
+ * пришёл колбэк, запрошен QR — и что партнёр ответил на каждом шаге.
+ * sim_id проставлен только у событий, которые относятся к конкретной eSIM
+ * (партнёрские шаги); у событий уровня заказа (создание, оплата) его нет —
+ * order_id обязателен всегда, это и есть ось таймлайна.
+ */
+model OrderEvent {
+  id         Int      @id @default(autoincrement())
+  order_id   Int
+  sim_id     Int?
+  partner_id Int?
+  event      String
+  severity   String   @default("info")
+  message    String?
+  meta       Json?
+  created_at DateTime @default(now()) @db.Timestamptz(5)
+
+  order Order @relation(fields: [order_id], references: [id])
+  sim   Sims? @relation(fields: [sim_id], references: [id])
+
+  @@index([order_id])
+  @@index([sim_id])
+  @@index([created_at])
+  @@map("order_events")
 }
 
 enum OrderJobStatus {

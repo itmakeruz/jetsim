@@ -11,6 +11,7 @@ import { GatewayGateway } from '../gateway';
 import { PartnerIds } from '@enums';
 import { PromoCodeService } from '../promocode';
 import { TBANK_VERIFY_WEBHOOK } from '@config';
+import { OrderEventsService } from 'src/modules/order-events/order-events.service';
 
 @Injectable()
 export class PaymentService {
@@ -21,6 +22,7 @@ export class PaymentService {
     private readonly orderService: OrderService,
     private readonly socketGateway: GatewayGateway,
     private readonly promoCodeService: PromoCodeService,
+    private readonly orderEvents: OrderEventsService,
   ) {}
 
   async create(userId: number, lang: string) {
@@ -155,6 +157,13 @@ export class PaymentService {
       data: { order_id: order.id },
     });
 
+    await this.orderEvents.record({
+      orderId: order.id,
+      event: 'order_created',
+      message: `Заказ создан из корзины (${basket.items.length} позиций)`,
+      meta: { transactionId: transaction.id, totalAmount: finalAmount, discountAmount },
+    });
+
     await this.promoCodeService.createPendingUsage({
       promo,
       userId: basket.user.id,
@@ -188,6 +197,7 @@ export class PaymentService {
           email: basket.user.email,
         },
         order: {
+          id: order.id,
           totalAmount: finalAmount,
           originalAmount: totalAmount,
           discountAmount,
@@ -240,6 +250,12 @@ export class PaymentService {
         },
       });
       await this.promoCodeService.cancelUsageByTransaction(data.transaction.transactionId);
+      await this.orderEvents.record({
+        orderId: data.order.id,
+        event: 'payment_link_failed',
+        severity: 'error',
+        message: error?.message ?? 'Т-Банк не ответил на запрос ссылки на оплату',
+      });
       throw error;
     }
 
@@ -257,8 +273,22 @@ export class PaymentService {
         },
       });
       await this.promoCodeService.cancelUsageByTransaction(data.transaction.transactionId);
+      await this.orderEvents.record({
+        orderId: data.order.id,
+        event: 'payment_link_failed',
+        severity: 'error',
+        message: response?.Details ?? response?.Message ?? 'Т-Банк отклонил запрос ссылки на оплату',
+        meta: { errorCode: response?.ErrorCode },
+      });
       throw new BadRequestException(response?.Details ? response?.Details : response?.Message);
     }
+
+    await this.orderEvents.record({
+      orderId: data.order.id,
+      event: 'payment_link_created',
+      message: 'Ссылка на оплату получена от Т-Банка, ждём клиента',
+    });
+
     return {
       success: true,
       message: '',
@@ -279,7 +309,9 @@ export class PaymentService {
     // Подпись считаем всегда, но отклоняем только при TBANK_VERIFY_WEBHOOK=true.
     // Пока флаг выключен — копим в логах статистику совпадений на живом трафике:
     // если сразу включить отклонение и алгоритм не сойдётся, платежи встанут молча.
-    if (!this.TbankService.verifyNotification(data as unknown as Record<string, any>)) {
+    const signatureValid = this.TbankService.verifyNotification(data as unknown as Record<string, any>);
+
+    if (!signatureValid) {
       const meta = { orderId: data?.OrderId, paymentId: data?.PaymentId };
 
       if (TBANK_VERIFY_WEBHOOK) {
@@ -304,6 +336,7 @@ export class PaymentService {
       },
       select: {
         id: true,
+        order_id: true,
         user: {
           select: {
             id: true,
@@ -331,9 +364,21 @@ export class PaymentService {
       return 'OK';
     }
 
+    // order_id появляется только здесь — поэтому событие о подписи пишем тут,
+    // а не в блоке проверки выше, где транзакция ещё не найдена.
+    if (!signatureValid && existTransaction.order_id) {
+      await this.orderEvents.record({
+        orderId: existTransaction.order_id,
+        event: 'payment_webhook_signature_mismatch',
+        severity: 'warning',
+        message: 'Подпись вебхука не совпала, но проверка выключена — заказ обработан как обычно',
+        meta: { paymentId: data?.PaymentId },
+      });
+    }
+
     // FAILED ham CAS bo‘lishi shart
     if (data.Success === false) {
-      await this.prisma.transaction.updateMany({
+      const updated = await this.prisma.transaction.updateMany({
         where: {
           id: existTransactionId,
           status: TransactionStatus.PENDING,
@@ -346,6 +391,16 @@ export class PaymentService {
         },
       });
       await this.promoCodeService.cancelUsageByTransaction(existTransactionId);
+
+      if (existTransaction.order_id && updated.count > 0) {
+        await this.orderEvents.record({
+          orderId: existTransaction.order_id,
+          event: 'payment_failed',
+          severity: 'warning',
+          message: 'Т-Банк прислал отказ по оплате',
+          meta: { status: data.Status, paymentId: data.PaymentId },
+        });
+      }
       return 'OK';
     }
 
@@ -366,7 +421,24 @@ export class PaymentService {
 
       // Kimdir oldin ishlatib bo‘lgan → chiqamiz
       if (updated.count === 0) {
+        if (existTransaction.order_id) {
+          await this.orderEvents.record({
+            orderId: existTransaction.order_id,
+            event: 'payment_webhook_duplicate',
+            message: 'Повторный вебхук Т-Банка по уже обработанной оплате — пропущен',
+            meta: { paymentId: data.PaymentId },
+          });
+        }
         return 'OK';
+      }
+
+      if (existTransaction.order_id) {
+        await this.orderEvents.record({
+          orderId: existTransaction.order_id,
+          event: 'payment_confirmed',
+          message: 'Оплата подтверждена Т-Банком',
+          meta: { paymentId: data.PaymentId },
+        });
       }
 
       // T-Bank acknowledgement provider jarayonini kutmasligi kerak.
