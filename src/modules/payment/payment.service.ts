@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { UpdatePaymentDto } from './dto';
 import { PrismaService } from '@prisma';
 import { WinstonLoggerService } from '@logger';
@@ -24,6 +25,8 @@ export class PaymentService {
     private readonly promoCodeService: PromoCodeService,
     private readonly orderEvents: OrderEventsService,
   ) {}
+
+  private isCheckingPendingPayments = false;
 
   async create(userId: number, lang: string) {
     const basket = await this.prisma.basket.findFirst({
@@ -283,6 +286,16 @@ export class PaymentService {
       throw new BadRequestException(response?.Details ? response?.Details : response?.Message);
     }
 
+    // PaymentId приходит уже в ответе на Init — его не нужно ждать из вебхука.
+    // Сохраняем сразу: без этого проверочный крон (checkPendingPayments) не
+    // может спросить статус у Т-Банка самостоятельно, если их вебхук задержится.
+    if (response?.PaymentId) {
+      await this.prisma.transaction.update({
+        where: { id: data.transaction.transactionId },
+        data: { partner_transaction_id: response.PaymentId },
+      });
+    }
+
     await this.orderEvents.record({
       orderId: data.order.id,
       event: 'payment_link_created',
@@ -405,48 +418,17 @@ export class PaymentService {
     }
 
     if (data.Success === true && data.Status === 'CONFIRMED') {
-      // 🔒 DB-level ATOMIC LOCK
-      const updated = await this.prisma.transaction.updateMany({
-        where: {
-          id: existTransactionId,
-          status: TransactionStatus.PENDING,
-        },
-        data: {
-          status: TransactionStatus.SUCCESS,
-          partner_transaction_id: data.PaymentId,
-          response: JSON.stringify(data),
-          updated_at: new Date(),
-        },
-      });
-
-      // Kimdir oldin ishlatib bo‘lgan → chiqamiz
-      if (updated.count === 0) {
-        if (existTransaction.order_id) {
-          await this.orderEvents.record({
-            orderId: existTransaction.order_id,
-            event: 'payment_webhook_duplicate',
-            message: 'Повторный вебхук Т-Банка по уже обработанной оплате — пропущен',
-            meta: { paymentId: data.PaymentId },
-          });
-        }
-        return 'OK';
-      }
-
-      if (existTransaction.order_id) {
-        await this.orderEvents.record({
-          orderId: existTransaction.order_id,
-          event: 'payment_confirmed',
-          message: 'Оплата подтверждена Т-Банком',
-          meta: { paymentId: data.PaymentId },
-        });
-      }
-
       // T-Bank acknowledgement provider jarayonini kutmasligi kerak.
       // Payment allaqachon SUCCESS qilib saqlandi; downstream order/provider
-      // jarayoni alohida davom etadi, webhook esa darhol HTTP 200 qaytaradi.
-      if (existTransaction.user?.id) {
-        void this.processConfirmedPayment(existTransaction.user.id, existTransaction.id);
-      }
+      // jarayoni alohida davom etadi, webhook esa darhol HTTP 200 qaytaradi (confirmTransaction ichida).
+      await this.confirmTransaction({
+        transactionId: existTransactionId,
+        orderId: existTransaction.order_id,
+        userId: existTransaction.user?.id ?? null,
+        paymentId: data.PaymentId,
+        rawResponse: data,
+        source: 'webhook',
+      });
     }
 
     // if (existTransaction.status === TransactionStatus.SUCCESS) {
@@ -479,6 +461,141 @@ export class PaymentService {
     //   await this.orderService.create(existTransaction.user.id, updatedTransaction.id);
     // }
     return 'OK';
+  }
+
+  /**
+   * Атомарно переводит транзакцию PENDING -> SUCCESS и запускает выдачу.
+   * Общий путь для двух источников подтверждения: настоящего вебхука
+   * Т-Банка и проверочного крона checkPendingPayments (на случай, если
+   * вебхук задержался или не пришёл вовсе). updateMany с условием по
+   * текущему статусу защищает от двойной обработки, если оба источника
+   * сработают почти одновременно — кто первый дошёл до БД, тот и выиграл.
+   */
+  private async confirmTransaction(params: {
+    transactionId: number;
+    orderId: number | null;
+    userId: number | null;
+    paymentId: number;
+    rawResponse: any;
+    source: 'webhook' | 'poll';
+  }): Promise<boolean> {
+    const updated = await this.prisma.transaction.updateMany({
+      where: {
+        id: params.transactionId,
+        status: TransactionStatus.PENDING,
+      },
+      data: {
+        status: TransactionStatus.SUCCESS,
+        partner_transaction_id: params.paymentId,
+        response: JSON.stringify(params.rawResponse),
+        updated_at: new Date(),
+      },
+    });
+
+    if (updated.count === 0) {
+      if (params.orderId) {
+        await this.orderEvents.record({
+          orderId: params.orderId,
+          event: params.source === 'poll' ? 'payment_poll_duplicate' : 'payment_webhook_duplicate',
+          message:
+            params.source === 'poll'
+              ? 'Проверка статуса в Т-Банке нашла уже обработанную оплату — пропущено'
+              : 'Повторный вебхук Т-Банка по уже обработанной оплате — пропущен',
+          meta: { paymentId: params.paymentId },
+        });
+      }
+      return false;
+    }
+
+    if (params.orderId) {
+      await this.orderEvents.record({
+        orderId: params.orderId,
+        event: 'payment_confirmed',
+        message:
+          params.source === 'poll'
+            ? 'Оплата подтверждена проверкой статуса в Т-Банке — вебхук не пришёл вовремя'
+            : 'Оплата подтверждена Т-Банком',
+        meta: { paymentId: params.paymentId, source: params.source },
+      });
+    }
+
+    if (params.userId) {
+      void this.processConfirmedPayment(params.userId, params.transactionId);
+    }
+
+    return true;
+  }
+
+  /**
+   * Подстраховка на случай, когда вебхук Т-Банка задерживается или теряется:
+   * сами спрашиваем статус оплаты вместо того, чтобы пассивно ждать колбэк.
+   * PaymentId уже сохранён на шаге preparePayment (сразу из ответа Init, не
+   * из вебхука) — поэтому спросить можно даже если вебхук так и не пришёл.
+   *
+   * Трогает только CONFIRMED: если статус не подтверждён, транзакция просто
+   * остаётся PENDING — дальше ей занимается существующий крон очистки
+   * брошенных заказов (24ч), а не этот метод. Список финальных статусов
+   * отказа у Т-Банка нигде в проекте не задокументирован, и гадать здесь
+   * опаснее, чем оставить платёж висеть лишний час.
+   */
+  @Cron('*/5 * * * *')
+  async checkPendingPayments() {
+    if (this.isCheckingPendingPayments) return { checked: 0, confirmed: 0 };
+    this.isCheckingPendingPayments = true;
+
+    try {
+      return await this.checkPendingPaymentsOnce();
+    } finally {
+      this.isCheckingPendingPayments = false;
+    }
+  }
+
+  private async checkPendingPaymentsOnce() {
+    const STALE_AFTER_MS = 3 * 60 * 1000;
+    const cutoff = new Date(Date.now() - STALE_AFTER_MS);
+
+    const pending = await this.prisma.transaction.findMany({
+      where: {
+        status: TransactionStatus.PENDING,
+        partner_transaction_id: { not: null },
+        created_at: { lt: cutoff },
+      },
+      select: {
+        id: true,
+        order_id: true,
+        partner_transaction_id: true,
+        user: { select: { id: true } },
+      },
+      take: 20,
+      orderBy: { created_at: 'asc' },
+    });
+
+    if (pending.length === 0) return { checked: 0, confirmed: 0 };
+
+    let confirmed = 0;
+
+    for (const transaction of pending) {
+      try {
+        const status = await this.TbankService.getPaymentStatus(Number(transaction.partner_transaction_id));
+
+        if (status?.Success === true && status?.Status === 'CONFIRMED') {
+          const applied = await this.confirmTransaction({
+            transactionId: transaction.id,
+            orderId: transaction.order_id,
+            userId: transaction.user?.id ?? null,
+            paymentId: Number(transaction.partner_transaction_id),
+            rawResponse: status,
+            source: 'poll',
+          });
+          if (applied) confirmed += 1;
+        }
+      } catch (error) {
+        this.logger.error(`checkPendingPayments: не удалось проверить transaction ${transaction.id}`, error);
+      }
+    }
+
+    this.logger.log(`checkPendingPayments: проверено ${pending.length}, подтверждено ${confirmed}`);
+    return { checked: pending.length, confirmed };
   }
 
   private async processConfirmedPayment(userId: number, transactionId: number) {
