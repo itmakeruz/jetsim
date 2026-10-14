@@ -1,4 +1,4 @@
-import { TELEGRAM_BOT_TOKEN } from '@config';
+import { TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_CHAT_ID } from '@config';
 import { Injectable, Logger } from '@nestjs/common';
 import * as TelegramBotAPI from 'node-telegram-bot-api';
 
@@ -7,14 +7,27 @@ export enum PartnerIds {
   BILLION_CONNECT = 2,
 }
 
+// Прежний захардкоженный чат — используется только если TELEGRAM_ADMIN_CHAT_ID
+// не задан в .env, чтобы деплой без обновлённого .env не остался без уведомлений.
+const FALLBACK_ADMIN_CHAT_ID = '-5179566420';
+
 @Injectable()
 export class TelegramBotService {
   private readonly bot: TelegramBotAPI;
   private readonly logger = new Logger(TelegramBotService.name);
-  private readonly notificationChatId = '-5179566420';
+  private readonly notificationChatId: string;
 
   constructor() {
     this.bot = new TelegramBotAPI(TELEGRAM_BOT_TOKEN, { polling: false });
+
+    if (TELEGRAM_ADMIN_CHAT_ID) {
+      this.notificationChatId = TELEGRAM_ADMIN_CHAT_ID;
+    } else {
+      this.notificationChatId = FALLBACK_ADMIN_CHAT_ID;
+      this.logger.warn(
+        `TELEGRAM_ADMIN_CHAT_ID не задан в .env — уведомления уходят в старый захардкоженный чат ${FALLBACK_ADMIN_CHAT_ID}`,
+      );
+    }
 
     this.bot.on('message', (msg) => {
       console.log(msg);

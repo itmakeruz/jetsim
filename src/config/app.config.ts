@@ -52,6 +52,9 @@ const TBANK_VERIFY_WEBHOOK = config.get<string>('TBANK_VERIFY_WEBHOOK') === 'tru
 
 // TELEGRAM BOT
 const TELEGRAM_BOT_TOKEN = config.get<string>('TELEGRAM_BOT_TOKEN') ?? '';
+// Чат, куда шлём уведомления о заказах/ошибках партнёров. Раньше был
+// захардкожен в коде — вынесен в env, чтобы его можно было сменить без деплоя.
+const TELEGRAM_ADMIN_CHAT_ID = config.get<string>('TELEGRAM_ADMIN_CHAT_ID') ?? '';
 
 // BASIC AUTH для /docs и /logs — если не заданы, эндпоинты не монтируются
 const DOCS_USER = config.get<string>('DOCS_USER') ?? '';
@@ -92,6 +95,7 @@ export {
   TBANK_PASSWORD,
   TBANK_VERIFY_WEBHOOK,
   TELEGRAM_BOT_TOKEN,
+  TELEGRAM_ADMIN_CHAT_ID,
   DOCS_USER,
   DOCS_PASS,
   LOGS_USER,
