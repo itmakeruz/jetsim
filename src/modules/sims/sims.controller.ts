@@ -87,7 +87,7 @@ export class SimsController {
   @UseGuards(AtGuard, RolesGuard)
   @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async adminUsage(@Param() param: ParamId) {
-    return this.usageService.forSim(param.id);
+    return this.usageService.forSim(param.id, undefined, true);
   }
 
   @Get(':id/usage')

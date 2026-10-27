@@ -1,4 +1,5 @@
-import { BadGatewayException, Injectable, NotFoundException } from '@nestjs/common';
+import { ProviderExchange, ProviderTrace, sanitizeProviderData } from '../../http/provider-diagnostics';
+import { BadGatewayException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@prisma';
 import { PartnerIds } from '@enums';
 import { BillionConnectService, JoyTel } from '@http';
@@ -7,6 +8,11 @@ import { normalizeBc, normalizeJoytel, normalizeMobiline, selectBcPlan, UsageRes
 
 @Injectable()
 export class UsageService {
+  private readonly logger = new Logger(UsageService.name);
+  private readonly diagnostics = new Map<
+    number,
+    { checked_at: string; provider: string; exchanges: ProviderExchange[]; error?: string }
+  >();
   private readonly inFlight = new Map<number, Promise<UsageResult>>();
   constructor(
     private readonly prisma: PrismaService,
@@ -14,7 +20,35 @@ export class UsageService {
     private readonly bc: BillionConnectService,
     private readonly skyblue: SkyBlueService,
   ) {}
-  async forSim(id: number, userId?: number): Promise<UsageResult> {
+  async forSim(
+    id: number,
+    userId?: number,
+    includeDiagnostics = false,
+  ): Promise<UsageResult & { diagnostics?: unknown }> {
+    try {
+      const result = await this.load(id, userId);
+      if (!includeDiagnostics) return result;
+      return {
+        ...result,
+        diagnostics: this.diagnostics.get(id) ?? {
+          checked_at: result.status === 'ok' ? result.data.checked_at : new Date().toISOString(),
+          source: result.status === 'ok' ? 'saved_snapshot' : result.status,
+          exchanges: [],
+          note:
+            result.status === 'ok'
+              ? 'Ответ взят из сохранённого баланса; повторный запрос доступен через 60 секунд.'
+              : 'Запрос поставщику не отправлялся: eSIM ещё не готова или поставщик не поддерживается.',
+        },
+      };
+    } catch (error) {
+      if (includeDiagnostics && error instanceof BadGatewayException) {
+        throw new BadGatewayException({ ...(error.getResponse() as object), diagnostics: this.diagnostics.get(id) });
+      }
+      throw error;
+    }
+  }
+
+  private async load(id: number, userId?: number): Promise<UsageResult> {
     // Ownership is checked even on cache hits and coalesced requests.
     const sim = await this.prisma.sims.findFirst({
       where: { id, ...(userId === undefined ? {} : { user_id: userId }) },
@@ -33,18 +67,27 @@ export class UsageService {
     return request;
   }
   private async refresh(sim: any): Promise<UsageResult> {
+    const report = {
+      checked_at: new Date().toISOString(),
+      provider: { 1: 'Joytel', 2: 'BillionConnect', 3: 'Mobiline / SkyBlue' }[sim.partner.identified_number] as string,
+      exchanges: [] as ProviderExchange[],
+      error: undefined as string | undefined,
+    };
+    const trace: ProviderTrace = (exchange) => {
+      if (report.exchanges.length < 20) report.exchanges.push(sanitizeProviderData(exchange));
+    };
     try {
       let usage;
       switch (sim.partner.identified_number) {
         case PartnerIds.JOYTEL: {
           const coupon = sim.coupon || sim.sn_pin;
           if (!coupon) return { status: 'not_ready' };
-          usage = normalizeJoytel(await this.joytel.getUsageResponse({ coupon }), sim.tariff);
+          usage = normalizeJoytel(await this.joytel.getUsageResponse({ coupon }, trace), sim.tariff);
           break;
         }
         case PartnerIds.BILLION_CONNECT: {
           if (!sim.iccid) return { status: 'not_ready' };
-          const plans = await this.bc.getPlans(sim.iccid);
+          const plans = await this.bc.getPlans(sim.iccid, trace);
           const plan = selectBcPlan(plans, sim.sub_order_id);
           const orders = plans.tradeData ?? [];
           const owner = orders.find((o: any) =>
@@ -52,7 +95,7 @@ export class UsageService {
           );
           let use;
           try {
-            use = await this.bc.getUsage({ iccid: sim.iccid, orderId: sim.partner_order_id || owner?.orderId });
+            use = await this.bc.getUsage({ iccid: sim.iccid, orderId: sim.partner_order_id || owner?.orderId }, trace);
           } catch {
             use = null;
           } // F012 may still contain a valid usedTraffic counter.
@@ -61,7 +104,7 @@ export class UsageService {
         }
         case PartnerIds.MOBILINE:
           if (!sim.iccid) return { status: 'not_ready' };
-          usage = normalizeMobiline(await this.skyblue.getEsimDetail(sim.iccid), sim);
+          usage = normalizeMobiline(await this.skyblue.getEsimDetail(sim.iccid, trace), sim);
           break;
         default:
           return { status: 'unsupported' };
@@ -82,12 +125,25 @@ export class UsageService {
         },
       });
       return { status: 'ok', data: usage };
-    } catch {
+    } catch (error) {
+      report.error = sanitizeProviderData(
+        error?.isAxiosError
+          ? error.code || 'Provider request failed'
+          : typeof error?.getResponse === 'function'
+            ? 'Provider request failed (see response)'
+            : error?.message || 'Balance check failed',
+      );
+      this.logger.warn({ event: 'provider_usage_failed', sim_id: sim.id, ...report });
       throw new BadGatewayException({
         success: false,
         message: 'Balance is temporarily unavailable',
         last_success: sim.usage_snapshot ? { status: 'ok', data: sim.usage_snapshot } : null,
       });
+    } finally {
+      // Bounded in-process diagnostic cache; never added to customer-visible snapshots.
+      this.diagnostics.delete(sim.id);
+      this.diagnostics.set(sim.id, report);
+      if (this.diagnostics.size > 200) this.diagnostics.delete(this.diagnostics.keys().next().value);
     }
   }
 }

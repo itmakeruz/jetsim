@@ -72,3 +72,73 @@ describe('UsageService access, caching and persistence', () => {
     expect(joytel.getUsageResponse).not.toHaveBeenCalled();
   });
 });
+
+describe('Admin-only provider diagnostics', () => {
+  function failingCheck() {
+    const prisma = {
+      sims: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 1,
+          status: 'COMPLETED',
+          coupon: 'PRIVATE',
+          partner: { identified_number: 1 },
+          tariff: { quantity_internet: 5 },
+        }),
+        update: jest.fn(),
+      },
+    };
+    const joytel = {
+      getUsageResponse: jest.fn().mockImplementation(async (request, trace) => {
+        const response = { code: '1002', msg: 'Coupon not found', secret: 'PRIVATE' };
+        trace?.({ operation: 'joytel_usage', endpoint: '/esim/usage/query', request, response, http_status: 200 });
+        return response;
+      }),
+    };
+    return { service: new UsageService(prisma as any, joytel as any, {} as any, {} as any), joytel };
+  }
+  it('returns the sanitized supplier response and parsing reason to an admin', async () => {
+    const { service } = failingCheck();
+    try {
+      await service.forSim(1, undefined, true);
+      throw new Error('expected failure');
+    } catch (error) {
+      const body = error.getResponse();
+      expect(body.diagnostics).toMatchObject({
+        provider: 'Joytel',
+        error: 'Joytel usage failed',
+        exchanges: [
+          {
+            http_status: 200,
+            request: { coupon: '[REDACTED]' },
+            response: { code: '1002', msg: 'Coupon not found', secret: '[REDACTED]' },
+          },
+        ],
+      });
+      expect(JSON.stringify(body)).not.toContain('PRIVATE');
+    }
+  });
+  it('does not expose diagnostics to a customer, including coalesced checks with an admin', async () => {
+    const { service, joytel } = failingCheck();
+    const results = await Promise.allSettled([service.forSim(1, 5), service.forSim(1, undefined, true)]);
+    expect(results[0].status).toBe('rejected');
+    expect(results[1].status).toBe('rejected');
+    const customer = (results[0] as PromiseRejectedResult).reason.getResponse();
+    const admin = (results[1] as PromiseRejectedResult).reason.getResponse();
+    expect(customer).not.toHaveProperty('diagnostics');
+    expect(admin).toHaveProperty('diagnostics');
+    expect(joytel.getUsageResponse).toHaveBeenCalledTimes(1);
+  });
+  it('returns diagnostic exchanges on successful normalization', async () => {
+    const { service, joytel } = failingCheck();
+    joytel.getUsageResponse.mockImplementation(async (request, trace) => {
+      const response = { code: '000', data: { totalUsage: 1048576 } };
+      trace?.({ operation: 'joytel_usage', request, response, http_status: 200 });
+      return response;
+    });
+    await expect(service.forSim(1, undefined, true)).resolves.toMatchObject({
+      status: 'ok',
+      diagnostics: { exchanges: [{ response: { data: { totalUsage: 1048576 } } }] },
+    });
+    await expect(service.forSim(1, 5)).resolves.not.toHaveProperty('diagnostics');
+  });
+});

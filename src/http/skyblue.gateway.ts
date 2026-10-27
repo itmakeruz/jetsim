@@ -1,3 +1,4 @@
+import { ProviderTrace, traceProviderError } from './provider-diagnostics';
 import { Injectable } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
 import { randomUUID } from 'crypto';
@@ -16,13 +17,13 @@ export class SkyBlueService {
   });
   constructor(private readonly redis: RedisService) {}
 
-  async getEsimDetail(iccid: string) {
+  async getEsimDetail(iccid: string, trace?: ProviderTrace) {
     try {
-      let session = (await this.redis.getClient().get(this.sessionKey)) || (await this.login());
-      let result = await this.detail(iccid, session);
+      let session = (await this.redis.getClient().get(this.sessionKey)) || (await this.login(undefined, trace));
+      let result = await this.detail(iccid, session, trace);
       if (result.errorCode === 'E9998') {
-        session = await this.login(session);
-        result = await this.detail(iccid, session);
+        session = await this.login(session, trace);
+        result = await this.detail(iccid, session, trace);
         if (result.errorCode === 'E9998') {
           await this.block();
           throw new Error('Fresh session rejected');
@@ -31,12 +32,13 @@ export class SkyBlueService {
       if (Number(result.result) !== 0 || !result.data || typeof result.data !== 'object')
         throw new Error('No usage detail');
       return result.data;
-    } catch {
+    } catch (error) {
+      traceProviderError(trace, 'skyblue_error', '/ajax', { method: 'EsimGetOrderDetail', iccid }, error);
       // Axios errors contain the credentials/cookie in config: never propagate them.
       throw new Error('SkyBlue balance is temporarily unavailable');
     }
   }
-  private async detail(iccid: string, session: string) {
+  private async detail(iccid: string, session: string, trace?: ProviderTrace) {
     const response = await this.http.get('/ajax', {
       params: { method: 'EsimGetOrderDetail', order_number: '', iccid },
       headers: {
@@ -44,6 +46,13 @@ export class SkyBlueService {
         'X-Requested-With': 'XMLHttpRequest',
         'Cookie': `JSESSIONID=${session}`,
       },
+    });
+    trace?.({
+      operation: 'skyblue_detail',
+      endpoint: '/ajax',
+      request: { method: 'EsimGetOrderDetail', iccid },
+      http_status: response.status,
+      response: response.data,
     });
     if (response.status >= 500 || response.status >= 400) throw new Error('SkyBlue HTTP error');
     if (response.status >= 300 || !response.data || typeof response.data !== 'object') return { errorCode: 'E9998' };
@@ -57,7 +66,7 @@ export class SkyBlueService {
     await client.set(this.blockedKey, '1', 'EX', 600);
     await client.del(this.sessionKey);
   }
-  private async login(stale?: string): Promise<string> {
+  private async login(stale?: string, trace?: ProviderTrace): Promise<string> {
     const client = this.redis.getClient();
     const token = randomUUID();
     const deadline = Date.now() + 15000;
@@ -74,6 +83,7 @@ export class SkyBlueService {
             password = process.env.SKYBLUE_PASSWORD;
           if (!email || !password) throw new Error('SkyBlue is not configured');
           const page = await this.http.get('/login.jsp');
+          trace?.({ operation: 'skyblue_login_page', endpoint: '/login.jsp', http_status: page.status });
           if (page.status >= 400) throw new Error('SkyBlue login page unavailable');
           const cookie = this.cookie(page);
           const response = await this.http.post(
@@ -86,6 +96,7 @@ export class SkyBlueService {
               },
             },
           );
+          trace?.({ operation: 'skyblue_login', endpoint: '/action?method=login', http_status: response.status });
           if (response.status >= 500) throw new Error('SkyBlue login unavailable');
           const session = this.cookie(response) || cookie;
           const rejected =

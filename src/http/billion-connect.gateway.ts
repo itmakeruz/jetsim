@@ -1,3 +1,4 @@
+import { ProviderTrace, traceProviderError } from './provider-diagnostics';
 // src/integrations/billion-connect.service.ts
 import { GetUsageRequest, GetStatusRequest } from '@interfaces';
 import { WinstonLoggerService } from '@logger';
@@ -103,24 +104,36 @@ export class BillionConnectService {
     }
   }
 
-  async getPlans(iccid: string) {
+  async getPlans(iccid: string, trace?: ProviderTrace) {
     const payloadJson = JSON.stringify({
       tradeType: 'F012',
       tradeTime: this.formatDateTime(new Date()),
       tradeData: { iccid },
     });
-    const response = await this.http.post('', payloadJson, {
-      timeout: 12000,
-      headers: {
-        'x-channel-id': this.appKey,
-        'x-sign-method': this.signMethod,
-        'x-sign-value': this.md5(this.appSecret + payloadJson),
-      },
-    });
-    return response.data;
+    try {
+      const response = await this.http.post('', payloadJson, {
+        timeout: 12000,
+        headers: {
+          'x-channel-id': this.appKey,
+          'x-sign-method': this.signMethod,
+          'x-sign-value': this.md5(this.appSecret + payloadJson),
+        },
+      });
+      trace?.({
+        operation: 'bc_plan_F012',
+        endpoint: 'F012',
+        request: JSON.parse(payloadJson),
+        http_status: response.status,
+        response: response.data,
+      });
+      return response.data;
+    } catch (error) {
+      traceProviderError(trace, 'bc_plan_F012', 'F012', JSON.parse(payloadJson), error);
+      throw error;
+    }
   }
 
-  async getUsage(data: GetUsageRequest) {
+  async getUsage(data: GetUsageRequest, trace?: ProviderTrace) {
     const payload = {
       tradeType: 'F046',
       tradeTime: this.formatDateTime(new Date()),
@@ -144,8 +157,16 @@ export class BillionConnectService {
       // if (!this.isSuccess(response.data)) {
       //   throw new InternalServerErrorException(response.data?.tradeMsg);
       // }
+      trace?.({
+        operation: 'bc_usage_F046',
+        endpoint: 'F046',
+        request: payload,
+        http_status: response.status,
+        response: response.data,
+      });
       return response.data;
     } catch (err: any) {
+      traceProviderError(trace, 'bc_usage_F046', 'F046', payload, err);
       const status = err?.response?.status;
       const resp = err?.response?.data;
       const msg = `BillionConnect F040 failed${status ? ` [${status}]` : ''}: ${JSON.stringify(resp || err.message)}`;

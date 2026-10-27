@@ -104,6 +104,27 @@ describe('Usage HTTP authorization and Mobiline callback validation', () => {
       .expect(502);
     expect(response.body.last_success).toEqual({ status: 'ok', data: { used_mb: 25 } });
     expect(JSON.stringify(response.body)).not.toContain('private detail');
+    expect(response.body).not.toHaveProperty('diagnostics');
+  });
+  it('passes sanitized provider diagnostic details through the admin error response', async () => {
+    joytel.getUsageResponse.mockImplementation(async (body, trace) => {
+      trace?.({
+        operation: 'joytel_usage',
+        request: body,
+        http_status: 200,
+        response: { code: '1002', msg: 'Coupon not found', token: 'PRIVATE' },
+      });
+      return { code: '1002' };
+    });
+    const response = await request(app.getHttpServer())
+      .get('/sims/admin/1/usage')
+      .auth(token(99, [UserRoles.ADMIN]), { type: 'bearer' })
+      .expect(502);
+    expect(response.body.diagnostics).toMatchObject({
+      error: 'Joytel usage failed',
+      exchanges: [{ http_status: 200, response: { code: '1002', msg: 'Coupon not found', token: '[REDACTED]' } }],
+    });
+    expect(JSON.stringify(response.body)).not.toContain('PRIVATE');
   });
   it('exposes the agreed callback URL without requiring a user token', async () => {
     await request(app.getHttpServer())

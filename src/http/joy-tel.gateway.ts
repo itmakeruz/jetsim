@@ -1,3 +1,4 @@
+import { ProviderTrace, traceProviderError } from './provider-diagnostics';
 import axios from 'axios';
 import { HttpService } from './http.service';
 import {
@@ -197,13 +198,25 @@ export class JoyTel {
       .send();
   }
 
-  async getUsageResponse(coupon: CouponRequest) {
-    // Keep the envelope: resultCode/code must be checked before reading counters.
-    const response = await axios.post(JOYTEL_URL + '/esim/usage/query', coupon, {
-      headers: this.generateRspHeaders(),
-      timeout: 12000,
-    });
-    return response.data;
+  async getUsageResponse(coupon: CouponRequest, trace?: ProviderTrace) {
+    const endpoint = '/esim/usage/query';
+    try {
+      const response = await axios.post(JOYTEL_URL + endpoint, coupon, {
+        headers: this.generateRspHeaders(),
+        timeout: 12000,
+      });
+      trace?.({
+        operation: 'joytel_usage',
+        endpoint,
+        request: coupon,
+        http_status: response.status,
+        response: response.data,
+      });
+      return response.data;
+    } catch (error) {
+      traceProviderError(trace, 'joytel_usage', endpoint, coupon, error);
+      throw error;
+    }
   }
 
   async getUsage(coupon: CouponRequest) {

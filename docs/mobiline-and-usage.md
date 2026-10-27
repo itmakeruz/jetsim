@@ -32,3 +32,7 @@ SkyBlue sessions live in Jetsim-prefixed Redis keys for 12 hours. Login is seria
 ## Validation
 
 Run `npm test -- --runInBand` and `npm run build` in the backend, and `npm run build` in both frontend projects. Tests cover provider units/timezones, callback races/repeats, ambiguous submissions, authentication/ownership/roles, cache/error snapshots and SkyBlue session recovery. Live provider behavior still requires the controlled purchase described above.
+
+## Admin balance diagnostics
+
+The dashboard balance panel includes a collapsible diagnostic log on each check (expanded on error). It shows the provider, time, API operation, sanitized request/response, HTTP status and failure reason. Customer endpoints never return this diagnostic object. Authorization headers, passwords, keys, cookies, QR payloads and sensitive account fields are omitted/redacted. SkyBlue login steps show only their HTTP status; HTML login pages are omitted. Diagnostics are retained in a bounded in-process cache, so a cached successful snapshot after a process restart may have no original provider exchange. Failed checks also write a sanitized `provider_usage_failed` record to the backend log. No database migration or new environment variable is required for diagnostic logging.
