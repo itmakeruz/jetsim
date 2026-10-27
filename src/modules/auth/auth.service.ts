@@ -1,3 +1,4 @@
+import type { JwtSignOptions } from '@nestjs/jwt';
 import {
   BadRequestException,
   Injectable,
@@ -321,7 +322,7 @@ export class AuthService {
 
     const resetToken = await this.jwtService.signAsync(
       { id: user.id, email: user.email },
-      { secret: JWT_RESET_TOKEN, expiresIn: JWT_RESET_EXPIRE_TIME },
+      { secret: JWT_RESET_TOKEN, expiresIn: JWT_RESET_EXPIRE_TIME as JwtSignOptions['expiresIn'] },
     );
 
     await this.redisService.deleteOtp(key);
@@ -416,7 +417,7 @@ export class AuthService {
       const html = otpEmailTemplate(email, otp, ttlMinutes);
 
       await sendMailHelper(email, 'Ваш OTP код', `Ваш OTP код: ${otp}. Действителен ${ttlMinutes} минут.`, html);
-      
+
       //Voqtinchali ob tashab turamiz
       // const response = await sendOtpFromAnotherService(email, otp, ttlMinutes);
 

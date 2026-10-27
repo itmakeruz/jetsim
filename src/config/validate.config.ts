@@ -7,6 +7,30 @@ import { ConfigService } from '@nestjs/config';
 export let config = new ConfigService();
 
 class EnvironmentVariables {
+  @IsOptional()
+  @IsString()
+  MOBILINE_BASE_URI: string;
+
+  @IsOptional()
+  @IsString()
+  MOBILINE_GROUP_ID: string;
+
+  @IsOptional()
+  @IsString()
+  MOBILINE_GROUP_KEY: string;
+
+  @IsOptional()
+  @IsString()
+  SKYBLUE_BASE_URI: string;
+
+  @IsOptional()
+  @IsString()
+  SKYBLUE_EMAIL: string;
+
+  @IsOptional()
+  @IsString()
+  SKYBLUE_PASSWORD: string;
+
   @IsNotEmpty()
   @IsString()
   DATABASE_URL: string;

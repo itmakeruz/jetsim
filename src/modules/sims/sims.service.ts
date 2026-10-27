@@ -1,3 +1,4 @@
+import { UsageService } from '../usage/usage.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PartnerIds } from '@enums';
@@ -27,6 +28,7 @@ export class SimsService {
     private readonly billionConnectService: BillionConnectService,
     private readonly logger: WinstonLoggerService,
     private readonly qrService: QrService,
+    private readonly usageService: UsageService,
   ) {}
 
   private isCheckingSimStatuses = false;
@@ -63,6 +65,8 @@ export class SimsService {
         partner_id: true,
         order_id: true,
         last_usage_quantity: true,
+        usage_snapshot: true,
+        usage_checked_at: true,
         created_at: true,
         user: {
           select: { id: true, name: true, email: true },
@@ -240,6 +244,7 @@ export class SimsService {
           id: true,
           coupon: true,
           partner_id: true,
+          partner: { select: { identified_number: true } },
           channel_order_id: true,
           iccid: true,
           sim_status: true,
@@ -256,21 +261,23 @@ export class SimsService {
       let updated = 0;
 
       for (const sim of sims) {
+        const provider = sim.partner.identified_number;
+        if (provider !== PartnerIds.JOYTEL && provider !== PartnerIds.BILLION_CONNECT) continue;
         // BillionConnect умеем только повышать статус — уже активированные
         // симки этого партнёра дёргать незачем
-        if (sim.partner_id === PartnerIds.BILLION_CONNECT && sim.sim_status === SimStatus.ACTIVATED) {
+        if (provider === PartnerIds.BILLION_CONNECT && sim.sim_status === SimStatus.ACTIVATED) {
           continue;
         }
 
         try {
           const response =
-            sim.partner_id === PartnerIds.JOYTEL
+            provider === PartnerIds.JOYTEL
               ? await this.joyTelService.getStatus({ coupon: sim.coupon })
               : await this.billionConnectService.getStatus({ iccid: sim.iccid });
 
           responses.push(response);
 
-          const nextStatus = resolveSimStatus(sim.partner_id, response);
+          const nextStatus = resolveSimStatus(provider, response);
 
           if (nextStatus === undefined || nextStatus === sim.sim_status) {
             continue;
@@ -320,6 +327,8 @@ export class SimsService {
         status: true,
         sim_status: true,
         last_usage_quantity: true,
+        usage_snapshot: true,
+        usage_checked_at: true,
         created_at: true,
         tariff: {
           select: {
@@ -363,7 +372,9 @@ export class SimsService {
           status: sim?.status,
           sim_status: sim?.sim_status,
           day_left: getRemainingDays(sim?.created_at, sim?.tariff?.validity_period),
-          usage: Number(sim?.last_usage_quantity) ?? 0,
+          usage: Number(sim?.last_usage_quantity) || 0,
+          usage_snapshot: sim.usage_snapshot,
+          usage_checked_at: sim.usage_checked_at,
           quantity_internet: sim?.tariff?.quantity_internet * 1024,
           is_4g: sim?.tariff?.is_4g,
           is_5g: sim?.tariff?.is_5g,
@@ -377,12 +388,7 @@ export class SimsService {
           },
           validity_period: sim?.tariff?.validity_period,
           expire_date: dayAfterNConverter(sim?.created_at, sim?.tariff?.validity_period),
-          can_activate:
-            sim.status === OrderStatus.NOTIFY_COUPON ||
-            sim.status === OrderStatus.REDEEM_COUPON ||
-            sim.status === OrderStatus.COMPLETED
-              ? true
-              : false,
+          can_activate: sim.status === OrderStatus.COMPLETED && !!sim.qrcode,
           uid: sim?.uid,
           region_group: {
             id: sim?.tariff?.region_group?.id,
@@ -577,11 +583,12 @@ export class SimsService {
         coupon: true,
         iccid: true,
         partner_id: true,
+        partner: { select: { identified_number: true } },
       },
     });
 
     for (let sim of sims) {
-      if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
+      if (sim.partner.identified_number === PartnerIds.BILLION_CONNECT) {
         const partnerStatus = await this.billionConnectService.getStatus({ iccid: sim.iccid });
 
         const tradeData = partnerStatus?.tradeData ?? null;
@@ -598,7 +605,7 @@ export class SimsService {
         }
       }
 
-      if (sim.partner_id === PartnerIds.JOYTEL) {
+      if (sim.partner.identified_number === PartnerIds.JOYTEL) {
         const response = await this.joyTelService.getStatus({ coupon: sim.coupon });
         console.log(response);
 
@@ -628,53 +635,15 @@ export class SimsService {
 
   async getUsage(userId: number) {
     const sims = await this.prisma.sims.findMany({
-      where: {
-        user_id: userId,
-        sim_status: 'ACTIVATED',
-        status: 'COMPLETED',
-      },
-      select: {
-        id: true,
-        coupon: true,
-        iccid: true,
-        status: true,
-        partner_id: true,
-        partner_order_id: true,
-      },
+      where: { user_id: userId, sim_status: 'ACTIVATED', status: 'COMPLETED' },
+      include: { partner: true },
     });
-    console.log(sims);
-    const responses: any = [];
-
-    for (let sim of sims) {
-      if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
-        const response = await this.billionConnectService.getUsage({
-          iccid: sim.iccid,
-          orderId: sim?.partner_order_id,
-        });
-        console.log(response);
-        responses.push(response);
-        if (response?.tradeCode === '1000') {
-          // Тот же разбор, что в кроне jobs.service.ts — оба писателя кладут в колонку мегабайты
-          const subOrders = response?.tradeData?.subOrderList ?? [];
-
-          let totalKb = 0;
-          for (const sub of subOrders) {
-            for (const usage of sub?.usageInfoList ?? []) {
-              totalKb += Number(usage?.usageAmt || 0);
-            }
-          }
-
-          const totalMb = +(totalKb / 1024).toFixed(2);
-
-          await this.prisma.sims.update({
-            where: {
-              id: sim.id,
-            },
-            data: {
-              last_usage_quantity: totalMb.toString(),
-            },
-          });
-        }
+    const responses: any[] = [];
+    for (const sim of sims) {
+      await this.usageService.forSim(sim.id, userId);
+      // Historical clients expect raw BC replies here. New clients use /:id/usage.
+      if (sim.partner.identified_number === PartnerIds.BILLION_CONNECT) {
+        responses.push(await this.billionConnectService.getUsage({ iccid: sim.iccid, orderId: sim.partner_order_id }));
       }
     }
     return responses;

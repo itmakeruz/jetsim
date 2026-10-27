@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { HttpService } from './http.service';
 import {
   JOYTEL_URL,
@@ -112,8 +113,7 @@ export class JoyTel {
     const url = `${this.orderUrl}/query`;
     const timestamp = this.generateTimeStamp();
 
-    const plainStr =
-      this.customerCode + this.customerAuth + (orderCode ?? '') + orderTid + timestamp;
+    const plainStr = this.customerCode + this.customerAuth + (orderCode ?? '') + orderTid + timestamp;
     const autoGraph = crypto.createHash('sha1').update(plainStr).digest('hex');
 
     const body: Record<string, any> = {
@@ -195,6 +195,15 @@ export class JoyTel {
       })
       .setBody(body)
       .send();
+  }
+
+  async getUsageResponse(coupon: CouponRequest) {
+    // Keep the envelope: resultCode/code must be checked before reading counters.
+    const response = await axios.post(JOYTEL_URL + '/esim/usage/query', coupon, {
+      headers: this.generateRspHeaders(),
+      timeout: 12000,
+    });
+    return response.data;
   }
 
   async getUsage(coupon: CouponRequest) {

@@ -9,6 +9,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
+    let lastSuccess: unknown = undefined;
 
     // NestJS HttpException turlari uchun
     if (exception instanceof HttpException) {
@@ -19,6 +20,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message = res;
       } else if (typeof res === 'object') {
         message = (res as any).message || (res as any).error || message;
+        if (status === 502) lastSuccess = (res as any).last_success;
       }
     }
     // Oddiy Error uchun (masalan throw new Error('Nimadir noto‘g‘ri');)
@@ -30,6 +32,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       success: false,
       message,
       statusCode: status,
+      ...(lastSuccess !== undefined ? { last_success: lastSuccess } : {}),
     });
   }
 }

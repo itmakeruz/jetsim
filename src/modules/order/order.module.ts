@@ -1,3 +1,4 @@
+import { MobilineActivationService } from './mobiline-activation.service';
 import { Module } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { OrderController } from './order.controller';
@@ -12,7 +13,15 @@ import { OrderEventsModule } from 'src/modules/order-events/order-events.module'
 @Module({
   imports: [PrismaModule, HttpModule, OrderEventsModule],
   controllers: [OrderController],
-  providers: [OrderService, JoyTel, QrService, WinstonLoggerService, TelegramBotService, CreateSimService],
+  providers: [
+    MobilineActivationService,
+    OrderService,
+    JoyTel,
+    QrService,
+    WinstonLoggerService,
+    TelegramBotService,
+    CreateSimService,
+  ],
   exports: [OrderService],
 })
 export class OrderModule {}

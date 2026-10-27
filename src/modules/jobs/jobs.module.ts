@@ -1,3 +1,4 @@
+import { UsageModule } from '../usage/usage.module';
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { JobsService } from './jobs.service';
@@ -8,7 +9,7 @@ import { OrderModule } from '../order';
 import { PromoCodeModule } from '../promocode';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), PrismaModule, HttpModule, OrderModule, PromoCodeModule],
+  imports: [UsageModule, ScheduleModule.forRoot(), PrismaModule, HttpModule, OrderModule, PromoCodeModule],
   providers: [JobsService, WinstonLoggerService],
   exports: [JobsService],
 })

@@ -1,4 +1,4 @@
-import { PartnerIds } from '@enums';
+import { UsageService } from '../usage/usage.service';
 import { BillionConnectService, JoyTel } from '@http';
 import { WinstonLoggerService } from '@logger';
 import { Injectable } from '@nestjs/common';
@@ -23,6 +23,7 @@ export class JobsService {
     private readonly billionConnectService: BillionConnectService,
     private readonly orderService: OrderService,
     private readonly promoCodeService: PromoCodeService,
+    private readonly usageService: UsageService,
   ) {}
 
   private isProcessingConfirmedPayments = false;
@@ -161,106 +162,23 @@ export class JobsService {
     });
   }
 
+  private isUpdatingUsage = false;
+
   @Cron('*/20 * * * *')
   async updateUsage() {
-    this.logger.log('Update sim usage!');
-
-    const sims = await this.prisma.sims.findMany({
-      where: {
-        status: 'COMPLETED',
-      },
-      select: {
-        id: true,
-        coupon: true,
-        iccid: true,
-        last_usage_quantity: true,
-        partner_id: true,
-        partner_order_id: true,
-      },
-      orderBy: {
-        created_at: 'desc',
-      },
-    });
-
-    for (const sim of sims) {
-      try {
-        /**
-         * ======================
-         * JOYTEL
-         * ======================
-         */
-        if (sim.partner_id === PartnerIds.JOYTEL) {
-          const response = await this.joyTelService.getUsage({
-            coupon: sim.coupon,
-          });
-
-          const usageList = response?.dataUsageList ?? [];
-
-          if (!Array.isArray(usageList) || usageList.length === 0) {
-            continue;
-          }
-
-          let totalBytes = 0;
-
-          for (const item of usageList) {
-            totalBytes += Number(item?.usage || 0);
-          }
-
-          const totalMb = +(totalBytes / (1024 * 1024)).toFixed(2);
-
-          if (sim.last_usage_quantity !== totalMb.toString()) {
-            await this.prisma.sims.update({
-              where: { id: sim.id },
-              data: {
-                last_usage_quantity: totalMb.toString(),
-              },
-            });
-
-            this.logger.log(`JOYTEL SIM ${sim.id} → ${totalMb} MB`);
-          }
+    if (this.isUpdatingUsage) return;
+    this.isUpdatingUsage = true;
+    try {
+      const sims = await this.prisma.sims.findMany({ where: { status: 'COMPLETED' }, select: { id: true } });
+      for (const sim of sims) {
+        try {
+          await this.usageService.forSim(sim.id);
+        } catch {
+          this.logger.warn(`Balance refresh failed for SIM ${sim.id}`);
         }
-
-        /**
-         * ======================
-         * BILLION CONNECT
-         * ======================
-         */
-        if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
-          const response = await this.billionConnectService.getUsage({
-            iccid: sim.iccid,
-            orderId: sim.partner_order_id,
-          });
-
-          if (response?.tradeCode !== '1000') {
-            continue;
-          }
-
-          const subOrders = response?.tradeData?.subOrderList ?? [];
-
-          let totalKb = 0;
-
-          for (const sub of subOrders) {
-            const usageList = sub?.usageInfoList ?? [];
-
-            for (const usage of usageList) {
-              totalKb += Number(usage?.usageAmt || 0);
-            }
-          }
-
-          const totalMb = +(totalKb / 1024).toFixed(2);
-
-          console.log(`BILLION SIM ${sim.id}: ${totalKb} KB = ${totalMb} MB`);
-
-          await this.prisma.sims.update({
-            where: { id: sim.id },
-            data: {
-              last_usage_quantity: totalMb.toString(),
-            },
-          });
-        }
-      } catch (error) {
-        this.logger.error(`SIM usage update failed for SIM ${sim.id}`, error);
       }
+    } finally {
+      this.isUpdatingUsage = false;
     }
   }
 

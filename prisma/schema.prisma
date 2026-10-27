@@ -200,6 +200,8 @@ model Sims {
   partner_sim_status   Int?
   sim_status           SimStatus?
   last_usage_quantity  String?
+  usage_snapshot       Json?
+  usage_checked_at     DateTime? @db.Timestamptz(5)
 
   user        User         @relation(fields: [user_id], references: [id])
   partner     Partner      @relation(fields: [partner_id], references: [id])
@@ -214,6 +216,7 @@ model Sims {
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
 
+  @@index([partner_id, channel_order_id])
   @@index([iccid])
   @@index([order_id])
   @@index([user_id])

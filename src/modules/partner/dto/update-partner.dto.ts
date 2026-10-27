@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Status } from '@prisma/client';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { PartnerIds } from '@enums';
 
 export class UpdatePartnerDto {
   @ApiProperty({ type: String, required: true, example: 'Partner Name (RU)' })
@@ -25,7 +26,7 @@ export class UpdatePartnerDto {
 
   @ApiProperty({ type: Number, required: true, example: 1 })
   @IsOptional()
-  @IsNumber()
+  @IsEnum(PartnerIds)
   identified_number: number;
 
   @ApiProperty({ enum: Status, required: true, example: Status.ACTIVE })

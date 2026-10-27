@@ -103,6 +103,23 @@ export class BillionConnectService {
     }
   }
 
+  async getPlans(iccid: string) {
+    const payloadJson = JSON.stringify({
+      tradeType: 'F012',
+      tradeTime: this.formatDateTime(new Date()),
+      tradeData: { iccid },
+    });
+    const response = await this.http.post('', payloadJson, {
+      timeout: 12000,
+      headers: {
+        'x-channel-id': this.appKey,
+        'x-sign-method': this.signMethod,
+        'x-sign-value': this.md5(this.appSecret + payloadJson),
+      },
+    });
+    return response.data;
+  }
+
   async getUsage(data: GetUsageRequest) {
     const payload = {
       tradeType: 'F046',
@@ -212,15 +229,34 @@ export class BillionConnectService {
     return crypto.createHash('md5').update(s, 'utf8').digest('hex');
   }
 
+  /**
+   * BillionConnect — китайская площадка, их API ожидает время в Asia/Shanghai
+   * (UTC+8, без перехода на летнее). Раньше здесь были d.getHours() и
+   * прочие "локальные" геттеры Date — они берут часовой пояс процесса Node,
+   * какой бы он ни был на сервере, и никак не приводят его к Шанхаю. Из-за
+   * этого orderCreateTime/tradeTime уезжали на несколько часов от реального
+   * времени запроса — BillionConnect поймал это на заказе #4580 (прислали
+   * 13 окт 21:33 вместо фактических 14 окт 03:44). Теперь время считается
+   * явно в их таймзоне, независимо от того, в каком поясе крутится сервер.
+   */
   private formatDateTime(d: Date) {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const yyyy = d.getFullYear();
-    const MM = pad(d.getMonth() + 1);
-    const dd = pad(d.getDate());
-    const hh = pad(d.getHours());
-    const mm = pad(d.getMinutes());
-    const ss = pad(d.getSeconds());
-    return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).formatToParts(d);
+
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00';
+    // Защита от известной особенности ICU: hour12:false иногда отдаёт "24"
+    // вместо "00" для полуночи на некоторых версиях Node/ICU.
+    const hour = get('hour') === '24' ? '00' : get('hour');
+
+    return `${get('year')}-${get('month')}-${get('day')} ${hour}:${get('minute')}:${get('second')}`;
   }
 
   async isSuccess(data: any): Promise<boolean> {

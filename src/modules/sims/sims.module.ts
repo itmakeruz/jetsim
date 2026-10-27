@@ -1,3 +1,4 @@
+import { UsageModule } from '../usage/usage.module';
 import { Module } from '@nestjs/common';
 import { SimsService } from './sims.service';
 import { SimsController } from './sims.controller';
@@ -9,6 +10,6 @@ import { QrService } from '@helpers';
 @Module({
   controllers: [SimsController],
   providers: [SimsService, JoyTel, BillionConnectService, WinstonLoggerService, QrService],
-  imports: [PrismaModule, HttpModule],
+  imports: [UsageModule, PrismaModule, HttpModule],
 })
 export class SimsModule {}

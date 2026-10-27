@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
 import { PrismaModule } from '@prisma';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JWT_ACCESS_EXPIRE_TIME, JWT_ACCESS_SECRET } from '@config';
@@ -14,7 +14,7 @@ import { RedisService } from '@helpers';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: JWT_ACCESS_SECRET,
-        signOptions: { expiresIn: JWT_ACCESS_EXPIRE_TIME },
+        signOptions: { expiresIn: JWT_ACCESS_EXPIRE_TIME as JwtSignOptions['expiresIn'] },
       }),
       inject: [ConfigService],
     }),

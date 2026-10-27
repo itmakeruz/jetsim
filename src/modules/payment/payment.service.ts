@@ -132,6 +132,29 @@ export class PaymentService {
       const itemPrice = item.price ?? item.tariff?.price_sell ?? 0;
       return sum + itemPrice * item.quantity;
     }, 0);
+    const providers = await this.prisma.partner.findMany({
+      where: {
+        id: {
+          in: [
+            ...new Set(
+              basket.items.map((item) => item.tariff?.partner_id).filter((id): id is number => id !== undefined),
+            ),
+          ],
+        },
+      },
+      select: { id: true, identified_number: true },
+    });
+    for (const item of basket.items) {
+      const provider = providers.find((p) => p.id === item.tariff?.partner_id);
+      if (
+        !item.tariff ||
+        item.tariff.status !== Status.ACTIVE ||
+        !provider ||
+        ![PartnerIds.JOYTEL, PartnerIds.BILLION_CONNECT, PartnerIds.MOBILINE].includes(provider.identified_number!)
+      ) {
+        throw new BadRequestException('Unsupported or inactive tariff');
+      }
+    }
     const promo = await this.promoCodeService.validateCodeForPayment(userId, promoCode, totalAmount);
     const discountAmount = promo?.discount_amount ?? 0;
     const finalAmount = totalAmount - discountAmount;
@@ -177,7 +200,6 @@ export class PaymentService {
     for (const item of basket.items) {
       if (!item.tariff || item.tariff.status !== Status.ACTIVE) continue;
       const partnerId = item.tariff.partner_id;
-      if (partnerId !== PartnerIds.JOYTEL && partnerId !== PartnerIds.BILLION_CONNECT) continue;
       const quantity = item.quantity ?? 1;
       for (let q = 0; q < quantity; q++) {
         await this.prisma.sims.create({

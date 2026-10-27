@@ -2,10 +2,7 @@ import { TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_CHAT_ID, TELEGRAM_PERSONAL_CHAT_ID }
 import { Injectable, Logger } from '@nestjs/common';
 import * as TelegramBotAPI from 'node-telegram-bot-api';
 
-export enum PartnerIds {
-  JOYTEL = 1,
-  BILLION_CONNECT = 2,
-}
+import { PartnerIds } from '@enums';
 
 // Прежний захардкоженный чат — используется только если TELEGRAM_ADMIN_CHAT_ID
 // не задан в .env, чтобы деплой без обновлённого .env не остался без уведомлений.
@@ -64,7 +61,11 @@ export class TelegramBotService {
     // Имя провайдера (JoyTel/BillionConnect) намеренно не упоминаем в тексте —
     // только внутри сырого JSON-ответа, который и так нужен для отладки.
     const formattedDate = this.formatDate(params.date);
-    const esc = (s: unknown) => String(s ?? '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const esc = (s: unknown) =>
+      String(s ?? '—')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
     const code = (s: unknown) => `<code>${esc(s)}</code>`;
 
     const formattedResponse = esc(JSON.stringify(params.response, null, 2));
@@ -105,7 +106,11 @@ export class TelegramBotService {
   }) {
     // Имя провайдера намеренно не упоминаем в тексте — см. notifyOrderSuccess.
     const formattedDate = this.formatDate(params.date);
-    const esc = (s: unknown) => String(s ?? '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const esc = (s: unknown) =>
+      String(s ?? '—')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
     const code = (s: unknown) => `<code>${esc(s)}</code>`;
 
     const formattedResponse = esc(JSON.stringify(params.response, null, 2));
@@ -164,8 +169,12 @@ export class TelegramBotService {
 📱 <b>SIM-карта</b>
 • CID: ${code(params.sim.cid)}
 • SN Pin: ${code(params.sim.snPin)}
-• SN Code: ${code(params.sim.snCode)}${params.sim.snPuk ? `
-• SN Puk: ${code(params.sim.snPuk)}` : ''}
+• SN Code: ${code(params.sim.snCode)}${
+      params.sim.snPuk
+        ? `
+• SN Puk: ${code(params.sim.snPuk)}`
+        : ''
+    }
 • Статус: ${code(params.sim.status)}
 
 ✅ QR-код для активации прикреплен

@@ -30,7 +30,7 @@ export class CreateSimService {
     await this.orderEvents.record({
       simId: item.id,
       orderId: order_id,
-      partnerId: PartnerIds.JOYTEL,
+      partnerId: item.partner_id ?? PartnerIds.JOYTEL,
       event: 'joytel_submit_requested',
       message: 'Заявка на выпуск eSIM отправлена в JoyTel (/customerApi/customerOrder)',
     });
@@ -68,14 +68,14 @@ export class CreateSimService {
       await this.orderEvents.record({
         simId: item.id,
         orderId: order_id,
-        partnerId: PartnerIds.JOYTEL,
+        partnerId: item.partner_id ?? PartnerIds.JOYTEL,
         event: 'joytel_submit_succeeded',
         message: 'JoyTel принял заказ',
         meta: { orderTid: response.data.orderTid, orderCode: response.data.orderCode, code: response.code },
       });
 
       await this.telegramBotService.notifyOrderSuccess({
-        partnerId: PartnerIds.JOYTEL,
+        partnerId: item.partner_id ?? PartnerIds.JOYTEL,
         orderId: order_id,
         esimId: item.id,
         date: new Date().toISOString(),
@@ -94,17 +94,35 @@ export class CreateSimService {
       // Если не готов — ничего не делаем, дальше сработает обычный колбэк.
       // Любая ошибка здесь проглатывается: это ускоряющая попытка, а не
       // обязательный шаг, основной путь выдачи остаётся прежним.
-      await this.tryProactiveJoyTelQuery(item.id, order_id, response.data.orderTid, response.data.orderCode);
+      await this.tryProactiveJoyTelQuery(
+        item.id,
+        order_id,
+        response.data.orderTid,
+        response.data.orderCode,
+        item.partner_id ?? PartnerIds.JOYTEL,
+      );
 
       return true;
     } catch (e) {
       const errorResponse = this.normalizeProviderError(e, providerResponse);
-      await this.failSim(item.id, order_id, errorResponse, PartnerIds.JOYTEL, 'joytel_submit_failed');
+      await this.failSim(
+        item.id,
+        order_id,
+        errorResponse,
+        item.partner_id ?? PartnerIds.JOYTEL,
+        'joytel_submit_failed',
+      );
       return false;
     }
   }
 
-  private async tryProactiveJoyTelQuery(simId: number, orderId: number, orderTid: string, orderCode: string) {
+  private async tryProactiveJoyTelQuery(
+    simId: number,
+    orderId: number,
+    orderTid: string,
+    orderCode: string,
+    partnerId = PartnerIds.JOYTEL,
+  ) {
     try {
       const statusResponse = await this.joyTel.queryOrderStatus(orderTid, orderCode);
 
@@ -115,7 +133,7 @@ export class CreateSimService {
         await this.orderEvents.record({
           simId,
           orderId,
-          partnerId: PartnerIds.JOYTEL,
+          partnerId,
           event: 'joytel_snpin_query_pending',
           message: 'JoyTel ещё не выдал snPin на момент проверки — ждём колбэк',
         });
@@ -145,7 +163,7 @@ export class CreateSimService {
         await this.orderEvents.record({
           simId,
           orderId,
-          partnerId: PartnerIds.JOYTEL,
+          partnerId,
           event: 'joytel_snpin_query_raced_callback',
           message: 'Колбэк JoyTel уже применил snPin раньше проактивного запроса — пропускаем повтор',
         });
@@ -155,7 +173,7 @@ export class CreateSimService {
       await this.orderEvents.record({
         simId,
         orderId,
-        partnerId: PartnerIds.JOYTEL,
+        partnerId,
         event: 'joytel_snpin_query_succeeded',
         message: 'snPin получен проактивным запросом статуса, не дожидаясь колбэка',
       });
@@ -164,7 +182,7 @@ export class CreateSimService {
       await this.orderEvents.record({
         simId,
         orderId,
-        partnerId: PartnerIds.JOYTEL,
+        partnerId,
         event: 'joytel_qr_requested',
         message: 'Запрос QR отправлен в JoyTel (/coupon/redeem) — по итогам проактивной проверки',
       });
@@ -172,7 +190,7 @@ export class CreateSimService {
       await this.orderEvents.record({
         simId,
         orderId,
-        partnerId: PartnerIds.JOYTEL,
+        partnerId,
         event: 'joytel_snpin_query_failed',
         severity: 'warning',
         message: error?.message ?? String(error),
@@ -191,7 +209,7 @@ export class CreateSimService {
     await this.orderEvents.record({
       simId: item.id,
       orderId: order_id,
-      partnerId: PartnerIds.BILLION_CONNECT,
+      partnerId: item.partner_id ?? PartnerIds.BILLION_CONNECT,
       event: 'billionconnect_submit_requested',
       message: 'Заявка на выпуск eSIM отправлена в BillionConnect',
     });
@@ -234,14 +252,14 @@ export class CreateSimService {
       await this.orderEvents.record({
         simId: item.id,
         orderId: order_id,
-        partnerId: PartnerIds.BILLION_CONNECT,
+        partnerId: item.partner_id ?? PartnerIds.BILLION_CONNECT,
         event: 'billionconnect_submit_succeeded',
         message: 'BillionConnect принял заказ, ждём финальный колбэк',
         meta: { orderId: response.tradeData.orderId, tradeCode: response.tradeCode },
       });
 
       await this.telegramBotService.notifyOrderSuccess({
-        partnerId: PartnerIds.BILLION_CONNECT,
+        partnerId: item.partner_id ?? PartnerIds.BILLION_CONNECT,
         orderId: order_id,
         esimId: item.id,
         date: new Date().toISOString(),
@@ -258,7 +276,13 @@ export class CreateSimService {
     } catch (e) {
       const errorResponse = this.normalizeProviderError(e, providerResponse);
       console.log(errorResponse);
-      await this.failSim(item.id, order_id, errorResponse, PartnerIds.BILLION_CONNECT, 'billionconnect_submit_failed');
+      await this.failSim(
+        item.id,
+        order_id,
+        errorResponse,
+        item.partner_id ?? PartnerIds.BILLION_CONNECT,
+        'billionconnect_submit_failed',
+      );
       return false;
     }
   }

@@ -56,7 +56,7 @@ export class PartnerService {
   }
 
   async create(data: CreatePartnerDto) {
-    if (!data.identified_number || data.identified_number < 1 || data.identified_number > 2) {
+    if (!data.identified_number || data.identified_number < 1 || data.identified_number > 3) {
       throw new BadRequestException(validation_error['ru']);
     }
     const partner = await this.prisma.partner.create({
@@ -97,7 +97,7 @@ export class PartnerService {
 
     if (
       data.identified_number &&
-      (!data.identified_number || data.identified_number < 1 || data.identified_number > 2)
+      (!data.identified_number || data.identified_number < 1 || data.identified_number > 3)
     ) {
       throw new BadRequestException(validation_error['ru']);
     }

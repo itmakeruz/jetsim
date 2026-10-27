@@ -1,15 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Req,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, HttpCode, Get, Post, Body, Patch, Param, Delete, Req, Query, UseGuards } from '@nestjs/common';
+import { MobilineCallbackDto } from './dto/mobiline-callback.dto';
+import { MobilineActivationService } from './mobiline-activation.service';
 import { OrderService } from './order.service';
 import { UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
@@ -22,7 +13,10 @@ import { UserRoles } from '@prisma/client';
 
 @Controller('order')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly mobiline: MobilineActivationService,
+  ) {}
 
   @ApiOperation({ summary: 'Get orders admin', description: 'Get orders admin' })
   @Get('admin')
@@ -145,6 +139,12 @@ export class OrderController {
   @Post('notify/coupon/redeem')
   async notifyCoupon(@Body() data: any) {
     return this.orderService.notifyCoupon(data);
+  }
+
+  @Post('mobiline/callback')
+  @HttpCode(200)
+  async mobilineCallback(@Body() data: MobilineCallbackDto) {
+    return this.mobiline.callback(data);
   }
 
   @Post('bc/callback')

@@ -1,3 +1,4 @@
+import { MobilineActivationService } from './mobiline-activation.service';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
 import { PrismaService } from '@prisma';
@@ -35,6 +36,7 @@ export class OrderService {
     private readonly telegramBotService: TelegramBotService,
     private readonly createSimsService: CreateSimService,
     private readonly orderEvents: OrderEventsService,
+    private readonly mobiline: MobilineActivationService,
   ) {}
   /**
    * Полная история выдачи заказа: что отправили партнёру, что он ответил,
@@ -167,6 +169,7 @@ export class OrderService {
           qrcode: true,
           status: true,
           sim_status: true,
+          usage_snapshot: true,
           tariff: {
             select: {
               id: true,
@@ -322,6 +325,7 @@ export class OrderService {
           sn_puk: sim?.sn_puk,
           status: sim?.status,
           sim_status: sim?.sim_status,
+          usage_snapshot: sim?.usage_snapshot,
           qr_code: sim?.qrcode ? `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png` : null,
           activation_code: sim?.qrcode ?? null,
           tariff: {
@@ -732,6 +736,7 @@ export class OrderService {
             status: true,
             tariff_id: true,
             partner_id: true,
+            partner: { select: { identified_number: true } },
             tariff: {
               select: {
                 id: true,
@@ -781,13 +786,17 @@ export class OrderService {
             order_id: newOrder.id,
             tariff_id: sim.tariff_id,
             tariff: sim.tariff,
+            partner_id: sim.partner_id,
             user: { name: newOrder.user.name, email: newOrder.user.email },
           };
-          if (sim.partner_id === PartnerIds.JOYTEL) {
+          if (sim.partner.identified_number === PartnerIds.JOYTEL) {
             const success = await this.createSimsService.processJoyTel(newOrder.id, newOrder.user.id, item);
             hasFailedSims = hasFailedSims || !success;
-          } else if (sim.partner_id === PartnerIds.BILLION_CONNECT) {
+          } else if (sim.partner.identified_number === PartnerIds.BILLION_CONNECT) {
             const success = await this.createSimsService.processBillion(newOrder.id, newOrder.user.id, item);
+            hasFailedSims = hasFailedSims || !success;
+          } else if (sim.partner.identified_number === PartnerIds.MOBILINE) {
+            const success = await this.mobiline.submit(newOrder.id, item);
             hasFailedSims = hasFailedSims || !success;
           }
         } catch (error) {

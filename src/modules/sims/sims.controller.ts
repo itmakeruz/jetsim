@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
+import { UsageService } from '../usage/usage.service';
 import { SimsService } from './sims.service';
 import { DeviceHeadersDto, ParamId } from '@enums';
 import { FindAllSimsDto } from './dto';
@@ -13,7 +14,10 @@ import { UserRoles } from '@prisma/client';
 
 @Controller('sims')
 export class SimsController {
-  constructor(private readonly simsService: SimsService) {}
+  constructor(
+    private readonly simsService: SimsService,
+    private readonly usageService: UsageService,
+  ) {}
 
   @ApiOperation({ summary: 'Get all sims' })
   @Get()
@@ -76,6 +80,21 @@ export class SimsController {
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'private, max-age=300');
     res.send(buffer);
+  }
+
+  @Get('admin/:id/usage')
+  @ApiBearerAuth()
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  async adminUsage(@Param() param: ParamId) {
+    return this.usageService.forSim(param.id);
+  }
+
+  @Get(':id/usage')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  async simUsage(@Param() param: ParamId, @Req() request: IRequest) {
+    return this.usageService.forSim(param.id, request.user.id);
   }
 
   @ApiOperation({ summary: 'Get sim by id' })

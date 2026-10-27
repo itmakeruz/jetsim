@@ -53,6 +53,10 @@ export class RedisService {
     await this.client.del(`${REDIS_OTP_PREFIX}${key}`);
   }
 
+  getClient(): Redis {
+    return this.client;
+  }
+
   getClientStatus(): string {
     return this.client.status;
   }

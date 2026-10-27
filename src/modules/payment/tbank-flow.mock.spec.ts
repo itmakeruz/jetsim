@@ -248,7 +248,15 @@ describe('T-Bank and provider flow (mock)', () => {
         findFirst: jest.fn().mockResolvedValue({
           id: 3641,
           user: { id: 2918, email: 'client@example.com' },
-          sims: [{ id: 3319, partner_id: 2, tariff_id: 1, tariff: { sku_id: 'SKU', validity_period: 30 } }],
+          sims: [
+            {
+              id: 3319,
+              partner_id: 22,
+              partner: { identified_number: 2 },
+              tariff_id: 1,
+              tariff: { sku_id: 'SKU', validity_period: 30 },
+            },
+          ],
         }),
         update: jest.fn(),
       },
@@ -265,6 +273,7 @@ describe('T-Bank and provider flow (mock)', () => {
       {} as any,
       { processBillion: jest.fn().mockResolvedValue(false), processJoyTel: jest.fn() } as any,
       { record: jest.fn() } as any,
+      { submit: jest.fn() } as any,
     );
 
     await expect(service.create(2918, 4248)).resolves.toEqual(expect.objectContaining({ success: false }));
@@ -319,6 +328,7 @@ describe('T-Bank and provider flow (mock)', () => {
       {} as any,
       orderService as any,
       { cancelUsageByTransaction: jest.fn() } as any,
+      { forSim: jest.fn() } as any,
     );
 
     await jobs.processPendingConfirmedPayments();
@@ -344,6 +354,7 @@ describe('T-Bank and provider flow (mock)', () => {
       {} as any,
       {} as any,
       promoCodeService as any,
+      { forSim: jest.fn() } as any,
     );
 
     await jobs.cancelStaleOrders();
@@ -376,13 +387,12 @@ describe('T-Bank and provider flow (mock)', () => {
       {} as any,
       {} as any,
       promoCodeService as any,
+      { forSim: jest.fn() } as any,
     );
 
     await jobs.cancelStaleOrders();
 
-    expect(tx.order.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { status: OrderStatus.FAILED } }),
-    );
+    expect(tx.order.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { status: OrderStatus.FAILED } }));
     expect(tx.sims.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { status: OrderStatus.FAILED } }));
     expect(tx.transaction.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: TransactionStatus.CANCELED } }),
