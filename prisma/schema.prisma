@@ -19,6 +19,8 @@ model User {
   email        String?
   password     String?
   is_verified  Boolean @default(false)
+  // Служебный пользователь B2B-компании (держит её SIM/заказы, войти им нельзя)
+  is_service   Boolean @default(false)
   fcm_token    String?
   phone_number String?
   address      String?
@@ -30,6 +32,7 @@ model User {
   orders       Order[]
   sims         Sims[]
   promo_usages PromoUsage[]
+  reseller     Reseller?
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -149,11 +152,13 @@ model Tariff {
   is_regional       Boolean @default(false)
   region_group_id   Int?
 
-  regions      Region[]     @relation("tariff_regions")
-  region_group RegionGroup? @relation(fields: [region_group_id], references: [id])
-  partner      Partner      @relation(fields: [partner_id], references: [id])
-  bascet_item  BasketItem[]
-  sims         Sims[]
+  regions          Region[]         @relation("tariff_regions")
+  region_group     RegionGroup?     @relation(fields: [region_group_id], references: [id])
+  partner          Partner          @relation(fields: [partner_id], references: [id])
+  bascet_item      BasketItem[]
+  sims             Sims[]
+  reseller_tariffs ResellerTariff[]
+  reseller_orders  ResellerOrder[]
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -201,14 +206,17 @@ model Sims {
   sim_status           SimStatus?
   last_usage_quantity  String?
   usage_snapshot       Json?
-  usage_checked_at     DateTime? @db.Timestamptz(5)
+  usage_checked_at     DateTime?   @db.Timestamptz(5)
+  // Заполнено только у eSIM, выпущенных для партнёрской (B2B) компании
+  reseller_order_id    Int?        @unique
 
-  user        User         @relation(fields: [user_id], references: [id])
-  partner     Partner      @relation(fields: [partner_id], references: [id])
-  tariff      Tariff       @relation(fields: [tariff_id], references: [id])
-  order       Order?       @relation(fields: [order_id], references: [id])
-  main_region Region?      @relation(fields: [main_region_id], references: [id])
-  events      OrderEvent[]
+  user           User           @relation(fields: [user_id], references: [id])
+  partner        Partner        @relation(fields: [partner_id], references: [id])
+  tariff         Tariff         @relation(fields: [tariff_id], references: [id])
+  order          Order?         @relation(fields: [order_id], references: [id])
+  main_region    Region?        @relation(fields: [main_region_id], references: [id])
+  events         OrderEvent[]
+  reseller_order ResellerOrder? @relation(fields: [reseller_order_id], references: [id])
 
   request  Json?
   response Json?
@@ -245,16 +253,19 @@ model Partner {
 }
 
 model Order {
-  id             Int         @id @default(autoincrement())
-  status         OrderStatus
-  user_id        Int
-  transaction_id Int?
+  id                Int         @id @default(autoincrement())
+  status            OrderStatus
+  user_id           Int
+  transaction_id    Int?
+  // Заполнено только у «оболочки» заказа B2B-компании; розничные выборки её исключают
+  reseller_order_id Int?        @unique
 
-  user         User          @relation(fields: [user_id], references: [id])
-  sims         Sims[]
-  transactions Transaction[]
-  promo_usage  PromoUsage?
-  events       OrderEvent[]
+  user           User           @relation(fields: [user_id], references: [id])
+  sims           Sims[]
+  transactions   Transaction[]
+  promo_usage    PromoUsage?
+  events         OrderEvent[]
+  reseller_order ResellerOrder? @relation(fields: [reseller_order_id], references: [id])
 
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
@@ -504,4 +515,179 @@ enum TransactionStatus {
   REFUNDED // To'lov qaytarildi
   ERROR // Tizim xatosi
   UNKNOWN // Status hali aniqlanmagan
+}
+
+// ======================= B2B: партнёрские компании (Reseller) =======================
+// Reseller — компания партнёрской платформы. Не путать с Partner (поставщики eSIM).
+// Деньги — целые минорные единицы валюты компании (копейки/центы, BigInt). Валюта компании: RUB или USD,
+// задаётся при создании и не меняется; поля *_kopecks хранят минорные единицы любой из них.
+
+enum ResellerStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum ResellerKeyStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum ResellerLedgerType {
+  TOPUP
+  ADJUSTMENT
+  RESERVE
+  RELEASE
+  CAPTURE
+  REFUND
+}
+
+enum ResellerOrderState {
+  RESERVED // деньги зарезервированы, поставщику ещё не отправляли
+  SUBMITTING // заявка уходит поставщику (отмена уже невозможна)
+  SUBMITTED // поставщик принял, ждём выдачу
+  ISSUED // eSIM выдана, резерв списан
+  FAILED // достоверный отказ, резерв освобождён
+  RECONCILE // результат неизвестен, резерв удержан до сверки
+  CANCELLED // отменён до отправки, резерв освобождён
+  REFUNDED // возврат после выдачи подтверждён
+}
+
+model Reseller {
+  id              Int            @id @default(autoincrement())
+  name            String
+  status          ResellerStatus @default(ACTIVE)
+  currency        String         @default("RUB")
+  service_user_id Int            @unique
+
+  service_user User             @relation(fields: [service_user_id], references: [id])
+  api_keys     ResellerApiKey[]
+  tariffs      ResellerTariff[]
+  account      ResellerAccount?
+  ledger       ResellerLedger[]
+  orders       ResellerOrder[]
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+
+  @@map("reseller")
+}
+
+// Закупочный ключ компании (хранится только хеш; значение показывается один раз)
+model ResellerApiKey {
+  id           Int               @id @default(autoincrement())
+  reseller_id  Int
+  name         String?
+  prefix       String            @unique
+  key_hash     String
+  status       ResellerKeyStatus @default(ACTIVE)
+  last_used_at DateTime?         @db.Timestamptz(5)
+  revoked_at   DateTime?         @db.Timestamptz(5)
+
+  reseller Reseller @relation(fields: [reseller_id], references: [id])
+
+  created_at DateTime @default(now()) @db.Timestamptz(5)
+
+  @@index([reseller_id])
+  @@map("reseller_api_key")
+}
+
+// Тариф, доступный компании, и её закупочная цена; price_version растёт при каждой смене цены
+model ResellerTariff {
+  id            Int     @id @default(autoincrement())
+  reseller_id   Int
+  tariff_id     Int
+  price_kopecks BigInt
+  price_version Int     @default(1)
+  active        Boolean @default(true)
+
+  reseller Reseller @relation(fields: [reseller_id], references: [id])
+  tariff   Tariff   @relation(fields: [tariff_id], references: [id])
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+
+  @@unique([reseller_id, tariff_id])
+  @@map("reseller_tariff")
+}
+
+// Единственный достоверный денежный баланс компании.
+// available = balance_kopecks - reserved_kopecks (CHECK в БД не даёт уйти в минус)
+model ResellerAccount {
+  reseller_id      Int    @id
+  balance_kopecks  BigInt @default(0)
+  reserved_kopecks BigInt @default(0)
+
+  reseller Reseller @relation(fields: [reseller_id], references: [id])
+
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+
+  @@map("reseller_account")
+}
+
+// Неизменяемый журнал: UPDATE/DELETE запрещены триггером; исправления — новыми проводками
+model ResellerLedger {
+  id                     Int                @id @default(autoincrement())
+  reseller_id            Int
+  type                   ResellerLedgerType
+  delta_balance_kopecks  BigInt
+  delta_reserved_kopecks BigInt
+  balance_after          BigInt
+  reserved_after         BigInt
+  reseller_order_id      Int?
+  comment                String?
+  actor                  String?
+  idempotency_key        String
+
+  reseller Reseller       @relation(fields: [reseller_id], references: [id])
+  order    ResellerOrder? @relation(fields: [reseller_order_id], references: [id])
+
+  created_at DateTime @default(now()) @db.Timestamptz(5)
+
+  @@unique([reseller_id, idempotency_key])
+  @@index([reseller_id, id])
+  @@index([reseller_order_id])
+  @@map("reseller_ledger")
+}
+
+model ResellerOrder {
+  id              Int                @id @default(autoincrement())
+  reseller_id     Int
+  client_order_id String
+  request_hash    String
+  state           ResellerOrderState @default(RESERVED)
+  state_reason    String?
+
+  tariff_id      Int
+  tariff_name_ru String
+  tariff_name_en String
+  data_gb        Int?
+  validity_days  Int?
+  price_kopecks  BigInt
+  price_version  Int
+  currency       String @default("RUB")
+
+  source     String?
+  source_ref String?
+
+  // Служебные данные поставщика — отдаются только управляющему API
+  provider_response Json?
+
+  submitting_at DateTime? @db.Timestamptz(5)
+  submitted_at  DateTime? @db.Timestamptz(5)
+  issued_at     DateTime? @db.Timestamptz(5)
+  failed_at     DateTime? @db.Timestamptz(5)
+
+  reseller Reseller         @relation(fields: [reseller_id], references: [id])
+  tariff   Tariff           @relation(fields: [tariff_id], references: [id])
+  sim      Sims?
+  order    Order?
+  ledger   ResellerLedger[]
+
+  created_at DateTime  @default(now()) @db.Timestamptz(5)
+  updated_at DateTime? @updatedAt @db.Timestamptz(5)
+
+  @@unique([reseller_id, client_order_id])
+  @@index([state])
+  @@index([reseller_id, updated_at])
+  @@map("reseller_order")
 }

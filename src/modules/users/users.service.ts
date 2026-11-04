@@ -13,7 +13,8 @@ export class UsersService {
 
   async findAll(query: GetUsersDto) {
     const search = query?.search?.trim();
-    const where: Prisma.UserWhereInput = {};
+    // Служебные пользователи B2B-компаний — не клиенты
+    const where: Prisma.UserWhereInput = { is_service: false };
 
     if (search) {
       const or: Prisma.UserWhereInput[] = [

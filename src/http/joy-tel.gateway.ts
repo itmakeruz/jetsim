@@ -14,6 +14,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { CouponRequest, CidRequest, QueryOrderResponseJoyTel } from '@interfaces';
 import { WinstonLoggerService } from '@logger';
+import { ProviderRequestError } from './provider-request.error';
 
 @Injectable()
 export class JoyTel {
@@ -98,7 +99,10 @@ export class JoyTel {
       return response;
     } catch (error) {
       console.error('JoyTel RAW ERROR >>>', error?.response?.data || error.message);
-      throw new InternalServerErrorException('JoyTel order failed');
+      // HttpService при отсутствии ответа кидает статус 500 по умолчанию, поэтому «настоящими»
+      // считаем только 4xx; всё остальное для вызывающего — неизвестный исход
+      const status = typeof error?.getStatus === 'function' ? error.getStatus() : error?.response?.status;
+      throw new ProviderRequestError('JoyTel order failed', status, error?.response ?? error?.message);
     }
   }
 

@@ -27,6 +27,7 @@ import {
   TransactionModule,
 } from '@modules';
 import { LoggerModule } from './logging/logger.module';
+import { B2bModule } from './modules/b2b/b2b.module';
 import * as path from 'path';
 import { join } from 'path';
 
@@ -71,6 +72,7 @@ import { join } from 'path';
     RegionGroupModule,
     TransactionModule,
     LoggerModule,
+    B2bModule,
   ],
   controllers: [],
   providers: [WinstonLoggerService, LoggingInterceptor],

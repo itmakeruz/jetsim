@@ -35,7 +35,8 @@ export class SimsService {
 
   async findAll(query: FindAllSimsDto) {
     const search = query?.search?.trim();
-    const where: Prisma.SimsWhereInput = {};
+    // B2B-SIM партнёрских компаний в розничный список CRM не попадают
+    const where: Prisma.SimsWhereInput = { reseller_order_id: null };
 
     if (search) {
       const or: Prisma.SimsWhereInput[] = [
@@ -94,7 +95,7 @@ export class SimsService {
   async getQrCode(id: number): Promise<Buffer> {
     const sim = await this.prisma.sims.findUnique({
       where: { id },
-      select: { id: true, qrcode: true },
+      select: { id: true, qrcode: true, reseller_order_id: true },
     });
 
     if (!sim) {
@@ -104,6 +105,9 @@ export class SimsService {
     if (!sim.qrcode) {
       throw new BadRequestException('QR-код этой eSIM ещё не получен от партнёра');
     }
+
+    // B2B-eSIM: файлов в публичном /uploads/qr нет и не создаём — собираем картинку на лету
+    if (sim.reseller_order_id) return this.qrService.generateQrWithLogo(sim.qrcode);
 
     const filePath = path.join('uploads', 'qr', `qr_content_${sim.id}.png`);
 

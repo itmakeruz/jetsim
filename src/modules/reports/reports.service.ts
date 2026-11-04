@@ -121,6 +121,8 @@ export class ReportsService {
     // В отчёт попадают только оплаченные eSIM. Дашборд этого не делает и потому
     // завышает выручку на брошенные корзины — здесь эту ошибку не повторяем.
     const where: Prisma.SimsWhereInput = {
+      // B2B-выпуски идут отдельным учётом (ResellerLedger) и в розничные отчёты не входят
+      reseller_order_id: null,
       order: {
         transactions: { some: { status: TransactionStatus.SUCCESS } },
       },

@@ -5,6 +5,7 @@ import { WinstonLoggerService } from '@logger';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
+import { ProviderRequestError } from './provider-request.error';
 
 interface SubOrderInput {
   channelSubOrderId: string;
@@ -100,7 +101,8 @@ export class BillionConnectService {
       const status = err?.response?.status;
       const resp = err?.response?.data;
       const msg = `BillionConnect F040 failed${status ? ` [${status}]` : ''}: ${JSON.stringify(resp || err.message)}`;
-      throw new InternalServerErrorException(msg);
+      // Тип ProviderRequestError различает «поставщик ответил отказом» и «ответа не было» — важно для денег B2B
+      throw new ProviderRequestError(msg, status, resp);
     }
   }
 

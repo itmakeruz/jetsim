@@ -92,6 +92,9 @@ export class JobsService {
         where: {
           status: OrderStatus.CREATED,
           created_at: { lt: cutoff },
+          // «Оболочки» B2B-заказов (у них нет транзакций оплаты по определению) — не брошенные корзины:
+          // деньги по ним ведёт ResellerLedger, а статусом управляет B2bSettlementService
+          reseller_order_id: null,
           // Заказы с пришедшими деньгами не трогаем ни при каких условиях
           transactions: { none: { status: { in: PAID_TRANSACTION_STATUSES } } },
         },

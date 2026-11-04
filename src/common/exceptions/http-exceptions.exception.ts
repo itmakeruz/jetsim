@@ -11,6 +11,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let message = 'Internal server error';
     let lastSuccess: unknown = undefined;
     let diagnostics: unknown = undefined;
+    // Машинный код ошибки (B2B API: INSUFFICIENT_FUNDS, PRICE_CHANGED, …) — клиенты
+    // партнёров разбирают его, а не текст сообщения
+    let code: unknown = undefined;
 
     // NestJS HttpException turlari uchun
     if (exception instanceof HttpException) {
@@ -21,6 +24,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message = res;
       } else if (typeof res === 'object') {
         message = (res as any).message || (res as any).error || message;
+        code = (res as any).code;
         if (status === 502) {
           lastSuccess = (res as any).last_success;
           diagnostics = (res as any).diagnostics;
@@ -36,6 +40,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       success: false,
       message,
       statusCode: status,
+      ...(code !== undefined ? { code } : {}),
       ...(lastSuccess !== undefined ? { last_success: lastSuccess } : {}),
       ...(diagnostics !== undefined ? { diagnostics } : {}),
     });

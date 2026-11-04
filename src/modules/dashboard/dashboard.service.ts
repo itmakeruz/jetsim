@@ -26,13 +26,15 @@ export class DashboardService {
       SELECT
         (SELECT COUNT(*)::INT
          FROM "order" o
-         WHERE (${start}::timestamptz IS NULL OR o.created_at >= ${start})
+         WHERE o.reseller_order_id IS NULL
+           AND (${start}::timestamptz IS NULL OR o.created_at >= ${start})
            AND (${end}::timestamptz IS NULL OR o.created_at <= ${end})
         ) AS total_orders,
 
         (SELECT COUNT(*)::INT
          FROM "order" o
          WHERE o.status = 'COMPLETED'
+           AND o.reseller_order_id IS NULL
            AND (${start}::timestamptz IS NULL OR o.created_at >= ${start})
            AND (${end}::timestamptz IS NULL OR o.created_at <= ${end})
         ) AS active_orders,
@@ -40,13 +42,15 @@ export class DashboardService {
         (SELECT COALESCE(SUM(t.price_sell)::FLOAT, 0)
          FROM sims s
          JOIN tariff t ON t.id = s.tariff_id
-         WHERE (${start}::timestamptz IS NULL OR s.created_at >= ${start})
+         WHERE s.reseller_order_id IS NULL
+           AND (${start}::timestamptz IS NULL OR s.created_at >= ${start})
            AND (${end}::timestamptz IS NULL OR s.created_at <= ${end})
         ) AS total_revenue,
 
         (SELECT COUNT(*)::INT
          FROM "user" u
-         WHERE (${start}::timestamptz IS NULL OR u.created_at >= ${start})
+         WHERE u.is_service = false
+           AND (${start}::timestamptz IS NULL OR u.created_at >= ${start})
            AND (${end}::timestamptz IS NULL OR u.created_at <= ${end})
         ) AS new_clients,
 
@@ -57,7 +61,8 @@ export class DashboardService {
                     SUM(t.price_sell)::FLOAT AS total
              FROM sims s
              JOIN tariff t ON t.id = s.tariff_id
-             WHERE (${start}::timestamptz IS NULL OR s.created_at >= ${start})
+             WHERE s.reseller_order_id IS NULL
+               AND (${start}::timestamptz IS NULL OR s.created_at >= ${start})
                AND (${end}::timestamptz IS NULL OR s.created_at <= ${end})
              GROUP BY 1 ORDER BY 1
            ) x),
@@ -71,7 +76,8 @@ export class DashboardService {
                     COUNT(s.id)::INT AS sold
              FROM sims s
              JOIN tariff t ON t.id = s.tariff_id
-             WHERE (${start}::timestamptz IS NULL OR s.created_at >= ${start})
+             WHERE s.reseller_order_id IS NULL
+               AND (${start}::timestamptz IS NULL OR s.created_at >= ${start})
                AND (${end}::timestamptz IS NULL OR s.created_at <= ${end})
              GROUP BY t.id, t.name_ru
              ORDER BY sold DESC

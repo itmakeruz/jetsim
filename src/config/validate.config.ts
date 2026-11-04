@@ -155,6 +155,15 @@ class EnvironmentVariables {
   @IsString()
   TELEGRAM_ADMIN_CHAT_ID: string;
 
+  // sha256(hex) управляющего ключа B2B API; без него /b2b-admin/* закрыт полностью
+  @IsOptional()
+  @IsString()
+  B2B_MANAGEMENT_KEY_HASH: string;
+
+  @IsOptional()
+  @IsString()
+  B2B_MANAGEMENT_ALLOWED_IPS: string;
+
   @IsOptional()
   @IsString()
   TELEGRAM_PERSONAL_CHAT_ID: string;

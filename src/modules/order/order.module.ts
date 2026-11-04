@@ -1,6 +1,7 @@
 import { MobilineActivationService } from './mobiline-activation.service';
 import { Module } from '@nestjs/common';
 import { OrderService } from './order.service';
+import { AdminOrderService } from './admin-order.service';
 import { OrderController } from './order.controller';
 import { PrismaModule } from '@prisma';
 import { HttpModule, JoyTel } from '@http';
@@ -16,12 +17,13 @@ import { OrderEventsModule } from 'src/modules/order-events/order-events.module'
   providers: [
     MobilineActivationService,
     OrderService,
+    AdminOrderService,
     JoyTel,
     QrService,
     WinstonLoggerService,
     TelegramBotService,
     CreateSimService,
   ],
-  exports: [OrderService],
+  exports: [OrderService, CreateSimService, MobilineActivationService],
 })
 export class OrderModule {}

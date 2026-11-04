@@ -190,7 +190,8 @@ export class OrderService {
   }
 
   private buildAdminOrderWhere(query: GetOrderDto): Prisma.OrderWhereInput {
-    const where: Prisma.OrderWhereInput = {};
+    // «Оболочки» B2B-заказов в розничный список не попадают
+    const where: Prisma.OrderWhereInput = { reseller_order_id: null };
 
     if (query?.id) {
       where.id = query.id;
@@ -1346,7 +1347,8 @@ export class OrderService {
         updatedOrder?.puk_2,
       );
       // await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
-      saveQrCode(updatedOrder.id, qrBuffer);
+      // B2B-eSIM не кладём в публичный /uploads/qr: путь перечислим по id
+      if (!updatedOrder.reseller_order_id) saveQrCode(updatedOrder.id, qrBuffer);
     } catch (error) {
       // БД уже обновлена в COMPLETED — это сбой в уведомлениях/сохранении QR,
       // а не в самой выдаче. Если бросить исключение, JoyTel получит 500 на
@@ -1458,7 +1460,7 @@ export class OrderService {
         updatedSim?.puk_2,
       );
       // await sendMailHelper(updatedSim.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
-      saveQrCode(updatedSim.id, qrBuffer);
+      if (!updatedSim.reseller_order_id) saveQrCode(updatedSim.id, qrBuffer);
     } catch (error) {
       // БД уже обновлена в COMPLETED — см. аналогичный комментарий в notifyCoupon.
       this.logger.error('BillionConnect bcCallback: пост-обработка после выдачи упала', error);

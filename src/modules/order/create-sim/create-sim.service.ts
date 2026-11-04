@@ -1,12 +1,13 @@
 import { MAIL_USER } from '@config';
 import { PartnerIds } from '@enums';
-import { BillionConnectService, JoyTel } from '@http';
+import { BillionConnectService, JoyTel, ProviderRequestError } from '@http';
 import { WinstonLoggerService } from '@logger';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@prisma';
 import { OrderStatus } from '@prisma/client';
 import { TelegramBotService } from 'src/common/helpers/telegram-bot.service';
 import { OrderEventsService } from 'src/modules/order-events/order-events.service';
+import type { SubmitOutcome } from '../../b2b/issuance/provider-submitter';
 
 @Injectable()
 export class CreateSimService {
@@ -36,14 +37,7 @@ export class CreateSimService {
     });
 
     try {
-      const response = await this.joyTel.submitEsimOrder(
-        item.id,
-        'Jetsim User',
-        'string',
-        MAIL_USER,
-        item.tariff.sku_id,
-        1,
-      );
+      const response = await this.callJoyTel(item);
       this.logger.log('JT INIT ORDER RESPONSE: ', response);
       console.log(response);
 
@@ -52,55 +46,7 @@ export class CreateSimService {
         throw new Error(response?.message ?? response?.mesg ?? 'JoyTel order request failed');
       }
 
-      await this.prisma.sims.update({
-        where: {
-          id: item.id,
-        },
-        data: {
-          order_tid: response.data.orderTid,
-          order_code: response.data.orderCode,
-          status: OrderStatus.REDEEM_COUPON,
-          response,
-          updated_at: new Date(),
-        },
-      });
-
-      await this.orderEvents.record({
-        simId: item.id,
-        orderId: order_id,
-        partnerId: item.partner_id ?? PartnerIds.JOYTEL,
-        event: 'joytel_submit_succeeded',
-        message: 'JoyTel принял заказ',
-        meta: { orderTid: response.data.orderTid, orderCode: response.data.orderCode, code: response.code },
-      });
-
-      await this.telegramBotService.notifyOrderSuccess({
-        partnerId: item.partner_id ?? PartnerIds.JOYTEL,
-        orderId: order_id,
-        esimId: item.id,
-        date: new Date().toISOString(),
-        client: {
-          name: item.user?.name ?? '—',
-          email: item.user?.email ?? '—',
-        },
-        tradeCode: response?.data?.orderCode,
-        providerOrderId: response?.data?.orderTid,
-        response,
-      });
-
-      // Не ждём пассивно колбэк JoyTel на /order/joytel/callback — сразу же
-      // спрашиваем статус сами. Если snPin уже готов на их стороне, выигрываем
-      // время до QR: не нужно дожидаться, пока их очередь решит прислать вебхук.
-      // Если не готов — ничего не делаем, дальше сработает обычный колбэк.
-      // Любая ошибка здесь проглатывается: это ускоряющая попытка, а не
-      // обязательный шаг, основной путь выдачи остаётся прежним.
-      await this.tryProactiveJoyTelQuery(
-        item.id,
-        order_id,
-        response.data.orderTid,
-        response.data.orderCode,
-        item.partner_id ?? PartnerIds.JOYTEL,
-      );
+      await this.onJoyTelAccepted(order_id, item, response);
 
       return true;
     } catch (e) {
@@ -114,6 +60,64 @@ export class CreateSimService {
       );
       return false;
     }
+  }
+
+  /** Единственное место, где уходит заявка в JoyTel — общее для розницы и B2B */
+  private callJoyTel(item: any) {
+    return this.joyTel.submitEsimOrder(item.id, 'Jetsim User', 'string', MAIL_USER, item.tariff.sku_id, 1);
+  }
+
+  /** Поставщик принял заявку: фиксируем, уведомляем, пробуем сразу получить snPin (общее для розницы и B2B) */
+  private async onJoyTelAccepted(order_id: number, item: any, response: any) {
+    await this.prisma.sims.update({
+      where: {
+        id: item.id,
+      },
+      data: {
+        order_tid: response.data.orderTid,
+        order_code: response.data.orderCode,
+        status: OrderStatus.REDEEM_COUPON,
+        response,
+        updated_at: new Date(),
+      },
+    });
+
+    await this.orderEvents.record({
+      simId: item.id,
+      orderId: order_id,
+      partnerId: item.partner_id ?? PartnerIds.JOYTEL,
+      event: 'joytel_submit_succeeded',
+      message: 'JoyTel принял заказ',
+      meta: { orderTid: response.data.orderTid, orderCode: response.data.orderCode, code: response.code },
+    });
+
+    await this.telegramBotService.notifyOrderSuccess({
+      partnerId: item.partner_id ?? PartnerIds.JOYTEL,
+      orderId: order_id,
+      esimId: item.id,
+      date: new Date().toISOString(),
+      client: {
+        name: item.user?.name ?? '—',
+        email: item.user?.email ?? '—',
+      },
+      tradeCode: response?.data?.orderCode,
+      providerOrderId: response?.data?.orderTid,
+      response,
+    });
+
+    // Не ждём пассивно колбэк JoyTel на /order/joytel/callback — сразу же
+    // спрашиваем статус сами. Если snPin уже готов на их стороне, выигрываем
+    // время до QR: не нужно дожидаться, пока их очередь решит прислать вебхук.
+    // Если не готов — ничего не делаем, дальше сработает обычный колбэк.
+    // Любая ошибка здесь проглатывается: это ускоряющая попытка, а не
+    // обязательный шаг, основной путь выдачи остаётся прежним.
+    await this.tryProactiveJoyTelQuery(
+      item.id,
+      order_id,
+      response.data.orderTid,
+      response.data.orderCode,
+      item.partner_id ?? PartnerIds.JOYTEL,
+    );
   }
 
   private async tryProactiveJoyTelQuery(
@@ -215,21 +219,7 @@ export class CreateSimService {
     });
 
     try {
-      const fiksirovanniy_sku_ids = ['1756107340691234', '1768370171837992', '1768370171830991'];
-
-      const isFiksirovanniySkuId = fiksirovanniy_sku_ids?.includes(item?.tariff?.sku_id);
-      const response = await this.billionConnect.createEsimOrder({
-        channelOrderId: item.id.toString(),
-        email: item.user.email || undefined,
-        subOrderList: [
-          {
-            channelSubOrderId: item.id.toString(),
-            deviceSkuId: item.tariff.sku_id,
-            planSkuCopies: isFiksirovanniySkuId ? '1' : item?.tariff?.validity_period?.toString(),
-            number: '1',
-          },
-        ],
-      });
+      const response = await this.callBillion(item);
       console.log(response);
 
       this.logger.log('BC INIT ORDER RESPONSE: ', response);
@@ -239,38 +229,7 @@ export class CreateSimService {
         throw new Error(response?.tradeMsg ?? 'BillionConnect order request failed');
       }
 
-      await this.prisma.sims.update({
-        where: { id: item.id },
-        data: {
-          status: OrderStatus.NOTIFY_COUPON,
-          partner_order_id: response.tradeData.orderId,
-          response,
-          updated_at: new Date(),
-        },
-      });
-
-      await this.orderEvents.record({
-        simId: item.id,
-        orderId: order_id,
-        partnerId: item.partner_id ?? PartnerIds.BILLION_CONNECT,
-        event: 'billionconnect_submit_succeeded',
-        message: 'BillionConnect принял заказ, ждём финальный колбэк',
-        meta: { orderId: response.tradeData.orderId, tradeCode: response.tradeCode },
-      });
-
-      await this.telegramBotService.notifyOrderSuccess({
-        partnerId: item.partner_id ?? PartnerIds.BILLION_CONNECT,
-        orderId: order_id,
-        esimId: item.id,
-        date: new Date().toISOString(),
-        client: {
-          name: item.user?.name ?? '—',
-          email: item.user?.email ?? '—',
-        },
-        tradeCode: response?.tradeCode,
-        providerOrderId: response?.tradeData?.orderId,
-        response,
-      });
+      await this.onBillionAccepted(order_id, item, response);
 
       return true;
     } catch (e) {
@@ -285,6 +244,142 @@ export class CreateSimService {
       );
       return false;
     }
+  }
+
+  /** Единственное место, где уходит заявка в BillionConnect — общее для розницы и B2B */
+  private callBillion(item: any) {
+    const fiksirovanniy_sku_ids = ['1756107340691234', '1768370171837992', '1768370171830991'];
+
+    const isFiksirovanniySkuId = fiksirovanniy_sku_ids?.includes(item?.tariff?.sku_id);
+    return this.billionConnect.createEsimOrder({
+      channelOrderId: item.id.toString(),
+      email: item.user?.email || undefined,
+      subOrderList: [
+        {
+          channelSubOrderId: item.id.toString(),
+          deviceSkuId: item.tariff.sku_id,
+          planSkuCopies: isFiksirovanniySkuId ? '1' : item?.tariff?.validity_period?.toString(),
+          number: '1',
+        },
+      ],
+    });
+  }
+
+  private async onBillionAccepted(order_id: number, item: any, response: any) {
+    await this.prisma.sims.update({
+      where: { id: item.id },
+      data: {
+        status: OrderStatus.NOTIFY_COUPON,
+        partner_order_id: response.tradeData.orderId,
+        response,
+        updated_at: new Date(),
+      },
+    });
+
+    await this.orderEvents.record({
+      simId: item.id,
+      orderId: order_id,
+      partnerId: item.partner_id ?? PartnerIds.BILLION_CONNECT,
+      event: 'billionconnect_submit_succeeded',
+      message: 'BillionConnect принял заказ, ждём финальный колбэк',
+      meta: { orderId: response.tradeData.orderId, tradeCode: response.tradeCode },
+    });
+
+    await this.telegramBotService.notifyOrderSuccess({
+      partnerId: item.partner_id ?? PartnerIds.BILLION_CONNECT,
+      orderId: order_id,
+      esimId: item.id,
+      date: new Date().toISOString(),
+      client: {
+        name: item.user?.name ?? '—',
+        email: item.user?.email ?? '—',
+      },
+      tradeCode: response?.tradeCode,
+      providerOrderId: response?.tradeData?.orderId,
+      response,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // B2B: тот же вызов поставщика, но с различением исхода (см. ProviderSubmitter).
+  // В отличие от processJoyTel/processBillion здесь неизвестный исход (таймаут,
+  // обрыв, 5xx) НЕ превращается в FAILED: заявка могла дойти, и повторно её
+  // отправлять нельзя — резерв денег держится до сверки.
+  // ---------------------------------------------------------------------------
+
+  async submitJoyTelForB2b(order_id: number, item: any): Promise<SubmitOutcome> {
+    return this.submitForB2b(order_id, item, PartnerIds.JOYTEL, 'joytel', async () => {
+      const response = await this.callJoyTel(item);
+      if (response?.code !== 0) {
+        return { rejected: response, reason: response?.message ?? response?.mesg ?? 'JoyTel отклонил заказ' };
+      }
+      await this.onJoyTelAccepted(order_id, item, response);
+      return { accepted: response };
+    });
+  }
+
+  async submitBillionForB2b(order_id: number, item: any): Promise<SubmitOutcome> {
+    return this.submitForB2b(order_id, item, PartnerIds.BILLION_CONNECT, 'billionconnect', async () => {
+      const response = await this.callBillion(item);
+      if (response?.tradeCode !== '1000' || response?.tradeData?.successFlag !== 'true') {
+        return { rejected: response, reason: response?.tradeMsg ?? 'BillionConnect отклонил заказ' };
+      }
+      await this.onBillionAccepted(order_id, item, response);
+      return { accepted: response };
+    });
+  }
+
+  private async submitForB2b(
+    order_id: number,
+    item: any,
+    defaultPartner: PartnerIds,
+    prefix: string,
+    run: () => Promise<{ accepted: any } | { rejected: any; reason: string }>,
+  ): Promise<SubmitOutcome> {
+    const partnerId = item.partner_id ?? defaultPartner;
+    if (!(await this.claimSim(item.id))) {
+      return { kind: 'UNKNOWN', reason: 'SIM уже была взята в работу — повторная отправка не выполняется' };
+    }
+    await this.orderEvents.record({
+      simId: item.id,
+      orderId: order_id,
+      partnerId,
+      event: `${prefix}_submit_requested`,
+      message: `Заявка на выпуск eSIM отправлена поставщику (B2B)`,
+    });
+
+    try {
+      const result = await run();
+      if ('accepted' in result) return { kind: 'ACCEPTED', response: result.accepted };
+      await this.failSim(item.id, order_id, result.rejected, partnerId, `${prefix}_submit_failed`);
+      return { kind: 'REJECTED', reason: result.reason, response: result.rejected };
+    } catch (e: any) {
+      const outcome = this.classifySubmitError(e);
+      if (outcome.kind === 'REJECTED') {
+        await this.failSim(item.id, order_id, this.normalizeProviderError(e), partnerId, `${prefix}_submit_failed`);
+        return outcome;
+      }
+      // Неизвестный исход: SIM остаётся в PENDING, ничего не освобождаем и не повторяем
+      await this.orderEvents.record({
+        simId: item.id,
+        orderId: order_id,
+        partnerId,
+        event: `${prefix}_submit_unknown`,
+        severity: 'warning',
+        message: 'Результат заявки неизвестен; автоматического повтора нет — нужна сверка',
+        meta: { error: e?.message },
+      });
+      return outcome;
+    }
+  }
+
+  /** Достоверный отказ — только HTTP 4xx поставщика; всё остальное (нет ответа, 5xx, сбой кода) — неизвестно. */
+  classifySubmitError(e: any): SubmitOutcome {
+    const status = e instanceof ProviderRequestError ? e.providerStatus : undefined;
+    if (typeof status === 'number' && status >= 400 && status < 500) {
+      return { kind: 'REJECTED', reason: `HTTP ${status}: ${e.message}`.slice(0, 300), response: (e as ProviderRequestError).providerBody };
+    }
+    return { kind: 'UNKNOWN', reason: String(e?.message ?? e).slice(0, 300) };
   }
 
   private async claimSim(simId: number) {

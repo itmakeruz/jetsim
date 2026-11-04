@@ -179,7 +179,8 @@ export class MobilineActivationService {
       async () => {
         const buffer = await this.qr.generateQrWithLogo(d!.qrcode!);
         try {
-          saveQrCode(sim.id, buffer);
+          // B2B-eSIM не кладём в публичный /uploads/qr: путь перечислим по id
+          if (!sim.reseller_order_id) saveQrCode(sim.id, buffer);
         } catch {
           await this.record(
             sim,

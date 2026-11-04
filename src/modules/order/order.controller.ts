@@ -2,7 +2,8 @@ import { Controller, HttpCode, Get, Post, Body, Patch, Param, Delete, Req, Query
 import { MobilineCallbackDto } from './dto/mobiline-callback.dto';
 import { MobilineActivationService } from './mobiline-activation.service';
 import { OrderService } from './order.service';
-import { UpdateOrderDto, GetOrderDto, AddToBasket } from './dto';
+import { UpdateOrderDto, GetOrderDto, AddToBasket, CreateAdminOrderDto } from './dto';
+import { AdminOrderService } from './admin-order.service';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { BillionConnectCallbackResponse, IRequest } from '@interfaces';
 import { HeadersValidation, Roles } from '@decorators';
@@ -15,6 +16,7 @@ import { UserRoles } from '@prisma/client';
 export class OrderController {
   constructor(
     private readonly orderService: OrderService,
+    private readonly adminOrders: AdminOrderService,
     private readonly mobiline: MobilineActivationService,
   ) {}
 
@@ -25,6 +27,18 @@ export class OrderController {
   @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT)
   async findAll(@Query() query: GetOrderDto) {
     return this.orderService.findAll(query);
+  }
+
+  @ApiOperation({
+    summary: 'Create order from admin',
+    description: 'Сотрудник оформляет заказ клиенту и принимает оплату вручную; eSIM выдаётся тем же путём, что после онлайн-оплаты',
+  })
+  @Post('admin')
+  @ApiBearerAuth()
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  async createFromAdmin(@Body() dto: CreateAdminOrderDto, @Req() request: IRequest) {
+    return this.adminOrders.create(dto, { id: request.user.id, role: request.user.role });
   }
 
   @ApiOperation({

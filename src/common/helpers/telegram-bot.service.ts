@@ -183,6 +183,12 @@ export class TelegramBotService {
     await this.sendPhoto(params.qrBuffer, caption);
   }
 
+  /** Служебное предупреждение операторам (общий чат), напр. «B2B-заказ требует ручной сверки» */
+  public async notifyAlert(text: string) {
+    const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    await this.send(`⚠️ ${esc(text)}`, 'HTML');
+  }
+
   public async notifyNewOrder(orderId: number, customerName?: string) {
     const message =
       `📦 Новый заказ принят!\n` + `ID заказа: ${orderId}\n` + (customerName ? `Клиент: ${customerName}` : '');
