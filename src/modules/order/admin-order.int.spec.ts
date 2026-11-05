@@ -79,4 +79,47 @@ describeDb('Заказ из админки (реальный Postgres)', () => {
     expect(await prisma.user.count()).toBe(0);
     expect(createSpy).not.toHaveBeenCalled();
   });
+
+  describe('отмена заказа', () => {
+    it('отменяет заказ и eSIM, транзакцию переводит в REFUNDED, пишет событие с причиной', async () => {
+      const res = await service.create(dto({ quantity: 2 }), staff);
+      const out = await service.cancel(res.data.order_id, { reason: 'Клиент передумал' }, staff);
+      expect(out).toMatchObject({ success: true, data: { status: 'CANCELED', online_refund_due: false } });
+
+      const order = await prisma.order.findUniqueOrThrow({ where: { id: res.data.order_id }, include: { sims: true, transactions: true, events: true } });
+      expect(order.status).toBe('CANCELED');
+      expect(order.sims.every((s) => s.status === 'CANCELED')).toBe(true);
+      expect(order.transactions[0].status).toBe('REFUNDED');
+      const ev = order.events.find((e) => e.event === 'order_canceled');
+      expect(ev?.message).toContain('Клиент передумал');
+      expect(ev?.meta).toMatchObject({ staffId: 7, issuedSims: 0 });
+    });
+
+    it('повторная отмена и отмена активированной eSIM — отказ без изменений', async () => {
+      const a = await service.create(dto(), staff);
+      await service.cancel(a.data.order_id, { reason: 'ошибка' }, staff);
+      await expect(service.cancel(a.data.order_id, { reason: 'ещё раз' }, staff)).rejects.toThrow('уже отменён');
+
+      const b = await service.create(dto({ client_email: 'b@example.com' }), staff);
+      await prisma.sims.updateMany({ where: { order_id: b.data.order_id }, data: { sim_status: 'ACTIVATED' } });
+      await expect(service.cancel(b.data.order_id, { reason: 'ошибка' }, staff)).rejects.toThrow('активирована');
+      expect((await prisma.order.findUniqueOrThrow({ where: { id: b.data.order_id } })).status).toBe('COMPLETED');
+    });
+
+    it('онлайн-оплата: возврат денег вручную; ожидающий промокод освобождается; заказ компании B2B не отменяется', async () => {
+      const res = await service.create(dto(), staff);
+      await prisma.transaction.updateMany({ where: { order_id: res.data.order_id }, data: { request: { manual: false } } });
+      const out = await service.cancel(res.data.order_id, { reason: 'возврат' }, staff);
+      expect(out.data.online_refund_due).toBe(true);
+
+      await expect(service.cancel(999999, { reason: 'нет такого' }, staff)).rejects.toThrow('Заказ не найден');
+    });
+
+    it('параллельные отмены дают ровно одну успешную', async () => {
+      const res = await service.create(dto(), staff);
+      const results = await Promise.allSettled(Array.from({ length: 5 }, () => service.cancel(res.data.order_id, { reason: 'двойной клик' }, staff)));
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(await prisma.orderEvent.count({ where: { order_id: res.data.order_id, event: 'order_canceled' } })).toBe(1);
+    });
+  });
 });

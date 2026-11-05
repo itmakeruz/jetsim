@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Prisma, Status, TransactionStatus } from '@prisma/client';
+import { OrderStatus, Prisma, PromoUsageStatus, SimStatus, Status, TransactionStatus } from '@prisma/client';
 import { PrismaService } from '@prisma';
 import { PartnerIds } from '@enums';
 import { OrderEventsService } from 'src/modules/order-events/order-events.service';
-import { CreateAdminOrderDto } from './dto';
+import { CancelAdminOrderDto, CreateAdminOrderDto } from './dto';
 import { OrderService } from './order.service';
 
 const SUPPORTED_PROVIDERS: number[] = [PartnerIds.JOYTEL, PartnerIds.BILLION_CONNECT, PartnerIds.MOBILINE];
@@ -122,6 +122,70 @@ export class AdminOrderService {
     }
 
     return this.result(orderId, existing);
+  }
+
+  /**
+   * Отмена заказа сотрудником (как в happytel): причина обязательна, статус заказа и eSIM — CANCELED,
+   * оплаченная транзакция — REFUNDED, ожидающий промокод освобождается. Деньги по онлайн-оплате
+   * возвращаются вручную в кабинете Т-Банка — система только фиксирует отмену. Активированную eSIM отменить нельзя.
+   */
+  async cancel(orderId: number, dto: CancelAdminOrderDto, staff: { id: number; role?: string }) {
+    const reason = dto.reason.trim();
+
+    const outcome = await this.prisma.$transaction(async (tx) => {
+      // Лок строки заказа: повторный клик и фоновая выдача не разойдутся с отменой
+      await tx.$executeRaw`SELECT id FROM "order" WHERE id = ${orderId} FOR UPDATE`;
+      const order = await tx.order.findFirst({
+        where: { id: orderId, reseller_order_id: null },
+        include: { sims: true, transactions: true, promo_usage: true },
+      });
+      if (!order) throw new NotFoundException('Заказ не найден');
+      if (order.status === OrderStatus.CANCELED) throw new BadRequestException('Заказ уже отменён');
+      if (order.sims.some((s) => s.sim_status === SimStatus.ACTIVATED)) {
+        throw new BadRequestException('Нельзя отменить заказ: eSIM уже активирована клиентом');
+      }
+
+      await tx.order.update({ where: { id: orderId }, data: { status: OrderStatus.CANCELED } });
+      await tx.sims.updateMany({ where: { order_id: orderId }, data: { status: OrderStatus.CANCELED } });
+      await tx.transaction.updateMany({
+        where: { order_id: orderId, status: TransactionStatus.SUCCESS },
+        data: { status: TransactionStatus.REFUNDED },
+      });
+      await tx.transaction.updateMany({
+        where: { order_id: orderId, status: TransactionStatus.PENDING },
+        data: { status: TransactionStatus.CANCELED },
+      });
+      if (order.promo_usage?.status === PromoUsageStatus.PENDING) {
+        await tx.promoUsage.update({
+          where: { id: order.promo_usage.id },
+          data: { status: PromoUsageStatus.CANCELED, canceled_at: new Date() },
+        });
+      }
+
+      const paid = order.transactions.filter((t) => t.status === TransactionStatus.SUCCESS);
+      return {
+        previousStatus: order.status,
+        issuedSims: order.sims.filter((s) => s.status === OrderStatus.COMPLETED).length,
+        // Онлайн-платёж (не ручной) сам не вернётся: деньги отдаёт сотрудник через кабинет Т-Банка
+        onlineRefundDue: paid.some((t) => !(t.request as { manual?: boolean } | null)?.manual),
+      };
+    });
+
+    await this.orderEvents.record({
+      orderId,
+      event: 'order_canceled',
+      severity: 'warning',
+      message: `Заказ отменён сотрудником: ${reason}`,
+      meta: { staffId: staff.id, role: staff.role ?? null, reason, ...outcome },
+    });
+
+    return {
+      success: true,
+      message: outcome.onlineRefundDue
+        ? 'Заказ отменён. Деньги клиенту по онлайн-оплате верните вручную в кабинете Т-Банка'
+        : 'Заказ отменён',
+      data: { order_id: orderId, status: OrderStatus.CANCELED, online_refund_due: outcome.onlineRefundDue },
+    };
   }
 
   private async result(orderId: number, existing: boolean) {

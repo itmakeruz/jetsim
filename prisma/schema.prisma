@@ -430,6 +430,7 @@ enum OrderStatus {
   COMPLETED
   PENDING
   FAILED
+  CANCELED // отменён сотрудником в админке
 }
 
 enum SimStatus {

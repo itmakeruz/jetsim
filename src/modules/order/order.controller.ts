@@ -1,8 +1,8 @@
-import { Controller, HttpCode, Get, Post, Body, Patch, Param, Delete, Req, Query, UseGuards } from '@nestjs/common';
+import { Controller, HttpCode, Get, Post, Body, Patch, Param, Delete, Req, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { MobilineCallbackDto } from './dto/mobiline-callback.dto';
 import { MobilineActivationService } from './mobiline-activation.service';
 import { OrderService } from './order.service';
-import { UpdateOrderDto, GetOrderDto, AddToBasket, CreateAdminOrderDto } from './dto';
+import { UpdateOrderDto, GetOrderDto, AddToBasket, CreateAdminOrderDto, CancelAdminOrderDto } from './dto';
 import { AdminOrderService } from './admin-order.service';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { BillionConnectCallbackResponse, IRequest } from '@interfaces';
@@ -39,6 +39,19 @@ export class OrderController {
   @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async createFromAdmin(@Body() dto: CreateAdminOrderDto, @Req() request: IRequest) {
     return this.adminOrders.create(dto, { id: request.user.id, role: request.user.role });
+  }
+
+  @ApiOperation({
+    summary: 'Cancel order from admin',
+    description: 'Отмена заказа сотрудником с обязательной причиной; активированную eSIM отменить нельзя',
+  })
+  @Post('admin/:id/cancel')
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  async cancelFromAdmin(@Param('id', ParseIntPipe) id: number, @Body() dto: CancelAdminOrderDto, @Req() request: IRequest) {
+    return this.adminOrders.cancel(id, dto, { id: request.user.id, role: request.user.role });
   }
 
   @ApiOperation({
