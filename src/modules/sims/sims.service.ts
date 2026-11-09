@@ -19,6 +19,7 @@ import { OrderStatus, Prisma, SimStatus } from '@prisma/client';
 import { WinstonLoggerService } from '@logger';
 import { FindAllSimsDto } from './dto';
 import { resolveSimStatus } from './sim-status.resolver';
+import { simPaymentStatus } from './sim-payment-status';
 
 @Injectable()
 export class SimsService {
@@ -334,6 +335,12 @@ export class SimsService {
         usage_snapshot: true,
         usage_checked_at: true,
         created_at: true,
+        order: {
+          select: {
+            transaction_id: true,
+            transactions: { select: { id: true, status: true }, orderBy: { id: 'desc' } },
+          },
+        },
         tariff: {
           select: {
             id: true,
@@ -374,6 +381,7 @@ export class SimsService {
           tariff_id: sim?.tariff?.id,
           tariff_name: sim?.tariff?.[`name_${lang}`],
           status: sim?.status,
+          payment_status: simPaymentStatus(sim?.order),
           sim_status: sim?.sim_status,
           day_left: getRemainingDays(sim?.created_at, sim?.tariff?.validity_period),
           usage: Number(sim?.last_usage_quantity) || 0,

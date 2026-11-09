@@ -52,6 +52,7 @@ export class RegionService {
         name_ru: true,
         name_en: true,
         image: true,
+        cover_image: true,
         status: true,
         created_at: true,
 
@@ -80,6 +81,7 @@ export class RegionService {
         id: region.id,
         name: region[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region.image}`,
+        cover_image: region?.cover_image ? `${FilePath.REGION_ICON}/${region.cover_image}` : null,
         status: region.status,
         min_price: region.tariffs[0]?.price_sell / 100 || 0,
         created_at: region.created_at,
@@ -105,6 +107,7 @@ export class RegionService {
         name_ru: true,
         name_en: true,
         image: true,
+        cover_image: true,
       },
     });
 
@@ -139,12 +142,16 @@ export class RegionService {
               id: plan.region_group.id,
               name: plan.region_group[`name_${lang}`],
               image: `${FilePath.REGION_GROUP_ICON}/${plan.region_group.image}`,
+              cover_image: plan.region_group?.cover_image
+                ? `${FilePath.REGION_GROUP_ICON}/${plan.region_group.cover_image}`
+                : null,
             }
           : null,
         regions: plan.regions.map((r) => ({
           id: r.id,
           name: r[`name_${lang}`],
           image: `${FilePath.REGION_ICON}/${r.image}`,
+          cover_image: r?.cover_image ? `${FilePath.REGION_ICON}/${r.cover_image}` : null,
         })),
       };
 
@@ -164,6 +171,7 @@ export class RegionService {
           id: r.id,
           name: r[`name_${lang}`],
           image: `${FilePath.REGION_ICON}/${r.image}`,
+          cover_image: r?.cover_image ? `${FilePath.REGION_ICON}/${r.cover_image}` : null,
         })),
         tariffs: {
           local: grouped.local,
@@ -203,6 +211,7 @@ export class RegionService {
         name_ru: true,
         name_en: true,
         image: true,
+        cover_image: true,
         status: true,
         created_at: true,
       },
@@ -217,6 +226,7 @@ export class RegionService {
         name_ru: region?.name_ru,
         name_en: region?.name_en,
         image: `${FilePath.REGION_ICON}/${region?.image}`,
+        cover_image: region?.cover_image ? `${FilePath.REGION_ICON}/${region.cover_image}` : null,
         status: region?.status,
         created_at: region?.created_at,
       })),
@@ -234,6 +244,7 @@ export class RegionService {
         name_ru: true,
         name_en: true,
         image: true,
+        cover_image: true,
         status: true,
         created_at: true,
       },
@@ -250,6 +261,7 @@ export class RegionService {
         id: region?.id,
         name: region?.[`name_${lan}`],
         image: `${FilePath.REGION_ICON}/${region?.image}`,
+        cover_image: region?.cover_image ? `${FilePath.REGION_ICON}/${region.cover_image}` : null,
         status: region?.status,
         created_at: region?.created_at,
       },
@@ -266,6 +278,7 @@ export class RegionService {
         name_ru: true,
         name_en: true,
         image: true,
+        cover_image: true,
         status: true,
         created_at: true,
       },
@@ -283,18 +296,20 @@ export class RegionService {
         name_ru: region?.name_ru,
         name_en: region?.name_en,
         image: `${FilePath.REGION_ICON}/${region?.image}`,
+        cover_image: region?.cover_image ? `${FilePath.REGION_ICON}/${region.cover_image}` : null,
         status: region?.status,
         created_at: region?.created_at,
       },
     };
   }
 
-  async create(data: CreateRegionDto, fileName: string) {
+  async create(data: CreateRegionDto, fileName: string, coverFileName?: string) {
     await this.prisma.region.create({
       data: {
         name_ru: data.name_ru,
         name_en: data.name_en,
         image: fileName,
+        cover_image: coverFileName,
         status: data.status,
       },
     });
@@ -305,7 +320,7 @@ export class RegionService {
     };
   }
 
-  async update(id: number, data: UpdateRegionDto, fileName: string) {
+  async update(id: number, data: UpdateRegionDto, fileName: string, coverFileName?: string) {
     const existRegion = await this.prisma.region.findUnique({
       where: {
         id: id,
@@ -332,6 +347,7 @@ export class RegionService {
         name_ru: data?.name_ru ?? existRegion.name_ru,
         name_en: data?.name_en ?? existRegion.name_en,
         image: fileName ?? existRegion.image,
+        cover_image: coverFileName ?? (data.remove_cover === 'true' ? null : existRegion.cover_image),
         status: data?.status ?? existRegion.status,
       },
     });
@@ -351,6 +367,7 @@ export class RegionService {
       select: {
         id: true,
         image: true,
+        cover_image: true,
       },
     });
 

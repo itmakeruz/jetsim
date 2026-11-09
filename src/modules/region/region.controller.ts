@@ -9,7 +9,7 @@ import {
   Query,
   BadRequestException,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
   UseGuards,
 } from '@nestjs/common';
 import { RegionService } from './region.service';
@@ -17,7 +17,7 @@ import { CreateRegionDto, GetRegionDto, UpdateRegionDto } from './dto';
 import { DeviceHeadersDto, ParamId } from '@enums';
 import { HeadersValidation, Roles } from '@decorators';
 import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { AtGuard, RolesGuard } from '@guards';
@@ -68,22 +68,42 @@ export class RegionController {
   // @UseGuards(AtGuard, RolesGuard)
   // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/region_icons',
-        filename: (req, file, cb) => {
-          if (!file) {
-            throw new BadRequestException('Требуется изображение!');
+    FileFieldsInterceptor(
+      [
+        { name: 'image', maxCount: 1 },
+        { name: 'cover_image', maxCount: 1 },
+      ],
+      {
+        limits: { fileSize: 8 * 1024 * 1024 },
+        fileFilter: (_req, file, cb) => {
+          if (file.fieldname === 'cover_image' && !['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+            return cb(new BadRequestException('Фото обложки: разрешены JPEG, PNG и WebP'), false);
           }
-          const name = file.originalname.replace(/\s+/g, '');
-          const uniqueName = uuidv4() + '-' + name;
-          cb(null, uniqueName);
+          cb(null, true);
         },
-      }),
-    }),
+        storage: diskStorage({
+          destination: './uploads/region_icons',
+          filename: (req, file, cb) => {
+            if (!file) {
+              throw new BadRequestException('Требуется изображение!');
+            }
+            if (file.fieldname === 'cover_image') {
+              const extension = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[file.mimetype];
+              return cb(null, uuidv4() + extension);
+            }
+            const name = file.originalname.replace(/\s+/g, '');
+            const uniqueName = uuidv4() + '-' + name;
+            cb(null, uniqueName);
+          },
+        }),
+      },
+    ),
   )
-  async create(@Body() data: CreateRegionDto, @UploadedFile() file: Express.Multer.File) {
-    return this.regionService.create(data, file?.filename);
+  async create(
+    @Body() data: CreateRegionDto,
+    @UploadedFiles() files: { image?: Express.Multer.File[]; cover_image?: Express.Multer.File[] },
+  ) {
+    return this.regionService.create(data, files?.image?.[0]?.filename, files?.cover_image?.[0]?.filename);
   }
 
   @ApiOperation({ summary: 'Update region', description: 'Update region' })
@@ -93,23 +113,45 @@ export class RegionController {
   // @UseGuards(AtGuard, RolesGuard)
   // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/region_icons',
-        filename: (req, file, cb) => {
-          const name = file.originalname.replace(/\s+/g, '');
-          const uniqueName = uuidv4() + '-' + name;
-          cb(null, uniqueName);
+    FileFieldsInterceptor(
+      [
+        { name: 'image', maxCount: 1 },
+        { name: 'cover_image', maxCount: 1 },
+      ],
+      {
+        limits: { fileSize: 8 * 1024 * 1024 },
+        fileFilter: (_req, file, cb) => {
+          if (file.fieldname === 'cover_image' && !['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+            return cb(new BadRequestException('Фото обложки: разрешены JPEG, PNG и WebP'), false);
+          }
+          cb(null, true);
         },
-      }),
-    }),
+        storage: diskStorage({
+          destination: './uploads/region_icons',
+          filename: (req, file, cb) => {
+            if (file.fieldname === 'cover_image') {
+              const extension = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[file.mimetype];
+              return cb(null, uuidv4() + extension);
+            }
+            const name = file.originalname.replace(/\s+/g, '');
+            const uniqueName = uuidv4() + '-' + name;
+            cb(null, uniqueName);
+          },
+        }),
+      },
+    ),
   )
   async update(
     @Param('id') id: string,
     @Body() updateRegionDto: UpdateRegionDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: { image?: Express.Multer.File[]; cover_image?: Express.Multer.File[] },
   ) {
-    return this.regionService.update(+id, updateRegionDto, file?.filename);
+    return this.regionService.update(
+      +id,
+      updateRegionDto,
+      files?.image?.[0]?.filename,
+      files?.cover_image?.[0]?.filename,
+    );
   }
 
   @ApiOperation({ summary: 'Delete region', description: 'Delete region' })

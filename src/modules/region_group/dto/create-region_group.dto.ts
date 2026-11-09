@@ -23,6 +23,20 @@ export class CreateRegionGroupDto {
   })
   image: string;
 
+  @ApiProperty({
+    description: 'Destination cover photo (JPEG, PNG, WebP)',
+    required: false,
+    type: String,
+    format: 'binary',
+  })
+  @IsOptional()
+  cover_image?: string;
+
+  @ApiProperty({ description: 'Remove saved cover', required: false, enum: ['true', 'false'] })
+  @IsOptional()
+  @IsString()
+  remove_cover?: string;
+
   @ApiProperty({ type: String, required: false, enum: Status, default: Status.ACTIVE })
   @IsOptional()
   @IsEnum(Status)

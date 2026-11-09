@@ -52,6 +52,7 @@ export class RegionGroupService {
         name_ru: true,
         name_en: true,
         image: true,
+        cover_image: true,
         created_at: true,
 
         regions: {
@@ -60,6 +61,7 @@ export class RegionGroupService {
             name_ru: true,
             name_en: true,
             image: true,
+            cover_image: true,
           },
         },
 
@@ -85,11 +87,13 @@ export class RegionGroupService {
         id: group.id,
         name: group[`name_${lan}`],
         image: `${FilePath.REGION_GROUP_ICON}/${group.image}`,
+        cover_image: group?.cover_image ? `${FilePath.REGION_GROUP_ICON}/${group.cover_image}` : null,
         min_price: group.tariffs[0]?.price_sell / 100 || 0,
         regions: group.regions.map((r) => ({
           id: r.id,
           name: r[`name_${lan}`],
           image: `${FilePath.REGION_ICON}/${r.image}`,
+          cover_image: r?.cover_image ? `${FilePath.REGION_ICON}/${r.cover_image}` : null,
         })),
         created_at: group.created_at,
       })),
@@ -108,6 +112,7 @@ export class RegionGroupService {
         name_ru: true,
         name_en: true,
         image: true,
+        cover_image: true,
         status: true,
         regions: true,
         created_at: true,
@@ -123,12 +128,14 @@ export class RegionGroupService {
         name_ru: region?.name_ru,
         name_en: region?.name_en,
         image: `${FilePath.REGION_GROUP_ICON}/${region?.image}`,
+        cover_image: region?.cover_image ? `${FilePath.REGION_GROUP_ICON}/${region.cover_image}` : null,
         status: region?.status,
         regions: region?.regions.map((reg) => ({
           id: reg.id,
           name_ru: reg?.name_ru,
           name_en: reg?.name_en,
           image: `${FilePath.REGION_ICON}/${reg?.image}`,
+          cover_image: reg?.cover_image ? `${FilePath.REGION_ICON}/${reg.cover_image}` : null,
           status: reg.status,
           created_at: reg.created_at,
         })),
@@ -167,6 +174,7 @@ export class RegionGroupService {
           name_ru: true,
           name_en: true,
           image: true,
+          cover_image: true,
         },
       });
 
@@ -178,6 +186,7 @@ export class RegionGroupService {
         id: r.id,
         name: r[`name_${lang}`] || r.name_ru,
         image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
+        cover_image: r?.cover_image ? `${FilePath.REGION_ICON}/${r.cover_image}` : null,
       }));
     }
 
@@ -197,6 +206,7 @@ export class RegionGroupService {
           id: group.id,
           name: group[`name_${lang}`] || group.name_ru,
           image: group.image ? `${FilePath.REGION_GROUP_ICON}/${group.image}` : null,
+          cover_image: group?.cover_image ? `${FilePath.REGION_GROUP_ICON}/${group.cover_image}` : null,
         },
       ];
 
@@ -350,12 +360,16 @@ export class RegionGroupService {
               id: plan.region_group.id,
               name: plan.region_group[`name_${lang}`] || plan.region_group.name_ru,
               image: plan.region_group.image ? `${FilePath.REGION_GROUP_ICON}/${plan.region_group.image}` : null,
+              cover_image: plan.region_group?.cover_image
+                ? `${FilePath.REGION_GROUP_ICON}/${plan.region_group.cover_image}`
+                : null,
             }
           : null,
         regions: plan.regions.map((r) => ({
           id: r.id,
           name: r[`name_${lang}`] || r.name_ru,
           image: r.image ? `${FilePath.REGION_ICON}/${r.image}` : null,
+          cover_image: r?.cover_image ? `${FilePath.REGION_ICON}/${r.cover_image}` : null,
         })),
       };
 
@@ -387,16 +401,20 @@ export class RegionGroupService {
     return {
       success: true,
       message: region_group_find_one['ru'],
-      data: regionGroup,
+      data: {
+        ...regionGroup,
+        cover_image: regionGroup.cover_image ? `${FilePath.REGION_GROUP_ICON}/${regionGroup.cover_image}` : null,
+      },
     };
   }
 
-  async createRegionGroup(data: CreateRegionGroupDto, fileName: string) {
+  async createRegionGroup(data: CreateRegionGroupDto, fileName: string, coverFileName?: string) {
     await this.prisma.regionGroup.create({
       data: {
         name_ru: data.name_ru,
         name_en: data.name_en,
         image: fileName,
+        cover_image: coverFileName,
         status: data?.status,
         regions: {
           connect: data?.region_ids?.map((id) => ({ id })) || [],
@@ -411,7 +429,7 @@ export class RegionGroupService {
     };
   }
 
-  async updateRegionGroup(id: number, data: UpdateRegionGroupDto, fileName: string) {
+  async updateRegionGroup(id: number, data: UpdateRegionGroupDto, fileName: string, coverFileName?: string) {
     const regionGroup = await this.prisma.regionGroup.findUnique({
       where: {
         id: id,
@@ -439,8 +457,9 @@ export class RegionGroupService {
         name_en: data.name_en ?? regionGroup.name_en,
         status: data.status ?? regionGroup.status,
         image: fileName ?? regionGroup.image,
+        cover_image: coverFileName ?? (data.remove_cover === 'true' ? null : regionGroup.cover_image),
         regions: {
-          set: data.region_ids?.map((id) => ({ id })) || [],
+          set: data.region_ids?.map((id) => ({ id })),
         },
       },
     });
@@ -461,7 +480,7 @@ export class RegionGroupService {
         },
         data: {
           regions: {
-            set: data.region_ids?.map((id) => ({ id })) || [],
+            set: data.region_ids?.map((id) => ({ id })),
           },
         },
       });
@@ -482,6 +501,7 @@ export class RegionGroupService {
       select: {
         id: true,
         image: true,
+        cover_image: true,
       },
     });
 

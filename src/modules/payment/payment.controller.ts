@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   Header,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { UpdatePaymentDto } from './dto';
@@ -49,6 +50,17 @@ export class PaymentController {
     @HeadersValidation() headers: DeviceHeadersDto,
   ) {
     return this.paymentService.preparePayment(request?.user?.id, headers.lang, data?.promo_code);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Post('orders/:id/payment-link')
+  resumePayment(
+    @Req() request: IRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @HeadersValidation() headers: DeviceHeadersDto,
+  ) {
+    return this.paymentService.resumePayment(request.user.id, id, headers.lang);
   }
 
   // @Post('accept-payment-test')

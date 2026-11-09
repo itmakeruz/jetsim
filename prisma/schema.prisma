@@ -73,11 +73,12 @@ model SupportOperators {
 }
 
 model Region {
-  id      Int     @id @default(autoincrement())
-  name_ru String
-  name_en String
-  image   String?
-  status  Status
+  id          Int     @id @default(autoincrement())
+  name_ru     String
+  name_en     String
+  image       String?
+  cover_image String?
+  status      Status
 
   sims          Sims[]
   tariffs       Tariff[]      @relation("tariff_regions")
@@ -91,11 +92,12 @@ model Region {
 }
 
 model RegionGroup {
-  id      Int     @id @default(autoincrement())
-  name_ru String?
-  name_en String?
-  status  Status  @default(ACTIVE)
-  image   String?
+  id          Int     @id @default(autoincrement())
+  name_ru     String?
+  name_en     String?
+  status      Status  @default(ACTIVE)
+  image       String?
+  cover_image String?
 
   tariffs Tariff[]
   regions Region[] @relation("region_to_regiongroup")

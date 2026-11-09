@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+  BadGatewayException,
+  Injectable,
+} from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { UpdatePaymentDto } from './dto';
 import { PrismaService } from '@prisma';
@@ -241,6 +247,72 @@ export class PaymentService {
     };
   }
 
+  /** Reuse the existing bank payment. Never initialise another payment for a pending order. */
+  async resumePayment(userId: number, orderId: number, lang: string) {
+    const en = lang === 'en';
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, user_id: userId },
+      select: { transaction_id: true, status: true },
+    });
+    if (!order) throw new NotFoundException(en ? 'Order not found' : 'Заказ не найден');
+    const transaction = order.transaction_id
+      ? await this.prisma.transaction.findFirst({
+          where: { id: order.transaction_id, order_id: orderId, user_id: userId },
+        })
+      : null;
+    if (!transaction || transaction.status !== TransactionStatus.PENDING || order.status !== OrderStatus.CREATED) {
+      throw new ConflictException(
+        en
+          ? 'This order is not awaiting payment. Refresh the page.'
+          : 'Этот заказ не ожидает оплаты. Обновите страницу.',
+      );
+    }
+    let request: any;
+    try {
+      request = typeof transaction.request === 'string' ? JSON.parse(transaction.request) : transaction.request;
+    } catch {
+      request = null;
+    }
+    const paymentUrl = request?.payment_url;
+    if (typeof paymentUrl !== 'string' || !paymentUrl.startsWith('https://') || !transaction.partner_transaction_id) {
+      throw new ConflictException(
+        en
+          ? 'The payment link for this older order was not saved. Contact support with the order number.'
+          : 'Ссылка для этого старого заказа не сохранена. Обратитесь в поддержку с номером заказа.',
+      );
+    }
+    let bank: any;
+    try {
+      bank = await this.TbankService.getPaymentStatus(Number(transaction.partner_transaction_id));
+    } catch {
+      throw new BadGatewayException(
+        en ? 'Unable to check payment. Try again later.' : 'Не удалось проверить платёж. Попробуйте позже.',
+      );
+    }
+    if (bank?.Success !== true) {
+      throw new BadGatewayException(
+        en ? 'Unable to check payment. Try again later.' : 'Не удалось проверить платёж. Попробуйте позже.',
+      );
+    }
+    if (!['NEW', 'FORM_SHOWED'].includes(bank.Status)) {
+      throw new ConflictException(
+        en
+          ? 'Payment is complete, in progress or the link has expired. Refresh the page or contact support.'
+          : 'Платёж завершён, обрабатывается или ссылка истекла. Обновите страницу или обратитесь в поддержку.',
+      );
+    }
+    // Recheck after the bank request in case a webhook completed concurrently.
+    const pending = await this.prisma.transaction.findFirst({
+      where: { id: transaction.id, status: TransactionStatus.PENDING },
+      select: { id: true },
+    });
+    if (!pending)
+      throw new ConflictException(
+        en ? 'Payment status changed. Refresh the page.' : 'Статус оплаты изменился. Обновите страницу.',
+      );
+    return { success: true, data: { payment_url: paymentUrl } };
+  }
+
   async preparePayment(userId: number, lang: string, promoCode?: string) {
     const { data } = await this.getPaymentInfos(userId, lang, promoCode);
     const paymentPayload = this.buildPaymentPayload(data);
@@ -314,7 +386,16 @@ export class PaymentService {
     if (response?.PaymentId) {
       await this.prisma.transaction.update({
         where: { id: data.transaction.transactionId },
-        data: { partner_transaction_id: response.PaymentId },
+        data: {
+          partner_transaction_id: response.PaymentId,
+          request: JSON.stringify({
+            ...paymentPayload,
+            promo: data.promo,
+            originalAmount: data.order.originalAmount,
+            discountAmount: data.order.discountAmount,
+            payment_url: response.PaymentURL,
+          }),
+        },
       });
     }
 
