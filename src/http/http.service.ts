@@ -1,3 +1,4 @@
+import { observeProvider } from './provider-health';
 import { Injectable, HttpException, Logger } from '@nestjs/common';
 import axios, { AxiosRequestConfig } from 'axios';
 
@@ -47,6 +48,11 @@ export class HttpService {
   }
 
   async send(): Promise<any> {
+    const start = Date.now();
+    const url = this.url;
+    const isJoytel = [process.env.JOYTEL_URL, process.env.JOY_TEL_ORDER_URL].filter(Boolean).some(base => {
+      try { return new URL(base!).origin === new URL(url).origin; } catch { return false; }
+    });
     try {
       const config: AxiosRequestConfig = {
         url: this.url,
@@ -57,6 +63,7 @@ export class HttpService {
       };
 
       const res = await axios(config);
+      if (isJoytel) observeProvider('Joytel', start, res.status);
 
       if (this.isLog) {
         Logger.log({
@@ -67,6 +74,7 @@ export class HttpService {
       }
       return res.data;
     } catch (error: any) {
+      if (isJoytel) observeProvider('Joytel', start, error.response?.status ?? 0);
       console.log('error.response.data', error.response?.data || error.message);
       throw new HttpException(error.response?.data || error.message, error.response?.status || 500);
     }

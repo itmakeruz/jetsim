@@ -167,6 +167,8 @@ export class ResellersAdminService {
       price_version: r.price_version,
       active: r.active,
       central_status: r.tariff.status,
+      cost_kopecks: r.tariff.price_arrival == null ? null : r.tariff.price_arrival * 100,
+      cost_currency: r.tariff.price_arrival == null ? null : 'RUB',
       updated_at: r.updated_at ?? r.created_at,
     }));
   }

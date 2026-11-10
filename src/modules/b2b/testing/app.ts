@@ -1,3 +1,4 @@
+import { OperationsController } from '../admin/operations.controller';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
@@ -31,7 +32,7 @@ export async function createB2bTestApp(prisma: PrismaService) {
   };
 
   const moduleRef = await Test.createTestingModule({
-    controllers: [ResellersAdminController, B2bPurchaseController],
+    controllers: [OperationsController, ResellersAdminController, B2bPurchaseController],
     providers: [
       { provide: PrismaService, useValue: prisma },
       { provide: ConfigService, useValue: { get: (k: string) => cfg[k] } },

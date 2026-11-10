@@ -1,3 +1,4 @@
+import { instrumentProvider } from './provider-health';
 import { ProviderTrace, traceProviderError } from './provider-diagnostics';
 // src/integrations/billion-connect.service.ts
 import { GetUsageRequest, GetStatusRequest } from '@interfaces';
@@ -49,6 +50,7 @@ export class BillionConnectService {
       timeout: 30000,
       headers: { 'Content-Type': 'application/json' },
     });
+    instrumentProvider(this.http, 'BillionConnect');
   }
 
   async createEsimOrder(input: CreateEsimOrderInput) {

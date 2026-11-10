@@ -1,3 +1,4 @@
+import { observeProvider } from './provider-health';
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import axios from 'axios';
 
@@ -32,6 +33,7 @@ export class MobilineService {
   }
 
   async activate(payload: ReturnType<MobilineService['buildActivation']>) {
+    const start = Date.now();
     const response = await axios.post(
       `${process.env.MOBILINE_BASE_URI!.replace(/\/$/, '')}/api/${encodeURIComponent(payload.group_id)}/common/activation/activation_request`,
       payload,
@@ -40,7 +42,8 @@ export class MobilineService {
         validateStatus: () => true,
         headers: { 'group-id': payload.group_id, 'group-key': process.env.MOBILINE_GROUP_KEY },
       },
-    );
+    ).catch(error => { observeProvider('Mobiline', start, error.response?.status ?? 0); throw error; });
+    observeProvider('Mobiline', start, response.status);
     if (
       !response.data ||
       typeof response.data !== 'object' ||

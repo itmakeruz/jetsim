@@ -672,6 +672,10 @@ model ResellerOrder {
   source     String?
   source_ref String?
 
+  cost_kopecks BigInt?
+  cost_currency String?
+  provider_name String?
+
   // Служебные данные поставщика — отдаются только управляющему API
   provider_response Json?
 

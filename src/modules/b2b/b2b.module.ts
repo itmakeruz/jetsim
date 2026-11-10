@@ -1,3 +1,4 @@
+import { OperationsController } from './admin/operations.controller';
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from '@prisma';
@@ -23,7 +24,7 @@ import { B2bPurchaseController } from './purchase/b2b-purchase.controller';
 
 @Module({
   imports: [PrismaModule, OrderModule, UsageModule, ScheduleModule.forRoot()],
-  controllers: [ResellersAdminController, B2bPurchaseController],
+  controllers: [OperationsController, ResellersAdminController, B2bPurchaseController],
   providers: [
     WinstonLoggerService,
     TelegramBotService,
