@@ -76,6 +76,8 @@ model Region {
   id          Int     @id @default(autoincrement())
   name_ru     String
   name_en     String
+  // ISO 3166-1 alpha-2 (TR, US…); null — регион не страна (например, «Европа») или код ещё не задан
+  iso_code    String?
   image       String?
   cover_image String?
   status      Status
@@ -88,6 +90,7 @@ model Region {
   created_at DateTime  @default(now()) @db.Timestamptz(5)
   updated_at DateTime? @updatedAt @db.Timestamptz(5)
 
+  @@index([iso_code])
   @@map("region")
 }
 

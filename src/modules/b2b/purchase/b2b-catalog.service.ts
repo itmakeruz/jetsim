@@ -11,7 +11,7 @@ export class B2bCatalogService {
     const rows = await this.prisma.resellerTariff.findMany({
       where: { reseller_id: resellerId, active: true, tariff: { deleted_at: null, status: 'ACTIVE' } },
       orderBy: { tariff_id: 'asc' },
-      include: { reseller: { select: { currency: true } }, tariff: { include: { regions: { select: { id: true, name_ru: true, name_en: true } } } } },
+      include: { reseller: { select: { currency: true } }, tariff: { include: { regions: { select: { id: true, name_ru: true, name_en: true, iso_code: true } } } } },
     });
     return rows.map((r) => ({
       id: r.tariff_id,

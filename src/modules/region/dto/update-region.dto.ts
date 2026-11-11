@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Status } from '@prisma/client';
-import { IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsOptional, IsString, Matches } from 'class-validator';
 
 export class UpdateRegionDto {
   @ApiProperty({ type: String, required: false })
@@ -12,6 +13,17 @@ export class UpdateRegionDto {
   @IsOptional()
   @IsString()
   name_en: string;
+
+  @ApiProperty({
+    description: 'ISO 3166-1 alpha-2 код страны (TR, US). Пустая строка — сбросить код (регион не страна)',
+    example: 'TR',
+    required: false,
+    type: String,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
+  @Matches(/^([A-Z]{2})?$/, { message: 'iso_code: два латинских символа по ISO 3166-1 alpha-2, например TR' })
+  iso_code?: string;
 
   @ApiProperty({
     description: 'Region Flag Image',
