@@ -42,6 +42,8 @@ export class RegionService {
         tariffs: {
           some: {
             status: Status.ACTIVE,
+            hide_site: false,
+            deleted_at: null,
             ...tariffFilter,
           },
         },
@@ -60,6 +62,8 @@ export class RegionService {
         tariffs: {
           where: {
             status: Status.ACTIVE,
+            hide_site: false,
+            deleted_at: null,
             ...tariffFilter,
           },
           orderBy: {
@@ -118,6 +122,7 @@ export class RegionService {
       where: {
         deleted_at: null,
         status: Status.ACTIVE,
+        hide_site: false,
         OR: [{ regions: { some: { id: { in: regions.map((r) => r.id) } } } }, { is_global: true }],
       },
       include: {

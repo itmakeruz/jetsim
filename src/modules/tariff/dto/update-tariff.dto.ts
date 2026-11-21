@@ -1,7 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateTariffDto {
+  @ApiProperty({ type: Boolean, required: false, description: 'Скрыть на сайте; доступность B2B не меняется' })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ obj, key }) => obj[key])
+  hide_site?: boolean;
+
   @ApiProperty({ type: String, required: false, example: 'Название тарифа' })
   @IsOptional()
   @IsString()

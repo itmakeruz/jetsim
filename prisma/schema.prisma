@@ -152,6 +152,7 @@ model Tariff {
   cashback_percent  Int?
   type              Int?
   is_global         Boolean @default(false)
+  hide_site         Boolean @default(false)
   is_popular        Boolean @default(false)
   is_local          Boolean @default(false)
   is_regional       Boolean @default(false)

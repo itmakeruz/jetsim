@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { Status } from '@prisma/client';
 import { IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
@@ -29,6 +30,12 @@ import { IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'c
 //   status: Status;
 // }
 export class CreateTariffDto {
+  @ApiProperty({ type: Boolean, required: false, description: 'Скрыть на сайте; доступность B2B не меняется' })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ obj, key }) => obj[key])
+  hide_site?: boolean;
+
   @ApiProperty({ type: String, required: true, example: 'Название тарифа' })
   @IsNotEmpty()
   @IsString()

@@ -123,6 +123,7 @@ export class PaymentService {
                 name_ru: true,
                 partner_id: true,
                 status: true,
+                hide_site: true,
               },
             },
           },
@@ -132,6 +133,10 @@ export class PaymentService {
 
     if (!basket || basket.items.length === 0) {
       throw new BadRequestException(basket_empty[lang]);
+    }
+
+    if (basket.items.some((item) => item.tariff?.hide_site === true)) {
+      throw new BadRequestException('Тариф больше недоступен на сайте. Удалите его из корзины и выберите другой.');
     }
 
     const totalAmount = basket.items.reduce((sum, item) => {

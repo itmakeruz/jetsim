@@ -41,6 +41,7 @@ export class RegionGroupService {
         tariffs: {
           some: {
             status: Status.ACTIVE,
+            hide_site: false,
             deleted_at: null,
             ...tariffFilter,
           },
@@ -68,6 +69,7 @@ export class RegionGroupService {
         tariffs: {
           where: {
             status: Status.ACTIVE,
+            hide_site: false,
             deleted_at: null,
             ...tariffFilter,
           },
@@ -221,6 +223,7 @@ export class RegionGroupService {
     const where: any = {
       deleted_at: null,
       status: 'ACTIVE',
+      hide_site: false,
     };
 
     // 4️⃣ regionIds LOGIKASI (TEGILMADIK ❗)

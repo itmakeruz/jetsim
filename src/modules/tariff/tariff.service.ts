@@ -35,6 +35,7 @@ export class TariffService {
       sort: query?.sort,
       where: {
         status: Status.ACTIVE,
+        hide_site: false,
         ...where,
         deleted_at: {
           equals: null,
@@ -134,6 +135,7 @@ export class TariffService {
         title_en: true,
         status: true,
         is_popular: true,
+        hide_site: true,
         is_4g: true,
         is_5g: true,
         is_local: true,
@@ -184,6 +186,7 @@ export class TariffService {
         title_en: tariff?.title_en,
         status: tariff?.status,
         is_popular: tariff?.is_popular,
+        hide_site: tariff?.hide_site,
         partner_id: tariff?.partner_id,
         is_4g: tariff?.is_4g,
         is_5g: tariff?.is_5g,
@@ -217,6 +220,7 @@ export class TariffService {
       where: {
         id: id,
         status: Status.ACTIVE,
+        hide_site: false,
         deleted_at: {
           equals: null,
         },
@@ -289,6 +293,7 @@ export class TariffService {
         title_en: true,
         status: true,
         is_popular: true,
+        hide_site: true,
         is_4g: true,
         is_5g: true,
         quantity_sms: true,
@@ -366,6 +371,7 @@ export class TariffService {
         status: data.status as Status,
         partner_id: data.partner_id,
         is_popular: data?.is_popular,
+        hide_site: data.hide_site ?? false,
         is_4g: data?.is_4g,
         is_5g: data?.is_5g,
         quantity_sms: data?.quantity_sms,
@@ -430,7 +436,7 @@ export class TariffService {
       }
     }
 
-    const regionIds = regionGroups.flatMap((group) => group.regions.map((region) => ({ id: region.id })));
+    const regionIds = regionGroups?.flatMap((group) => group.regions.map((region) => ({ id: region.id })));
 
     await this.prisma.tariff.update({
       where: {
@@ -444,6 +450,7 @@ export class TariffService {
         status: (data.status as Status) ?? tariff.status,
         partner_id: data.partner_id ?? tariff.partner_id,
         is_popular: data.is_popular ?? tariff.is_popular,
+        hide_site: data.hide_site ?? tariff.hide_site,
         is_4g: data.is_4g ?? tariff.is_4g,
         is_5g: data.is_5g ?? tariff.is_5g,
         quantity_sms: data.quantity_sms ?? tariff.quantity_sms,
@@ -458,9 +465,7 @@ export class TariffService {
         is_global: data?.is_global ?? tariff.is_global,
         is_regional: data?.is_regional ?? tariff.is_regional,
         is_local: data?.is_local ?? tariff.is_local,
-        regions: {
-          set: regionIds,
-        },
+        ...(regionIds ? { regions: { set: regionIds } } : {}),
 
         updated_at: new Date(),
       },

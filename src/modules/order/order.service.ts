@@ -1016,7 +1016,7 @@ export class OrderService {
 
     for (const item of data) {
       const tariff = await this.prisma.tariff.findUnique({
-        where: { id: item.tariff_id },
+        where: { id: item.tariff_id, hide_site: false, status: Status.ACTIVE, deleted_at: null },
       });
 
       if (!tariff) {
@@ -1070,7 +1070,7 @@ export class OrderService {
     // }
 
     const tariff = await this.prisma.tariff.findUnique({
-      where: { id: data.tariff_id },
+      where: { id: data.tariff_id, hide_site: false, status: Status.ACTIVE, deleted_at: null },
     });
 
     if (!tariff) {
