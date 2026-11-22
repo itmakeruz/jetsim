@@ -61,3 +61,7 @@ export class InvalidAmountException extends UnprocessableEntityException {
     super({ code: 'INVALID_AMOUNT', message });
   }
 }
+
+export class OfferChangedException extends ConflictException {
+  constructor() { super({ code: 'OFFER_CHANGED', message: 'Условия пакета изменились — обновите каталог' }); }
+}

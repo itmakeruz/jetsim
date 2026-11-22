@@ -6,6 +6,7 @@ import {
   IdempotencyConflictException,
   OrderNotFoundException,
   PriceChangedException,
+  OfferChangedException,
   ResellerBlockedException,
   TariffUnavailableException,
 } from '../b2b.errors';
@@ -15,8 +16,16 @@ import { CreateB2bOrderDto, ListB2bOrdersQueryDto } from './dto/purchase.dto';
 
 const SUPPORTED_PROVIDERS = [1, 2, 3];
 
-export function requestHash(input: { tariffId: number; priceVersion: number }): string {
-  return createHash('sha256').update(JSON.stringify({ t: input.tariffId, v: input.priceVersion })).digest('hex');
+export function requestHash(input: { tariffId: number; priceVersion: number; offerVersion?: string }): string {
+  return createHash('sha256')
+    .update(
+      JSON.stringify({
+        t: input.tariffId,
+        v: input.priceVersion,
+        ...(input.offerVersion === undefined ? {} : { o: input.offerVersion }),
+      }),
+    )
+    .digest('hex');
 }
 
 function isUniqueViolation(e: unknown): boolean {
@@ -37,7 +46,11 @@ export class B2bOrdersService {
    * другое содержимое → IDEMPOTENCY_CONFLICT. Повтор допустим и у заблокированной компании.
    */
   async create(resellerId: number, dto: CreateB2bOrderDto): Promise<{ order: ResellerOrder; created: boolean }> {
-    const hash = requestHash({ tariffId: dto.tariff_id, priceVersion: dto.price_version });
+    const hash = requestHash({
+      tariffId: dto.tariff_id,
+      priceVersion: dto.price_version,
+      offerVersion: dto.expected_offer_version,
+    });
 
     const existing = await this.findByClientId(resellerId, dto.client_order_id);
     if (existing) return { order: this.assertSameRequest(existing, hash), created: false };
@@ -59,13 +72,14 @@ export class B2bOrdersService {
   }
 
   private async createInTx(tx: Prisma.TransactionClient, resellerId: number, dto: CreateB2bOrderDto, hash: string) {
+    if (dto.expected_offer_version) await tx.$executeRaw`SELECT pg_advisory_xact_lock(71025,71025)`;
     // Компанию и тариф проверяем заново на каждой покупке, а не доверяем каталогу клиента
     const reseller = await tx.reseller.findUnique({ where: { id: resellerId } });
     if (!reseller || reseller.status !== 'ACTIVE') throw new ResellerBlockedException();
 
     const rt = await tx.resellerTariff.findUnique({
       where: { reseller_id_tariff_id: { reseller_id: resellerId, tariff_id: dto.tariff_id } },
-      include: { tariff: { include: { partner: true } } },
+      include: { tariff: { include: { partner: true, region_group: true, regions: true } } },
     });
     if (
       !rt ||
@@ -78,6 +92,18 @@ export class B2bOrdersService {
     }
     if (rt.price_version !== dto.price_version) throw new PriceChangedException();
 
+    if (dto.expected_offer_version) {
+      if (`${rt.tariff.offer_revision}:${rt.offer_revision}` !== dto.expected_offer_version)
+        throw new OfferChangedException();
+      if (
+        rt.tariff.partner.status !== 'ACTIVE' ||
+        !rt.tariff.region_group ||
+        rt.tariff.region_group.status !== 'ACTIVE' ||
+        !rt.tariff.regions.length ||
+        rt.tariff.regions.some((r) => r.status !== 'ACTIVE')
+      )
+        throw new TariffUnavailableException();
+    }
     // Название, цена и срок фиксируются в заказе и не меняются задним числом
     const order = await tx.resellerOrder.create({
       data: {
@@ -94,6 +120,17 @@ export class B2bOrdersService {
         cost_currency: rt.tariff.price_arrival == null ? null : 'RUB',
         provider_name: rt.tariff.partner.name_en,
         price_version: rt.price_version,
+        offer_version: dto.expected_offer_version ?? null,
+        ...(dto.expected_offer_version
+          ? {
+              offer_payload: {
+                partner_id: rt.tariff.partner_id,
+                provider_number: rt.tariff.partner.identified_number,
+                sku_id: rt.tariff.sku_id,
+                validity_period: rt.tariff.validity_period,
+              },
+            }
+          : {}),
         currency: reseller.currency,
         source: dto.source ?? null,
         source_ref: dto.source_ref ?? null,

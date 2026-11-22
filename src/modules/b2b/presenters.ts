@@ -75,6 +75,7 @@ export function presentPartnerOrder(o: ResellerOrder) {
     },
     price_kopecks: toNumber(o.price_kopecks),
     price_version: o.price_version,
+    ...(o.offer_version ? { offer_version: o.offer_version } : {}),
     currency: o.currency,
     source: o.source,
     created_at: o.created_at,

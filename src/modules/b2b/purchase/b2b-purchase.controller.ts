@@ -23,6 +23,11 @@ export class B2bPurchaseController {
     private readonly ledger: ResellerLedgerService,
   ) {}
 
+  @Get('catalog')
+  snapshot(@CurrentReseller() r: ResellerPrincipal) {
+    return this.catalog.snapshot(r.id);
+  }
+
   @Get('tariffs')
   tariffs(@CurrentReseller() r: ResellerPrincipal) {
     return this.catalog.list(r.id);

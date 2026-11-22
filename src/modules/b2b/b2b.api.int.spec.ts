@@ -17,10 +17,19 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
 
   /** Компания с ключом, тарифом (цена price) и балансом, всё через управляющее API */
   async function company(name: string, o: { price?: number; balance?: number; currency?: 'RUB' | 'USD' } = {}) {
-    const r = (await admin('post', '/resellers').send({ name, ...(o.currency ? { currency: o.currency } : {}) }).expect(201)).body;
+    const r = (
+      await admin('post', '/resellers')
+        .send({ name, ...(o.currency ? { currency: o.currency } : {}) })
+        .expect(201)
+    ).body;
     const key = (await admin('post', `/resellers/${r.id}/keys`).send({ name: 'site' }).expect(201)).body.key as string;
-    await admin('put', `/resellers/${r.id}/tariffs/${tariffId}`).send({ price_kopecks: o.price ?? 10_000 }).expect(200);
-    if (o.balance) await admin('post', `/resellers/${r.id}/topups`).send({ amount_kopecks: o.balance, comment: 'предоплата' }).expect(201);
+    await admin('put', `/resellers/${r.id}/tariffs/${tariffId}`)
+      .send({ price_kopecks: o.price ?? 10_000 })
+      .expect(200);
+    if (o.balance)
+      await admin('post', `/resellers/${r.id}/topups`)
+        .send({ amount_kopecks: o.balance, comment: 'предоплата' })
+        .expect(201);
     return { id: r.id as number, key };
   }
   const order = (key: string, body: Record<string, unknown>) => partner('post', '/orders', key).send(body);
@@ -84,7 +93,8 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
 
   it('смена цены повышает версию; повтор той же цены — нет', async () => {
     const c = await company('Comp A', { price: 10_000 });
-    const put = (price: number) => admin('put', `/resellers/${c.id}/tariffs/${tariffId}`).send({ price_kopecks: price }).expect(200);
+    const put = (price: number) =>
+      admin('put', `/resellers/${c.id}/tariffs/${tariffId}`).send({ price_kopecks: price }).expect(200);
     expect((await put(10_000)).body.price_version).toBe(1);
     expect((await put(11_000)).body.price_version).toBe(2);
     expect((await put(11_000)).body.price_version).toBe(2);
@@ -94,11 +104,20 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
   describe('создание заказа', () => {
     it('202, резервирует закупочную цену; ответ не раскрывает внутренние состояния и поставщиков', async () => {
       const c = await company('Comp A', { price: 10_000, balance: 25_000 });
-      const res = await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1, source: 'API_KEY' }).expect(202);
+      const res = await order(c.key, {
+        client_order_id: 'o-1',
+        tariff_id: tariffId,
+        price_version: 1,
+        source: 'API_KEY',
+      }).expect(202);
 
       expect(res.body).toMatchObject({ client_order_id: 'o-1', status: 'PROCESSING', price_kopecks: 10_000 });
       expect(Object.keys(res.body)).not.toEqual(expect.arrayContaining(['state', 'provider_response', 'state_reason']));
-      expect(await balance(c.key)).toMatchObject({ balance_kopecks: 25_000, reserved_kopecks: 10_000, available_kopecks: 15_000 });
+      expect(await balance(c.key)).toMatchObject({
+        balance_kopecks: 25_000,
+        reserved_kopecks: 10_000,
+        available_kopecks: 15_000,
+      });
       expect(h.enqueue).toHaveBeenCalledTimes(1);
     });
 
@@ -136,7 +155,9 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
     it('КОНКУРЕНТНОСТЬ: 12 разных заказов при балансе на 5 → ровно 5 принято, остальные INSUFFICIENT_FUNDS', async () => {
       const c = await company('Comp A', { price: 10_000, balance: 50_000 });
       const results = await Promise.all(
-        Array.from({ length: 12 }, (_, i) => order(c.key, { client_order_id: `p-${i}`, tariff_id: tariffId, price_version: 1 })),
+        Array.from({ length: 12 }, (_, i) =>
+          order(c.key, { client_order_id: `p-${i}`, tariff_id: tariffId, price_version: 1 }),
+        ),
       );
       expect(results.filter((r) => r.status === 202)).toHaveLength(5);
       expect(results.filter((r) => r.status === 422 && r.body.code === 'INSUFFICIENT_FUNDS')).toHaveLength(7);
@@ -157,11 +178,15 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
       await order(c.key, { client_order_id: 'old', tariff_id: tariffId, price_version: 1 }).expect(202);
       await admin('put', `/resellers/${c.id}/tariffs/${tariffId}`).send({ price_kopecks: 15_000 }).expect(200);
 
-      const stale = await order(c.key, { client_order_id: 'new-stale', tariff_id: tariffId, price_version: 1 }).expect(409);
+      const stale = await order(c.key, { client_order_id: 'new-stale', tariff_id: tariffId, price_version: 1 }).expect(
+        409,
+      );
       expect(stale.body.code).toBe('PRICE_CHANGED');
       expect(await balance(c.key)).toMatchObject({ reserved_kopecks: 10_000 });
 
-      const fresh = await order(c.key, { client_order_id: 'new-ok', tariff_id: tariffId, price_version: 2 }).expect(202);
+      const fresh = await order(c.key, { client_order_id: 'new-ok', tariff_id: tariffId, price_version: 2 }).expect(
+        202,
+      );
       expect(fresh.body.price_kopecks).toBe(15_000);
       const old = await partner('get', '/orders/old', c.key).expect(200);
       expect(old.body.price_kopecks).toBe(10_000);
@@ -173,11 +198,15 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
       let res = await order(c.key, { client_order_id: 'x1', tariff_id: other.id, price_version: 1 }).expect(422);
       expect(res.body.code).toBe('TARIFF_UNAVAILABLE');
 
-      await admin('put', `/resellers/${c.id}/tariffs/${tariffId}`).send({ price_kopecks: 10_000, active: false }).expect(200);
+      await admin('put', `/resellers/${c.id}/tariffs/${tariffId}`)
+        .send({ price_kopecks: 10_000, active: false })
+        .expect(200);
       res = await order(c.key, { client_order_id: 'x2', tariff_id: tariffId, price_version: 1 }).expect(422);
       expect(res.body.code).toBe('TARIFF_UNAVAILABLE');
 
-      await admin('put', `/resellers/${c.id}/tariffs/${tariffId}`).send({ price_kopecks: 10_000, active: true }).expect(200);
+      await admin('put', `/resellers/${c.id}/tariffs/${tariffId}`)
+        .send({ price_kopecks: 10_000, active: true })
+        .expect(200);
       await prisma.tariff.update({ where: { id: tariffId }, data: { status: 'INACTIVE' } });
       res = await order(c.key, { client_order_id: 'x3', tariff_id: tariffId, price_version: 1 }).expect(422);
       expect(res.body.code).toBe('TARIFF_UNAVAILABLE');
@@ -201,7 +230,8 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
   describe('блокировка компании', () => {
     it('новые покупки запрещены (403), но каталог, баланс и ранее выданная eSIM доступны; повтор старого заказа тоже', async () => {
       const c = await company('Comp A', { balance: 100_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
       await issue(ro.id);
       await admin('patch', `/resellers/${c.id}`).send({ status: 'BLOCKED' }).expect(200);
 
@@ -219,10 +249,17 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
     it('чужой заказ, eSIM, QR и расход — 404, неотличимо от несуществующего; список только свой', async () => {
       const a = await company('Comp A', { balance: 100_000 });
       const b = await company('Comp B', { balance: 100_000 });
-      const ro = (await order(a.key, { client_order_id: 'secret', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
+      const ro = (await order(a.key, { client_order_id: 'secret', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
       await issue(ro.id);
 
-      for (const path of ['/orders/secret', '/orders/secret/esim', '/orders/secret/qr', '/orders/secret/usage', '/orders/nope']) {
+      for (const path of [
+        '/orders/secret',
+        '/orders/secret/esim',
+        '/orders/secret/qr',
+        '/orders/secret/usage',
+        '/orders/nope',
+      ]) {
         const res = await partner('get', path, b.key).expect(404);
         expect(res.body.code).toBe('ORDER_NOT_FOUND');
       }
@@ -256,11 +293,15 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
   describe('выпуск и расчёты', () => {
     it('принято поставщиком → SUBMITTED, затем выдача → ISSUED и резерв превращается в списание (один раз)', async () => {
       const c = await company('Comp A', { price: 10_000, balance: 25_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
 
       h.submitter.submit.mockResolvedValueOnce({ kind: 'ACCEPTED', response: { ok: true } });
       await h.issuance.submit(ro.id);
-      const submitted = await prisma.resellerOrder.findUniqueOrThrow({ where: { id: ro.id }, include: { sim: true, order: true } });
+      const submitted = await prisma.resellerOrder.findUniqueOrThrow({
+        where: { id: ro.id },
+        include: { sim: true, order: true },
+      });
       expect(submitted.state).toBe('SUBMITTED');
       expect(submitted.sim?.reseller_order_id).toBe(ro.id);
       expect(submitted.order?.reseller_order_id).toBe(ro.id);
@@ -270,14 +311,19 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
       await h.settlement.run();
       await h.settlement.run();
       expect((await prisma.resellerOrder.findUniqueOrThrow({ where: { id: ro.id } })).state).toBe('ISSUED');
-      expect(await balance(c.key)).toMatchObject({ balance_kopecks: 15_000, reserved_kopecks: 0, available_kopecks: 15_000 });
+      expect(await balance(c.key)).toMatchObject({
+        balance_kopecks: 15_000,
+        reserved_kopecks: 0,
+        available_kopecks: 15_000,
+      });
       expect(await prisma.resellerLedger.count({ where: { type: 'CAPTURE' } })).toBe(1);
       expect((await partner('get', '/orders/o-1', c.key).expect(200)).body.status).toBe('ISSUED');
     });
 
     it('достоверный отказ → FAILED, резерв освобождён один раз, поставщик вызван один раз', async () => {
       const c = await company('Comp A', { price: 10_000, balance: 25_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
       h.submitter.submit.mockResolvedValue({ kind: 'REJECTED', reason: 'bad sku', response: { code: 17 } });
 
       await h.issuance.submit(ro.id);
@@ -291,7 +337,8 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
 
     it('ТАЙМАУТ ПОСТАВЩИКА: исключение отправителя → RECONCILE, резерв удержан, повторной покупки нет, оператору сигнал', async () => {
       const c = await company('Comp A', { price: 10_000, balance: 25_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
       h.submitter.submit.mockRejectedValue(new Error('ETIMEDOUT'));
 
       await h.issuance.submit(ro.id);
@@ -328,8 +375,12 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
 
     it('процесс умер посреди отправки: SUBMITTING старше 5 минут → RECONCILE (без повторной отправки)', async () => {
       const c = await company('Comp A', { balance: 25_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
-      await prisma.resellerOrder.update({ where: { id: ro.id }, data: { state: 'SUBMITTING', submitting_at: new Date(Date.now() - 6 * 60_000) } });
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
+      await prisma.resellerOrder.update({
+        where: { id: ro.id },
+        data: { state: 'SUBMITTING', submitting_at: new Date(Date.now() - 6 * 60_000) },
+      });
 
       await h.settlement.run();
 
@@ -340,7 +391,8 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
 
     it('потерянный фоновый запуск: RESERVED старше 30 с подхватывается расчётом', async () => {
       const c = await company('Comp A', { balance: 25_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
       await prisma.resellerOrder.update({ where: { id: ro.id }, data: { created_at: new Date(Date.now() - 60_000) } });
       h.enqueue.mockClear();
 
@@ -351,11 +403,13 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
   });
 
   describe('отмена, сверка и возврат (суперадмин)', () => {
-    const adminAction = (id: number, action: string, body: object) => admin('post', `/orders/${id}/${action}`).send(body);
+    const adminAction = (id: number, action: string, body: object) =>
+      admin('post', `/orders/${id}/${action}`).send(body);
 
     it('отмена до отправки освобождает резерв; поставщику потом ничего не уходит', async () => {
       const c = await company('Comp A', { balance: 25_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
 
       await adminAction(ro.id, 'cancel', { comment: 'клиент передумал' }).expect(200);
       await h.issuance.submit(ro.id);
@@ -367,7 +421,8 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
 
     it('после отправки поставщику отмена невозможна (409) — простая смена статуса не возвращает деньги', async () => {
       const c = await company('Comp A', { balance: 25_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
       h.submitter.submit.mockResolvedValueOnce({ kind: 'ACCEPTED' });
       await h.issuance.submit(ro.id);
 
@@ -394,7 +449,8 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
 
     it('возврат после выдачи — только ISSUED, только с подтверждением поставщика и только один раз', async () => {
       const c = await company('Comp A', { price: 10_000, balance: 25_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
 
       await adminAction(ro.id, 'refund', { provider_confirmed: true, comment: 'ранний возврат' }).expect(409);
       await issue(ro.id);
@@ -408,14 +464,21 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
 
     it('служебные данные (ответ поставщика, причина) видит только управляющее API', async () => {
       const c = await company('Comp A', { balance: 25_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
-      h.submitter.submit.mockResolvedValueOnce({ kind: 'REJECTED', reason: 'bad sku', response: { code: 17, mesg: 'JoyTel says no' } });
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
+      h.submitter.submit.mockResolvedValueOnce({
+        kind: 'REJECTED',
+        reason: 'bad sku',
+        response: { code: 17, mesg: 'JoyTel says no' },
+      });
       await h.issuance.submit(ro.id);
 
       const adminView = (await admin('get', `/orders/${ro.id}`).expect(200)).body;
       expect(adminView.provider_response).toMatchObject({ code: 17 });
       expect(adminView.state).toBe('FAILED');
-      expect(JSON.stringify((await partner('get', '/orders/o-1', c.key).expect(200)).body)).not.toMatch(/JoyTel|provider_response|bad sku|state_reason/);
+      expect(JSON.stringify((await partner('get', '/orders/o-1', c.key).expect(200)).body)).not.toMatch(
+        /JoyTel|provider_response|bad sku|state_reason/,
+      );
     });
   });
 
@@ -424,15 +487,30 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
       const usd = await company('Usd Co', { currency: 'USD', price: 1_250, balance: 10_000 });
       const rub = await company('Rub Co', { price: 99_000, balance: 500_000 });
 
-      expect((await partner('get', '/tariffs', usd.key).expect(200)).body[0]).toMatchObject({ price_kopecks: 1_250, currency: 'USD' });
-      expect((await partner('get', '/tariffs', rub.key).expect(200)).body[0]).toMatchObject({ price_kopecks: 99_000, currency: 'RUB' });
+      expect((await partner('get', '/tariffs', usd.key).expect(200)).body[0]).toMatchObject({
+        price_kopecks: 1_250,
+        currency: 'USD',
+      });
+      expect((await partner('get', '/tariffs', rub.key).expect(200)).body[0]).toMatchObject({
+        price_kopecks: 99_000,
+        currency: 'RUB',
+      });
       expect(await balance(usd.key)).toMatchObject({ balance_kopecks: 10_000, currency: 'USD' });
       expect(await balance(rub.key)).toMatchObject({ balance_kopecks: 500_000, currency: 'RUB' });
 
       const t = (await partner('get', '/tariffs', usd.key)).body[0];
-      const o = await order(usd.key, { client_order_id: 'u-1', tariff_id: t.id, price_version: t.price_version }).expect(202);
+      const o = await order(usd.key, {
+        client_order_id: 'u-1',
+        tariff_id: t.id,
+        price_version: t.price_version,
+      }).expect(202);
       expect(o.body).toMatchObject({ price_kopecks: 1_250, currency: 'USD' });
-      expect(await balance(usd.key)).toMatchObject({ balance_kopecks: 10_000, reserved_kopecks: 1_250, available_kopecks: 8_750, currency: 'USD' });
+      expect(await balance(usd.key)).toMatchObject({
+        balance_kopecks: 10_000,
+        reserved_kopecks: 1_250,
+        available_kopecks: 8_750,
+        currency: 'USD',
+      });
       // чужая валюта не затронута
       expect(await balance(rub.key)).toMatchObject({ reserved_kopecks: 0, currency: 'RUB' });
       const list = (await admin('get', '/orders').expect(200)).body;
@@ -465,8 +543,16 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
 
     it('закупочный ключ компании не может пополнить баланс, менять цены или отменять заказы', async () => {
       const c = await company('Comp A', { balance: 10_000 });
-      for (const [m, url] of [['post', `/b2b-admin/resellers/${c.id}/topups`], ['put', `/b2b-admin/resellers/${c.id}/tariffs/${tariffId}`], ['post', '/b2b-admin/orders/1/cancel']] as const) {
-        await (request(app.getHttpServer()) as any)[m](url).set('X-Reseller-Key', c.key).send({ amount_kopecks: 1, comment: 'hack', price_kopecks: 1 }).expect(401);
+      for (const [m, url] of [
+        ['post', `/b2b-admin/resellers/${c.id}/topups`],
+        ['put', `/b2b-admin/resellers/${c.id}/tariffs/${tariffId}`],
+        ['post', '/b2b-admin/orders/1/cancel'],
+      ] as const) {
+        await (request(app.getHttpServer()) as any)
+          [m](url)
+          .set('X-Reseller-Key', c.key)
+          .send({ amount_kopecks: 1, comment: 'hack', price_kopecks: 1 })
+          .expect(401);
       }
       expect(await balance(c.key)).toMatchObject({ balance_kopecks: 10_000 });
     });
@@ -476,22 +562,30 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
   describe('eSIM, QR и расход', () => {
     it('до выдачи — 409 NOT_ISSUED; после — ICCID, код активации и инструкции; QR — PNG без кэша', async () => {
       const c = await company('Comp A', { balance: 25_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
       for (const p of ['esim', 'qr', 'usage']) {
         expect((await partner('get', `/orders/o-1/${p}`, c.key).expect(409)).body.code).toBe('NOT_ISSUED');
       }
 
       await issue(ro.id);
       const esim = (await partner('get', '/orders/o-1/esim', c.key).expect(200)).body;
-      expect(esim).toMatchObject({ iccid: '8999000000000000001', smdp_address: 'smdp.example.com', matching_id: 'MATCH-123' });
+      expect(esim).toMatchObject({
+        iccid: '8999000000000000001',
+        smdp_address: 'smdp.example.com',
+        matching_id: 'MATCH-123',
+      });
       expect(esim.instructions.ru.length).toBeGreaterThan(0);
       expect(JSON.stringify(esim)).not.toMatch(/JoyTel|BillionConnect|Mobiline/i);
 
-      const qr = await partner('get', '/orders/o-1/qr', c.key).buffer(true).parse((res: any, cb: any) => {
-        const chunks: Buffer[] = [];
-        res.on('data', (d: Buffer) => chunks.push(d));
-        res.on('end', () => cb(null, Buffer.concat(chunks)));
-      }).expect(200);
+      const qr = await partner('get', '/orders/o-1/qr', c.key)
+        .buffer(true)
+        .parse((res: any, cb: any) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (d: Buffer) => chunks.push(d));
+          res.on('end', () => cb(null, Buffer.concat(chunks)));
+        })
+        .expect(200);
       expect(qr.headers['content-type']).toContain('image/png');
       expect(qr.headers['cache-control']).toContain('no-store');
       expect((qr.body as Buffer).subarray(0, 4).toString('hex')).toBe('89504e47');
@@ -499,16 +593,92 @@ describeDb('B2B API (центральный JetSim, реальный Postgres)',
 
     it('расход: нормализованный ответ; сбой поставщика не раскрывает детали', async () => {
       const c = await company('Comp A', { balance: 25_000 });
-      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202)).body;
+      const ro = (await order(c.key, { client_order_id: 'o-1', tariff_id: tariffId, price_version: 1 }).expect(202))
+        .body;
       await issue(ro.id);
 
       h.usage.forSim.mockResolvedValueOnce({ status: 'ok', data: { state: 'active', used_mb: 10, total_mb: 5120 } });
-      expect((await partner('get', '/orders/o-1/usage', c.key).expect(200)).body).toMatchObject({ status: 'ok', usage: { used_mb: 10 } });
+      expect((await partner('get', '/orders/o-1/usage', c.key).expect(200)).body).toMatchObject({
+        status: 'ok',
+        usage: { used_mb: 10 },
+      });
 
       h.usage.forSim.mockRejectedValueOnce(new Error('JoyTel secret internals'));
       const res = await partner('get', '/orders/o-1/usage', c.key).expect(502);
       expect(res.body.code).toBe('USAGE_UNAVAILABLE');
       expect(JSON.stringify(res.body)).not.toMatch(/JoyTel|secret/);
+    });
+  });
+  describe('versioned complete catalogue', () => {
+    async function linked() {
+      const r = await prisma.region.create({
+        data: { name_ru: 'Япония', name_en: 'Japan', iso_code: 'JP', status: 'ACTIVE' },
+      });
+      const g = await prisma.regionGroup.create({
+        data: { name_ru: 'Япония', name_en: 'Japan', regions: { connect: { id: r.id } } },
+      });
+      await prisma.tariff.update({
+        where: { id: tariffId },
+        data: { region_group_id: g.id, is_local: true, regions: { connect: { id: r.id } } },
+      });
+      return { r, g };
+    }
+    it('returns only company offers and real relationships; no supplier, SKU, keys or central cost', async () => {
+      const { r, g } = await linked();
+      const c = await company('USD Global', { currency: 'USD' });
+      const s = (await partner('get', '/catalog', c.key).expect(200)).body;
+      expect(s).toMatchObject({ complete: true, schema_version: 1, company: { id: c.id, currency: 'USD' } });
+      expect(s.tariffs[0]).toMatchObject({ id: tariffId, group_id: g.id, region_ids: [r.id] });
+      expect(s.region_groups).toEqual([expect.objectContaining({ id: g.id, region_ids: [r.id] })]);
+      expect(s.regions[0].iso_code).toBe('JP');
+      expect(JSON.stringify(s)).not.toMatch(/sku_id|partner_id|price_arrival|cost_kopecks|service_user|provider/);
+      const other = await company('Other', { currency: 'USD' });
+      await prisma.resellerTariff.deleteMany({ where: { reseller_id: other.id } });
+      expect((await partner('get', '/catalog', other.key).expect(200)).body.tariffs).toEqual([]);
+    });
+    it('detects off/on between polls, ignores cosmetic names and rejects stale versions before reserve', async () => {
+      await linked();
+      const c = await company('USD Global', { currency: 'USD', balance: 50000 });
+      const snap = async () => (await partner('get', '/catalog', c.key).expect(200)).body.tariffs[0];
+      const a = await snap();
+      await prisma.tariff.update({ where: { id: tariffId }, data: { name_en: 'Cosmetic' } });
+      expect((await snap()).offer_version).toBe(a.offer_version);
+      await prisma.resellerTariff.updateMany({ where: { reseller_id: c.id }, data: { active: false } });
+      await prisma.resellerTariff.updateMany({ where: { reseller_id: c.id }, data: { active: true } });
+      const b = await snap();
+      expect(b.offer_version).not.toBe(a.offer_version);
+      await order(c.key, {
+        client_order_id: 'stale',
+        tariff_id: tariffId,
+        price_version: 1,
+        expected_offer_version: a.offer_version,
+      }).expect(409);
+      expect(await prisma.resellerOrder.count()).toBe(0);
+      const body = {
+        client_order_id: 'current',
+        tariff_id: tariffId,
+        price_version: 1,
+        expected_offer_version: b.offer_version,
+      };
+      await order(c.key, body).expect(202);
+      await prisma.tariff.update({ where: { id: tariffId }, data: { quantity_internet: 7 } });
+      await order(c.key, body).expect(202);
+      expect(await prisma.resellerOrder.count()).toBe(1);
+      expect((await snap()).offer_version).not.toBe(b.offer_version);
+      expect((await prisma.resellerOrder.findFirstOrThrow()).offer_payload).toMatchObject({ sku_id: 'SKU-1' });
+    });
+    it('coverage and group availability changes advance offer versions, including restoration', async () => {
+      const { r, g } = await linked();
+      const c = await company('USD Global', { currency: 'USD' });
+      const version = async () => (await partner('get', '/catalog', c.key).expect(200)).body.tariffs[0].offer_version;
+      const a = await version();
+      await prisma.tariff.update({ where: { id: tariffId }, data: { regions: { disconnect: { id: r.id } } } });
+      await prisma.tariff.update({ where: { id: tariffId }, data: { regions: { connect: { id: r.id } } } });
+      const b = await version();
+      expect(b).not.toBe(a);
+      await prisma.regionGroup.update({ where: { id: g.id }, data: { status: 'INACTIVE' } });
+      await prisma.regionGroup.update({ where: { id: g.id }, data: { status: 'ACTIVE' } });
+      expect(await version()).not.toBe(b);
     });
   });
 });

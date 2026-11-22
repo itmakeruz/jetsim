@@ -1,3 +1,4 @@
+import { AdminOrderService } from '../order/admin-order.service';
 import { Test } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as passport from 'passport';
@@ -33,6 +34,7 @@ describe('Usage HTTP authorization and Mobiline callback validation', () => {
       providers: [
         { provide: SimsService, useValue: {} },
         { provide: OrderService, useValue: {} },
+        { provide: AdminOrderService, useValue: {} },
         { provide: MobilineActivationService, useValue: mobiline },
         { provide: UsageService, useValue: new UsageService(prisma as any, joytel as any, {} as any, {} as any) },
       ],

@@ -19,6 +19,11 @@ export class CreateB2bOrderDto {
   price_version: number;
 
   @IsOptional()
+  @IsString()
+  @Matches(/^[0-9]+:[0-9]+$/)
+  expected_offer_version?: string;
+
+  @IsOptional()
   @IsEnum(['ADMIN', 'AGENT', 'API_KEY'])
   source?: 'ADMIN' | 'AGENT' | 'API_KEY';
 

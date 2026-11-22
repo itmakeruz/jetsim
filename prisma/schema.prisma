@@ -133,6 +133,7 @@ model Transaction {
 }
 
 model Tariff {
+  offer_revision BigInt @default(1)
   id                Int     @id @default(autoincrement())
   name_ru           String
   name_en           String
@@ -600,6 +601,7 @@ model ResellerApiKey {
 
 // Тариф, доступный компании, и её закупочная цена; price_version растёт при каждой смене цены
 model ResellerTariff {
+  offer_revision BigInt @default(1)
   id            Int     @id @default(autoincrement())
   reseller_id   Int
   tariff_id     Int
@@ -657,6 +659,8 @@ model ResellerLedger {
 }
 
 model ResellerOrder {
+  offer_version String?
+  offer_payload Json?
   id              Int                @id @default(autoincrement())
   reseller_id     Int
   client_order_id String

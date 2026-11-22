@@ -25,7 +25,9 @@ export class B2bIssuanceService {
   /** Запускает отправку в фоне; если процесс упадёт до отправки, заказ подхватит крон (B2bSettlementService). */
   enqueue(resellerOrderId: number) {
     setImmediate(() => {
-      this.submit(resellerOrderId).catch((e) => this.logger.error(`B2B submit ${resellerOrderId} failed: ${e?.message}`, e?.stack));
+      this.submit(resellerOrderId).catch((e) =>
+        this.logger.error(`B2B submit ${resellerOrderId} failed: ${e?.message}`, e?.stack),
+      );
     });
   }
 
@@ -42,6 +44,7 @@ export class B2bIssuanceService {
       include: { reseller: { include: { service_user: true } }, tariff: { include: { partner: true } } },
     });
 
+    const frozen = ro.offer_version ? (ro.offer_payload as any) : null;
     // 2. «Оболочка» заказа и SIM — чтобы работали существующие обработчики провайдеров и история событий
     const { order, sim } = await this.prisma.$transaction(async (tx) => {
       const order = await tx.order.create({
@@ -50,7 +53,7 @@ export class B2bIssuanceService {
       const sim = await tx.sims.create({
         data: {
           status: 'CREATED',
-          partner_id: ro.tariff.partner_id,
+          partner_id: frozen?.partner_id ?? ro.tariff.partner_id,
           order_id: order.id,
           user_id: ro.reseller.service_user_id,
           tariff_id: ro.tariff_id,
@@ -69,9 +72,13 @@ export class B2bIssuanceService {
         simId: sim.id,
         userId: ro.reseller.service_user_id,
         userName: ro.reseller.name,
-        partnerId: ro.tariff.partner_id,
-        providerNumber: ro.tariff.partner?.identified_number ?? 0,
-        tariff: { id: ro.tariff.id, sku_id: ro.tariff.sku_id, validity_period: ro.tariff.validity_period },
+        partnerId: frozen?.partner_id ?? ro.tariff.partner_id,
+        providerNumber: frozen?.provider_number ?? ro.tariff.partner?.identified_number ?? 0,
+        tariff: {
+          id: ro.tariff.id,
+          sku_id: frozen?.sku_id ?? ro.tariff.sku_id,
+          validity_period: frozen?.validity_period ?? ro.tariff.validity_period,
+        },
       });
     } catch (e: any) {
       // Исключение = не знаем, дошла ли заявка → никогда не освобождаем резерв автоматически
@@ -81,7 +88,13 @@ export class B2bIssuanceService {
     await this.applyOutcome(ro.id, ro.reseller_id, ro.reseller.name, ro.price_kopecks, outcome);
   }
 
-  private async applyOutcome(id: number, resellerId: number, resellerName: string, price: bigint, outcome: SubmitOutcome) {
+  private async applyOutcome(
+    id: number,
+    resellerId: number,
+    resellerName: string,
+    price: bigint,
+    outcome: SubmitOutcome,
+  ) {
     switch (outcome.kind) {
       case 'ACCEPTED':
         await this.prisma.resellerOrder.updateMany({
