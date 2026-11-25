@@ -4,6 +4,7 @@ import { ManagementKeyGuard } from '../guards/management-key.guard';
 import {
   CancelOrderDto,
   CreateResellerDto,
+  ImportTariffsDto,
   IssueKeyDto,
   MoneyOperationDto,
   PageQueryDto,
@@ -40,6 +41,12 @@ export class ResellersAdminController {
   @Put('resellers/:id/tariffs/:tariffId')
   upsertTariff(@Param('id', ParseIntPipe) id: number, @Param('tariffId', ParseIntPipe) tariffId: number, @Body() dto: UpsertResellerTariffDto) {
     return this.resellers.upsertResellerTariff(id, tariffId, dto);
+  }
+
+  /** Массовая загрузка тарифов из Excel: новые тарифы скрыты на сайте и привязаны к компании. dry_run=true — только проверка. */
+  @Post('resellers/:id/tariffs/import') @HttpCode(200)
+  importTariffs(@Param('id', ParseIntPipe) id: number, @Body() dto: ImportTariffsDto) {
+    return this.resellers.importTariffs(id, dto);
   }
 
   @Get('resellers/:id/balance') balance(@Param('id', ParseIntPipe) id: number) { return this.resellers.balance(id); }

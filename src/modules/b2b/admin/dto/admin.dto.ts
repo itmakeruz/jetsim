@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Length, Matches, Max, Min } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDefined, IsEnum, IsInt, IsNumber, IsOptional, IsString, Length, Matches, Max, Min, ValidateNested } from 'class-validator';
 
 export class CreateResellerDto {
   @IsString()
@@ -117,4 +117,37 @@ export class CancelOrderDto {
   @IsString()
   @Length(3, 500)
   comment: string;
+}
+
+export class ImportTariffRowDto {
+  @IsString() @Length(1, 100) sku_id: string;
+  /** Поставщик: ID или название */
+  @IsDefined() partner: string | number;
+  @IsString() @Length(1, 200) name_ru: string;
+  @IsString() @Length(1, 200) name_en: string;
+  @IsNumber() data_gb: number;
+  @IsNumber() validity_days: number;
+  @IsOptional() @IsNumber() sms?: number;
+  @IsOptional() @IsNumber() minutes?: number;
+  @IsOptional() @IsBoolean() is_4g?: boolean;
+  @IsOptional() @IsBoolean() is_5g?: boolean;
+  /** Группа регионов: ID или название */
+  @IsDefined() region_group: string | number;
+  @IsOptional() @IsEnum(['local', 'regional', 'global']) kind?: 'local' | 'regional' | 'global';
+  /** Себестоимость, рубли */
+  @IsNumber() cost_rub: number;
+  /** Цена для компании в её валюте (рубли или доллары), не в копейках */
+  @IsNumber() company_price: number;
+}
+
+export class ImportTariffsDto {
+  /** true — только проверка и план без записи */
+  @IsBoolean() dry_run: boolean;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => ImportTariffRowDto)
+  items: ImportTariffRowDto[];
 }

@@ -6,7 +6,8 @@ import { generateKey } from '../keys/key-codec';
 import { parseKopecks, toNumber } from '../ledger/money';
 import { ResellerLedgerService } from '../ledger/reseller-ledger.service';
 import { presentBalance, presentLedgerEntry, presentReseller } from '../presenters';
-import { CreateResellerDto, MoneyOperationDto, PageQueryDto, UpdateResellerDto, UpsertResellerTariffDto } from './dto/admin.dto';
+import { CreateResellerDto, ImportTariffsDto, MoneyOperationDto, PageQueryDto, UpdateResellerDto, UpsertResellerTariffDto } from './dto/admin.dto';
+import { ImportRow, PlannedRow, planImport, summarize } from './tariff-import';
 
 /** Управляющие операции суперадмина над партнёрскими компаниями (вызывает только наш партнёрский backend). */
 @Injectable()
@@ -207,6 +208,95 @@ export class ResellersAdminService {
       price_version: row.price_version,
       active: row.active,
     };
+  }
+
+  /**
+   * Массовая загрузка тарифов компании из Excel. Новые тарифы создаются скрытыми на розничном сайте (hide_site) и сразу
+   * привязываются к компании с её ценой; уже существующий тариф (тот же SKU и поставщик) не меняется, а только привязывается.
+   * dry_run — только проверка. Запись — всё или ничего: при любой ошибке в строках ничего не сохраняется.
+   */
+  async importTariffs(resellerId: number, dto: ImportTariffsDto) {
+    const reseller = await this.requireReseller(resellerId);
+    const rows = dto.items as unknown as ImportRow[];
+    const skus = [...new Set(rows.map((r) => String(r.sku_id ?? '').trim()).filter(Boolean))];
+    const [partners, groups, existing] = await Promise.all([
+      this.prisma.partner.findMany({ select: { id: true, name_ru: true, name_en: true } }),
+      this.prisma.regionGroup.findMany({ select: { id: true, name_ru: true, name_en: true, _count: { select: { regions: true } } } }),
+      this.prisma.tariff.findMany({ where: { deleted_at: null, sku_id: { in: skus } }, select: { id: true, sku_id: true, partner_id: true } }),
+    ]);
+    const attached = new Set(
+      (
+        await this.prisma.resellerTariff.findMany({
+          where: { reseller_id: resellerId, tariff_id: { in: existing.map((t) => t.id) } },
+          select: { tariff_id: true },
+        })
+      ).map((r) => r.tariff_id),
+    );
+    const plan = planImport(rows, {
+      currency: reseller.currency,
+      partners,
+      groups: groups.map((g) => ({ id: g.id, name_ru: g.name_ru, name_en: g.name_en, regions: g._count.regions })),
+      existing,
+      attached,
+    });
+    const summary = summarize(plan);
+    const report = (applied: boolean, list: PlannedRow[]) => ({
+      dry_run: dto.dry_run,
+      applied,
+      currency: reseller.currency,
+      summary,
+      rows: list.map(({ create: _c, ...p }) => p),
+    });
+    if (dto.dry_run || summary.error > 0) return report(false, plan);
+
+    const created = await this.prisma.$transaction(
+      async (tx) => {
+        const done = plan.map((p) => ({ ...p }));
+        for (const [i, p] of plan.entries()) {
+          if (p.verdict === 'SKIP') continue;
+          const src = rows[i];
+          let tariffId = p.tariff_id;
+          if (p.verdict === 'CREATE') {
+            const c = p.create!;
+            const group = await tx.regionGroup.findUniqueOrThrow({ where: { id: c.region_group_id }, select: { regions: { select: { id: true } } } });
+            const t = await tx.tariff.create({
+              data: {
+                name_ru: src.name_ru.trim(),
+                name_en: src.name_en.trim(),
+                title_ru: src.name_ru.trim(),
+                title_en: src.name_en.trim(),
+                status: 'ACTIVE',
+                hide_site: true,
+                partner_id: c.partner_id,
+                sku_id: p.sku_id,
+                is_4g: !!src.is_4g,
+                is_5g: !!src.is_5g,
+                quantity_internet: src.data_gb,
+                quantity_sms: src.sms ?? 0,
+                quantity_minute: src.minutes ?? 0,
+                validity_period: src.validity_days,
+                price_arrival: c.price_arrival,
+                cashback_percent: 0,
+                is_local: c.kind === 'local',
+                is_regional: c.kind === 'regional',
+                is_global: c.kind === 'global',
+                region_group_id: c.region_group_id,
+                regions: { connect: group.regions.map((r) => ({ id: r.id })) },
+              },
+              select: { id: true },
+            });
+            tariffId = t.id;
+            done[i].tariff_id = t.id;
+          }
+          await tx.resellerTariff.create({
+            data: { reseller_id: resellerId, tariff_id: tariffId!, price_kopecks: BigInt(p.price_kopecks!), active: true },
+          });
+        }
+        return done;
+      },
+      { timeout: 60_000, maxWait: 10_000 },
+    );
+    return report(true, created);
   }
 
   // ----------------------------------------------------------------- деньги
