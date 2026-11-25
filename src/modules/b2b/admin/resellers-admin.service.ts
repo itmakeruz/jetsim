@@ -6,7 +6,7 @@ import { generateKey } from '../keys/key-codec';
 import { parseKopecks, toNumber } from '../ledger/money';
 import { ResellerLedgerService } from '../ledger/reseller-ledger.service';
 import { presentBalance, presentLedgerEntry, presentReseller } from '../presenters';
-import { CreateResellerDto, ImportTariffsDto, MoneyOperationDto, PageQueryDto, UpdateResellerDto, UpsertResellerTariffDto } from './dto/admin.dto';
+import { CreateResellerDto, ImportTariffsDto, MoneyOperationDto, PageQueryDto, ResellerTariffsQueryDto, UpdateResellerDto, UpsertResellerTariffDto } from './dto/admin.dto';
 import { ImportRow, PlannedRow, planImport, summarize } from './tariff-import';
 
 /** Управляющие операции суперадмина над партнёрскими компаниями (вызывает только наш партнёрский backend). */
@@ -150,6 +150,24 @@ export class ResellersAdminService {
     };
   }
 
+  private presentResellerTariff(r: any, currency: string) {
+    return {
+      tariff_id: r.tariff_id,
+      name_ru: r.tariff.name_ru,
+      name_en: r.tariff.name_en,
+      data_gb: r.tariff.quantity_internet,
+      validity_days: r.tariff.validity_period,
+      price_kopecks: toNumber(r.price_kopecks),
+      currency,
+      price_version: r.price_version,
+      active: r.active,
+      central_status: r.tariff.status,
+      cost_kopecks: r.tariff.price_arrival == null ? null : r.tariff.price_arrival * 100,
+      cost_currency: r.tariff.price_arrival == null ? null : 'RUB',
+      updated_at: r.updated_at ?? r.created_at,
+    };
+  }
+
   async listResellerTariffs(resellerId: number) {
     const reseller = await this.requireReseller(resellerId);
     const rows = await this.prisma.resellerTariff.findMany({
@@ -157,21 +175,70 @@ export class ResellersAdminService {
       orderBy: { tariff_id: 'asc' },
       include: { tariff: true },
     });
-    return rows.map((r) => ({
-      tariff_id: r.tariff_id,
-      name_ru: r.tariff.name_ru,
-      name_en: r.tariff.name_en,
-      data_gb: r.tariff.quantity_internet,
-      validity_days: r.tariff.validity_period,
-      price_kopecks: toNumber(r.price_kopecks),
-      currency: reseller.currency,
-      price_version: r.price_version,
-      active: r.active,
-      central_status: r.tariff.status,
-      cost_kopecks: r.tariff.price_arrival == null ? null : r.tariff.price_arrival * 100,
-      cost_currency: r.tariff.price_arrival == null ? null : 'RUB',
-      updated_at: r.updated_at ?? r.created_at,
-    }));
+    return rows.map((r) => this.presentResellerTariff(r, reseller.currency));
+  }
+
+  /**
+   * Тарифы компании с фильтрами, сортировкой и постраничной выдачей (всё на уровне базы).
+   * facets — какие значения трафика и срока вообще есть у компании: для списков выбора в интерфейсе.
+   */
+  async searchResellerTariffs(resellerId: number, q: ResellerTariffsQueryDto) {
+    const reseller = await this.requireReseller(resellerId);
+    const page = q.page ?? 1;
+    const size = q.size ?? 20;
+    const term = q.search?.trim();
+    const tariffWhere: Prisma.TariffWhereInput = {
+      ...(q.data_gb !== undefined ? { quantity_internet: q.data_gb } : {}),
+      ...(q.validity_days !== undefined ? { validity_period: q.validity_days } : {}),
+      ...(term
+        ? {
+            OR: [
+              { name_ru: { contains: term, mode: 'insensitive' } },
+              { name_en: { contains: term, mode: 'insensitive' } },
+              ...(/^\d{1,9}$/.test(term) ? [{ id: Number(term) }] : []),
+            ],
+          }
+        : {}),
+    };
+    const where: Prisma.ResellerTariffWhereInput = {
+      reseller_id: resellerId,
+      ...(Object.keys(tariffWhere).length ? { tariff: tariffWhere } : {}),
+      ...(q.active ? { active: q.active === 'true' } : {}),
+      ...(q.min_price_kopecks !== undefined || q.max_price_kopecks !== undefined
+        ? {
+            price_kopecks: {
+              ...(q.min_price_kopecks !== undefined ? { gte: BigInt(q.min_price_kopecks) } : {}),
+              ...(q.max_price_kopecks !== undefined ? { lte: BigInt(q.max_price_kopecks) } : {}),
+            },
+          }
+        : {}),
+    };
+    const dir = q.order ?? 'asc';
+    const orderBy: Prisma.ResellerTariffOrderByWithRelationInput[] = [
+      q.sort === 'name'
+        ? { tariff: { name_ru: dir } }
+        : q.sort === 'data_gb'
+          ? { tariff: { quantity_internet: dir } }
+          : q.sort === 'validity_days'
+            ? { tariff: { validity_period: dir } }
+            : q.sort === 'price'
+              ? { price_kopecks: dir }
+              : { tariff_id: dir },
+      { tariff_id: 'asc' },
+    ];
+    const mine = { reseller_tariffs: { some: { reseller_id: resellerId } } };
+    const [total, rows, gb, days] = await Promise.all([
+      this.prisma.resellerTariff.count({ where }),
+      this.prisma.resellerTariff.findMany({ where, orderBy, skip: (page - 1) * size, take: size, include: { tariff: true } }),
+      this.prisma.tariff.findMany({ where: mine, distinct: ['quantity_internet'], select: { quantity_internet: true } }),
+      this.prisma.tariff.findMany({ where: mine, distinct: ['validity_period'], select: { validity_period: true } }),
+    ]);
+    const nums = (list: (number | null)[]) => [...new Set(list.filter((v): v is number => v != null))].sort((a, b) => a - b);
+    return {
+      data: rows.map((r) => this.presentResellerTariff(r, reseller.currency)),
+      meta: { page, size, total, pages: Math.max(1, Math.ceil(total / size)) },
+      facets: { data_gb: nums(gb.map((t) => t.quantity_internet)), validity_days: nums(days.map((t) => t.validity_period)) },
+    };
   }
 
   /** Назначает тариф компании или меняет цену/доступность. Версия цены растёт при каждой смене суммы. */

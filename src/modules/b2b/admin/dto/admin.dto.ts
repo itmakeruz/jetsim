@@ -151,3 +151,18 @@ export class ImportTariffsDto {
   @Type(() => ImportTariffRowDto)
   items: ImportTariffRowDto[];
 }
+
+/** Фильтры и порядок списка тарифов компании. Цены — в минорных единицах валюты компании (копейки/центы). */
+export class ResellerTariffsQueryDto {
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(200) size?: number;
+  /** Часть названия (RU/EN) или точный ID тарифа */
+  @IsOptional() @IsString() @Length(1, 100) search?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) data_gb?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) validity_days?: number;
+  @IsOptional() @IsEnum(['true', 'false']) active?: 'true' | 'false';
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(1_000_000_000) min_price_kopecks?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(1_000_000_000) max_price_kopecks?: number;
+  @IsOptional() @IsEnum(['id', 'name', 'data_gb', 'validity_days', 'price']) sort?: 'id' | 'name' | 'data_gb' | 'validity_days' | 'price';
+  @IsOptional() @IsEnum(['asc', 'desc']) order?: 'asc' | 'desc';
+}

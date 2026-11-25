@@ -8,6 +8,7 @@ import {
   IssueKeyDto,
   MoneyOperationDto,
   PageQueryDto,
+  ResellerTariffsQueryDto,
   RefundOrderDto,
   ResolveOrderDto,
   UpdateResellerDto,
@@ -37,6 +38,8 @@ export class ResellersAdminController {
   @Delete('resellers/:id/keys/:keyId') revoke(@Param('id', ParseIntPipe) id: number, @Param('keyId', ParseIntPipe) keyId: number) { return this.resellers.revokeKey(id, keyId); }
 
   @Get('tariffs') centralTariffs(@Query() q: PageQueryDto) { return this.resellers.listCentralTariffs(q); }
+  /** Тарифы компании с фильтрами, сортировкой и страницами (для списка в партнёрке) */
+  @Get('resellers/:id/tariffs/search') searchResellerTariffs(@Param('id', ParseIntPipe) id: number, @Query() q: ResellerTariffsQueryDto) { return this.resellers.searchResellerTariffs(id, q); }
   @Get('resellers/:id/tariffs') resellerTariffs(@Param('id', ParseIntPipe) id: number) { return this.resellers.listResellerTariffs(id); }
   @Put('resellers/:id/tariffs/:tariffId')
   upsertTariff(@Param('id', ParseIntPipe) id: number, @Param('tariffId', ParseIntPipe) tariffId: number, @Body() dto: UpsertResellerTariffDto) {
