@@ -59,3 +59,12 @@ describe('ResellersAdminService.importTariffs', () => {
     expect(again.tx.resellerTariff.create).not.toHaveBeenCalled();
   });
 });
+
+it('loads supplier routing codes and uses Joytel record ID for aliases', async () => {
+  const {svc, prisma, tx} = make();
+  prisma.partner.findMany.mockResolvedValue([{id:42,name_ru:'Поставщик',name_en:'Provider',identified_number:1}]);
+  const result = await svc.importTariffs(4,{dry_run:false,items:[item({partner:'JT'})]} as any);
+  expect(result.applied).toBe(true);
+  expect(prisma.partner.findMany.mock.calls[0][0].select.identified_number).toBe(true);
+  expect(tx.tariff.create.mock.calls[0][0].data.partner_id).toBe(42);
+});

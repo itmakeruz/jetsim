@@ -75,3 +75,29 @@ describe('planImport', () => {
     expect(planImport([row({ company_price: 1.15, cost_rub: 0.07 })], ctx())[0]).toMatchObject({ price_kopecks: 115 });
   });
 });
+
+describe('Joytel supplier aliases', () => {
+  const partners = [{ id: 42, name_ru: 'Поставщик eSIM', name_en: 'Travel provider', identified_number: 1 }];
+  it.each(['JOY', 'JT', 'Joytel', 'joytel', '  JoyTel  '])('resolves %s through provider code, preserving the real foreign key', (partner) => {
+    const [p] = planImport([row({ partner })], ctx({ partners }));
+    expect(p.create?.partner_id).toBe(42);
+    expect(p.verdict).toBe('CREATE');
+  });
+  it('numeric references remain partner record IDs, not routing codes', () => {
+    expect(planImport([row({ partner: '42' })], ctx({ partners }))[0].create?.partner_id).toBe(42);
+    expect(planImport([row({ partner: 1 })], ctx({ partners }))[0].verdict).toBe('ERROR');
+  });
+  it('does not invent a Joytel provider when none is configured', () => {
+    expect(planImport([row({ partner: 'JT' })], ctx({ partners: [{ ...partners[0], identified_number: 2 }] }))[0].verdict).toBe('ERROR');
+  });
+  it('rejects duplicate routing records and conflicting exact names instead of choosing arbitrarily', () => {
+    for (const extra of [{ ...partners[0], id: 43 }, { id: 43, name_ru: 'Joytel', name_en: 'Other', identified_number: 2 }]) {
+      expect(planImport([row()], ctx({ partners: [...partners, extra] }))[0].message).toContain('укажите ID');
+    }
+  });
+  it('detects repeated SKU across different aliases of the same provider', () => {
+    const plan = planImport([row({partner:'JT'}), row({partner:'Joytel'})], ctx({partners}));
+    expect(plan.map(p=>p.verdict)).toEqual(['CREATE','ERROR']);
+    expect(plan[1].message).toContain('Повтор в файле');
+  });
+});

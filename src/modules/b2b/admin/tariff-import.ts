@@ -1,3 +1,5 @@
+import { PartnerIds } from '../../../common/enums/partner.enum';
+
 /**
  * Массовое создание тарифов из Excel (через партнёрку) и привязка их к компании.
  * Здесь только чистая логика: проверка строк и план действий. Запись в базу — в ResellersAdminService.
@@ -23,7 +25,7 @@ export interface ImportRow {
 
 export interface ImportContext {
   currency: string;
-  partners: { id: number; name_ru: string; name_en: string }[];
+  partners: { id: number; name_ru: string; name_en: string; identified_number?: number | null }[];
   groups: { id: number; name_ru: string | null; name_en: string | null; regions: number }[];
   /** существующие (не удалённые) тарифы с теми же SKU */
   existing: { id: number; sku_id: string; partner_id: number }[];
@@ -64,6 +66,21 @@ function find<T extends { id: number }>(items: T[], ref: string | number, names:
   return byName[0];
 }
 
+/** Numeric references remain database IDs. Known aliases use provider routing codes,
+ * never assume that a provider code is the primary key of its partner record. */
+function findPartner(items: ImportContext['partners'], ref: string | number) {
+  const r = norm(ref);
+  if (!r) return undefined;
+  if (/^\d+$/.test(r)) return find(items, ref, (p) => [p.name_ru, p.name_en]);
+  const code = ['joy', 'jt', 'joytel'].includes(r) ? PartnerIds.JOYTEL : undefined;
+  const matches = items.filter((p) =>
+    [p.name_ru, p.name_en].some((name) => norm(name) === r) ||
+    (code !== undefined && p.identified_number === code),
+  );
+  if (matches.length > 1) return 'AMBIGUOUS' as const;
+  return matches[0];
+}
+
 const integer = (v: unknown, min: number, max: number) => typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
 
 export function planImport(rows: ImportRow[], ctx: ImportContext): PlannedRow[] {
@@ -86,9 +103,9 @@ export function planImport(rows: ImportRow[], ctx: ImportContext): PlannedRow[] 
     if (!Number.isSafeInteger(priceKopecks) || priceKopecks < 0 || priceKopecks > 1_000_000_000)
       return fail('Цена для компании должна быть числом не меньше 0');
 
-    const partner = find(ctx.partners, r.partner, (p) => [p.name_ru, p.name_en]);
+    const partner = findPartner(ctx.partners, r.partner);
     if (partner === 'AMBIGUOUS') return fail('Несколько поставщиков с таким названием: укажите ID');
-    if (!partner) return fail(`Поставщик «${r.partner}» не найден`);
+    if (!partner) return fail(`Поставщик «${r.partner}» не найден. Укажите ID записи поставщика или его точное название`);
     const group = find(ctx.groups, r.region_group, (g) => [g.name_ru, g.name_en]);
     if (group === 'AMBIGUOUS') return fail('Несколько групп регионов с таким названием: укажите ID');
     if (!group) return fail(`Группа регионов «${r.region_group}» не найдена`);

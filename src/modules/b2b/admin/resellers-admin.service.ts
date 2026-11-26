@@ -287,7 +287,7 @@ export class ResellersAdminService {
     const rows = dto.items as unknown as ImportRow[];
     const skus = [...new Set(rows.map((r) => String(r.sku_id ?? '').trim()).filter(Boolean))];
     const [partners, groups, existing] = await Promise.all([
-      this.prisma.partner.findMany({ select: { id: true, name_ru: true, name_en: true } }),
+      this.prisma.partner.findMany({ select: { id: true, name_ru: true, name_en: true, identified_number: true } }),
       this.prisma.regionGroup.findMany({ select: { id: true, name_ru: true, name_en: true, _count: { select: { regions: true } } } }),
       this.prisma.tariff.findMany({ where: { deleted_at: null, sku_id: { in: skus } }, select: { id: true, sku_id: true, partner_id: true } }),
     ]);
