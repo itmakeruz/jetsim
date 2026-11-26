@@ -28,7 +28,7 @@ export interface ImportContext {
   partners: { id: number; name_ru: string; name_en: string; identified_number?: number | null }[];
   groups: { id: number; name_ru: string | null; name_en: string | null; regions: number }[];
   /** существующие (не удалённые) тарифы с теми же SKU */
-  existing: { id: number; sku_id: string; partner_id: number }[];
+  existing: { id: number; sku_id: string; partner_id: number; data_gb?: number | null; validity_days?: number | null }[];
   /** id тарифов, уже привязанных к этой компании */
   attached: Set<number>;
 }
@@ -111,12 +111,13 @@ export function planImport(rows: ImportRow[], ctx: ImportContext): PlannedRow[] 
     if (!group) return fail(`Группа регионов «${r.region_group}» не найдена`);
     if (group.regions === 0) return fail('В группе регионов нет стран');
 
-    const dupKey = `${norm(sku)}|${partner.id}`;
+    // SKU у поставщика один на объём трафика, а сроки разные: тариф определяют SKU + поставщик + ГБ + дни
+    const dupKey = `${norm(sku)}|${partner.id}|${r.data_gb}|${r.validity_days}`;
     if (seen.has(dupKey)) return fail(`Повтор в файле: такая же строка уже есть (строка ${seen.get(dupKey)})`);
     seen.set(dupKey, row);
 
-    const matches = ctx.existing.filter((t) => norm(t.sku_id) === norm(sku) && t.partner_id === partner.id);
-    if (matches.length > 1) return fail('В центре несколько тарифов с таким SKU и поставщиком: привяжите нужный вручную');
+    const matches = ctx.existing.filter((t) => norm(t.sku_id) === norm(sku) && t.partner_id === partner.id && Number(t.data_gb) === r.data_gb && Number(t.validity_days) === r.validity_days);
+    if (matches.length > 1) return fail('В центре несколько тарифов с таким SKU, поставщиком, трафиком и сроком: привяжите нужный вручную');
 
     const warnings: string[] = [];
     if (ctx.currency === 'RUB' && r.company_price < r.cost_rub) warnings.push('Цена для компании ниже себестоимости');
