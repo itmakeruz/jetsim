@@ -279,7 +279,7 @@ export class ResellersAdminService {
 
   /**
    * Массовая загрузка тарифов компании из Excel. Новые тарифы создаются скрытыми на розничном сайте (hide_site) и сразу
-   * привязываются к компании с её ценой; уже существующий тариф (тот же SKU, поставщик, трафик и срок) не меняется, а только привязывается.
+   * привязываются к компании с её ценой; уже существующий тариф (тот же SKU, поставщик, страна, трафик и срок) не меняется, а только привязывается.
    * dry_run — только проверка. Запись — всё или ничего: при любой ошибке в строках ничего не сохраняется.
    */
   async importTariffs(resellerId: number, dto: ImportTariffsDto) {
@@ -289,7 +289,7 @@ export class ResellersAdminService {
     const [partners, groups, existing] = await Promise.all([
       this.prisma.partner.findMany({ select: { id: true, name_ru: true, name_en: true, identified_number: true } }),
       this.prisma.regionGroup.findMany({ select: { id: true, name_ru: true, name_en: true, _count: { select: { regions: true } } } }),
-      this.prisma.tariff.findMany({ where: { deleted_at: null, sku_id: { in: skus } }, select: { id: true, sku_id: true, partner_id: true, quantity_internet: true, validity_period: true } }),
+      this.prisma.tariff.findMany({ where: { deleted_at: null, sku_id: { in: skus } }, select: { id: true, sku_id: true, partner_id: true, quantity_internet: true, validity_period: true, region_group_id: true } }),
     ]);
     const attached = new Set(
       (
@@ -303,7 +303,7 @@ export class ResellersAdminService {
       currency: reseller.currency,
       partners,
       groups: groups.map((g) => ({ id: g.id, name_ru: g.name_ru, name_en: g.name_en, regions: g._count.regions })),
-      existing: existing.map((t) => ({ id: t.id, sku_id: t.sku_id, partner_id: t.partner_id, data_gb: t.quantity_internet, validity_days: t.validity_period })),
+      existing: existing.map((t) => ({ id: t.id, sku_id: t.sku_id, partner_id: t.partner_id, data_gb: t.quantity_internet, validity_days: t.validity_period, region_group_id: t.region_group_id })),
       attached,
     });
     const summary = summarize(plan);

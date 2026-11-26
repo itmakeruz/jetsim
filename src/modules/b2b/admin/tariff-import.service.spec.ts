@@ -48,12 +48,12 @@ describe('ResellersAdminService.importTariffs', () => {
   });
 
   it('attaches an existing tariff without touching it and skips an already attached one', async () => {
-    const { svc, tx } = make([{ id: 55, sku_id: 'JP-1', partner_id: 1, quantity_internet: 5, validity_period: 30 }]);
+    const { svc, tx } = make([{ id: 55, sku_id: 'JP-1', partner_id: 1, quantity_internet: 5, validity_period: 30, region_group_id: 10 }]);
     const r = await svc.importTariffs(4, { dry_run: false, items: [item()] } as any);
     expect(tx.tariff.create).not.toHaveBeenCalled();
     expect(tx.resellerTariff.create).toHaveBeenCalledTimes(1);
     expect(r.rows[0]).toMatchObject({ verdict: 'ATTACH', tariff_id: 55 });
-    const again = make([{ id: 55, sku_id: 'JP-1', partner_id: 1, quantity_internet: 5, validity_period: 30 }], [{ tariff_id: 55 }]);
+    const again = make([{ id: 55, sku_id: 'JP-1', partner_id: 1, quantity_internet: 5, validity_period: 30, region_group_id: 10 }], [{ tariff_id: 55 }]);
     const r2 = await again.svc.importTariffs(4, { dry_run: false, items: [item()] } as any);
     expect(r2.rows[0].verdict).toBe('SKIP');
     expect(again.tx.resellerTariff.create).not.toHaveBeenCalled();

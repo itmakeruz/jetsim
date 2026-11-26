@@ -42,7 +42,7 @@ describe('planImport', () => {
   });
 
   it('attaches an existing tariff without changing it and skips one already attached', () => {
-    const existing = [{ id: 77, sku_id: 'jp-5g-30', partner_id: 1, data_gb: 5, validity_days: 30 }];
+    const existing = [{ id: 77, sku_id: 'jp-5g-30', partner_id: 1, data_gb: 5, validity_days: 30, region_group_id: 10 }];
     expect(planImport([row()], ctx({ existing }))[0]).toMatchObject({ verdict: 'ATTACH', tariff_id: 77, price_kopecks: 45050 });
     expect(planImport([row()], ctx({ existing, attached: new Set([77]) }))[0]).toMatchObject({ verdict: 'SKIP', tariff_id: 77 });
   });
@@ -55,10 +55,17 @@ describe('planImport', () => {
     expect(plan.map((p) => p.verdict)).toEqual(['CREATE', 'CREATE', 'CREATE', 'ERROR', 'CREATE']);
   });
 
+  it('same SKU and days for different countries is not a duplicate', () => {
+    const plan = planImport([row(), row({ region_group: '11' }), row()], ctx());
+    expect(plan.map((p) => p.verdict)).toEqual(['CREATE', 'CREATE', 'ERROR']);
+    const existing = [{ id: 5, sku_id: 'jp-5g-30', partner_id: 1, data_gb: 5, validity_days: 30, region_group_id: 11 }];
+    expect(planImport([row(), row({ region_group: '11' })], ctx({ existing })).map((p) => [p.verdict, p.tariff_id])).toEqual([['CREATE', undefined], ['ATTACH', 5]]);
+  });
+
   it('attaches only the existing tariff with the same days', () => {
     const existing = [
-      { id: 1, sku_id: 'jp-5g-30', partner_id: 1, data_gb: 5, validity_days: 7 },
-      { id: 2, sku_id: 'jp-5g-30', partner_id: 1, data_gb: 5, validity_days: 30 },
+      { id: 1, sku_id: 'jp-5g-30', partner_id: 1, data_gb: 5, validity_days: 7, region_group_id: 10 },
+      { id: 2, sku_id: 'jp-5g-30', partner_id: 1, data_gb: 5, validity_days: 30, region_group_id: 10 },
     ];
     expect(planImport([row({ validity_days: 7 }), row({ validity_days: 15 })], ctx({ existing })).map((p) => [p.verdict, p.tariff_id])).toEqual([['ATTACH', 1], ['CREATE', undefined]]);
   });
@@ -75,7 +82,7 @@ describe('planImport', () => {
         row({ sku_id: 'e' }),
         row({ sku_id: 'F' }),
       ],
-      ctx({ existing: [{ id: 1, sku_id: 'F', partner_id: 1, data_gb: 5, validity_days: 30 }, { id: 2, sku_id: 'F', partner_id: 1, data_gb: 5, validity_days: 30 }] }),
+      ctx({ existing: [{ id: 1, sku_id: 'F', partner_id: 1, data_gb: 5, validity_days: 30, region_group_id: 10 }, { id: 2, sku_id: 'F', partner_id: 1, data_gb: 5, validity_days: 30, region_group_id: 10 }] }),
     );
     expect(plan.map((p) => p.verdict)).toEqual(['ERROR', 'ERROR', 'ERROR', 'ERROR', 'ERROR', 'CREATE', 'ERROR', 'ERROR']);
     expect(plan[6].message).toContain('строка 6');
