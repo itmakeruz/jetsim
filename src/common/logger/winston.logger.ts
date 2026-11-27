@@ -1,3 +1,4 @@
+import { redact } from '../../security/redact';
 import { createLogger, format, transports, Logger } from 'winston';
 import 'winston-daily-rotate-file';
 import { Injectable } from '@nestjs/common';
@@ -42,30 +43,30 @@ export class WinstonLoggerService {
   }
 
   info(message: string, error?: any) {
-    this.logger.info(message, error);
+    this.logger.info(redact(message), redact(error));
   }
 
   error(message: string, error?: any) {
-    this.logger.error(message, error);
+    this.logger.error(redact(message), redact(error));
   }
 
   warn(message: string) {
-    this.logger.warn(message);
+    this.logger.warn(redact(message));
   }
 
   debug(message: string) {
-    this.logger.debug(message);
+    this.logger.debug(redact(message));
   }
 
   verbose(message: string) {
-    this.logger.verbose(message);
+    this.logger.verbose(redact(message));
   }
 
   log(message: string, meta?: any) {
     if (meta) {
-      this.logger.info(`${message} ${JSON.stringify(meta)}`);
+      this.logger.info(`${redact(message)} ${JSON.stringify(redact(meta))}`);
     } else {
-      this.logger.info(message);
+      this.logger.info(redact(message));
     }
   }
 

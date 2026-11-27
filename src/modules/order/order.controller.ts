@@ -1,3 +1,4 @@
+import { CustomerGuard } from '../../common/guards/customer.guard';
 import { Controller, HttpCode, Get, Post, Body, Patch, Param, Delete, Req, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { MobilineCallbackDto } from './dto/mobiline-callback.dto';
 import { MobilineActivationService } from './mobiline-activation.service';
@@ -68,7 +69,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Get orders admin', description: 'Get orders admin' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   @Get('cart')
   async getBascet(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.orderService.getBasket(request?.user?.id, headers?.lang);
@@ -76,7 +77,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Get orders public', description: 'Get orders public' })
   @Get('static')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   async findStaticOrders(
     @Query() query: GetOrderDto,
     @Req() request: IRequest,
@@ -87,23 +88,15 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Get orders public', description: 'Get orders public' })
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
-  async findOne(@Param('id') id: string) {
-    return this.orderService.findOne(+id);
-  }
-
-  @ApiOperation({ summary: 'create order', description: 'create order' })
-  @ApiBearerAuth()
-  @Post('esim')
-  @UseGuards(AuthGuard('jwt'))
-  async create(@Req() request: IRequest) {
-    return this.orderService.create(request?.user?.id, 2100);
+  @UseGuards(CustomerGuard)
+  async findOne(@Param('id') id: string, @Req() request: IRequest) {
+    return this.orderService.findOne(+id, request.user.id);
   }
 
   @ApiOperation({ summary: 'Add items to basket public', description: 'Add items to basket public' })
   @ApiBody({ type: [AddToBasket] })
   @Post('add-items')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   async addItemsToBascet(
     @Body() data: AddToBasket[],
     @HeadersValidation() headers: DeviceHeadersDto,
@@ -114,7 +107,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Add tariff to basket public', description: 'Add tariff to basket public' })
   @Post('add-to-basket')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   async addTobascet(
     @Body() data: AddToBasket,
     @HeadersValidation() headers: DeviceHeadersDto,
@@ -125,7 +118,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'remove item from basket public', description: 'remove item from basket public' })
   @Post('remove-item-from-basket')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   async removeFromBascet(
     @Body() data: AddToBasket,
     @HeadersValidation() headers: DeviceHeadersDto,
@@ -136,7 +129,7 @@ export class OrderController {
 
   @ApiOperation({ summary: 'decrease item from basket public', description: 'decrease item from basket public' })
   @Post('decrease-item-from-basket')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   async decreaseQuantity(
     @Body() data: AddToBasket,
     @HeadersValidation() headers: DeviceHeadersDto,
@@ -146,7 +139,7 @@ export class OrderController {
   }
 
   // @ApiOperation({ summary: 'Get Usage', description: 'Get Usage' })
-  // // @UseGuards(AuthGuard('jwt'))
+  // // @UseGuards(CustomerGuard)
   // @Post('get-usage/:id')
   // async getUsage(@Param() param: ParamId) {
   //   return this.orderService.getUsage(param.id);
@@ -180,11 +173,15 @@ export class OrderController {
   }
 
   @Patch(':id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN)
   update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
     return this.orderService.update(+id, updateOrderDto);
   }
 
   @Delete(':id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN)
   remove(@Param('id') id: string) {
     return this.orderService.remove(+id);
   }

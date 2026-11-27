@@ -20,7 +20,7 @@ describe('Usage HTTP authorization and Mobiline callback validation', () => {
   const prisma = { sims: { findFirst: jest.fn(), update: jest.fn() } };
   const joytel = { getUsageResponse: jest.fn() };
   const mobiline = { callback: jest.fn().mockResolvedValue({ success: true }) };
-  const token = (id: number, roles: UserRoles[] = []) => jwt.sign({ id, roles }, 'usage-test-secret');
+  const token = (id: number, roles: UserRoles[] = []) => jwt.sign({ id, roles, type: roles.length ? 'staff' : 'user' }, 'usage-test-secret');
   beforeAll(async () => {
     passport.use(
       'jwt',

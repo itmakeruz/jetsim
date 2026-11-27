@@ -1,3 +1,7 @@
+import { CustomerGuard } from '../../common/guards/customer.guard';
+import { AtGuard, RolesGuard } from '@guards';
+import { Roles } from '@decorators';
+import { UserRoles } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { Controller, Get, Post, Body, Patch, Req, UseGuards } from '@nestjs/common';
 import {
@@ -33,7 +37,7 @@ export class AuthController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   @ApiOperation({ summary: 'Get me public', description: 'Get me public' })
   @Get('me')
   async getMeUser(@Req() request: IRequest) {
@@ -78,7 +82,7 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Update Fcm Token public', description: 'Update Fcm Token public' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   @Patch('device/fcm-token')
   async updateDeviceFcmToken(@Req() request: IRequest, data: DeviceFcmTokenUpdateDto) {
     return await this.authService.deviceFcmTokenUpdate(request.user.id, data);
@@ -86,7 +90,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Get me admin', description: 'Get me admin' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.ACCOUNTANT, UserRoles.PRE_ACCOUNTANT, UserRoles.AGENT)
   @Get('me-staff')
   async getMeStaff(@Req() request: IRequest) {
     return await this.authService.getMeStaff(request.user.id);
@@ -94,8 +99,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Change password public', description: 'Change password public' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
-  @Get('change-password')
+  @UseGuards(CustomerGuard)
+  @Post('change-password')
   async changePasswordUser(
     @Req() request: IRequest,
     @Body() data: ChangePasswordDto,

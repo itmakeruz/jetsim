@@ -1,3 +1,4 @@
+import { BrowserSessions } from '../../security/browser-sessions';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
@@ -12,6 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     private configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly sessions: BrowserSessions,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -20,7 +22,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
   async validate(payload: IUser) {
-    if (payload?.type === 'staff' || payload?.role) {
+    if (!['staff', 'user'].includes(payload?.type)) throw new UnauthorizedException();
+    await this.sessions.validate(payload);
+    if (payload?.type === 'staff') {
       const staffExists = await this.prisma.staff.findUnique({
         where: {
           id: payload.id,
@@ -69,7 +73,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     try {
       return jwt.verify(token, JWT_ACCESS_SECRET) as IUser;
     } catch (err) {
-      console.log(err);
+
       return null;
     }
   }

@@ -1,3 +1,4 @@
+import { sendEsimReadyMail } from '../../common/helpers/email-sender.helper';
 import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from '@prisma';
 import { PartnerIds } from '@enums';
@@ -176,6 +177,7 @@ export class MobilineActivationService {
     // Each side effect is isolated: a socket outage must not suppress the QR notification.
     const tasks = [
       async () => this.socket.sendOrderMessage(sim.user_id, sim.id, d!.qrcode!),
+      async () => { if (!sim.reseller_order_id && sim.user?.email) await sendEsimReadyMail(sim.user.email, sim.id, await this.qr.generateQrWithLogo(d!.qrcode!)); },
       async () => {
         const buffer = await this.qr.generateQrWithLogo(d!.qrcode!);
         try {

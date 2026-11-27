@@ -11,7 +11,7 @@ import {
   saveQrCode,
 } from '@helpers';
 import { BillionConnectService, JoyTel } from '@http';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '@prisma';
 import { FilePath, sim_not_found } from '@constants';
@@ -80,16 +80,23 @@ export class SimsService {
     });
   }
 
-  async findOne(id: number) {
-    const sim = await this.prisma.sims.findUnique({
-      where: {
-        id: id,
-      },
+  async findOne(id: number, userId: number) {
+    const sim = await this.prisma.sims.findFirst({
+      where: { id, user_id: userId, reseller_order_id: null },
+      select: { id: true, status: true, sim_status: true, iccid: true,
+        qrcode: true, pin_1: true, puk_1: true, created_at: true,
+        usage_snapshot: true, usage_checked_at: true },
     });
+    if (!sim) throw new NotFoundException('eSIM not found');
+    return sim;
+  }
 
-    if (!sim) {
-      throw new BadRequestException(sim_not_found['ru']);
-    }
+  async findOneAdmin(id: number) {
+    const sim = await this.prisma.sims.findUnique({ where: { id }, select: {
+      id: true, user_id: true, status: true, sim_status: true, iccid: true, qrcode: true,
+      pin_1: true, puk_1: true, created_at: true, usage_snapshot: true, usage_checked_at: true,
+    } });
+    if (!sim) throw new NotFoundException('eSIM not found');
     return sim;
   }
 
@@ -110,7 +117,7 @@ export class SimsService {
     // B2B-eSIM: файлов в публичном /uploads/qr нет и не создаём — собираем картинку на лету
     if (sim.reseller_order_id) return this.qrService.generateQrWithLogo(sim.qrcode);
 
-    const filePath = path.join('uploads', 'qr', `qr_content_${sim.id}.png`);
+    const filePath = path.join('private', 'qr', `qr_content_${sim.id}.png`);
 
     if (fs.existsSync(filePath)) {
       return fs.readFileSync(filePath);
@@ -390,7 +397,7 @@ export class SimsService {
           quantity_internet: sim?.tariff?.quantity_internet * 1024,
           is_4g: sim?.tariff?.is_4g,
           is_5g: sim?.tariff?.is_5g,
-          qr_code: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
+          qr_code: `/sims/${sim.id}/customer-qr`,
           pin_1: sim?.pin_1,
           puk_1: sim?.puk_1,
           iccid: sim?.iccid,
@@ -554,7 +561,7 @@ export class SimsService {
           day_left: sim?.tariff?.validity_period,
           is_4g: sim?.tariff?.is_4g,
           is_5g: sim?.tariff?.is_5g,
-          qr_code: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
+          qr_code: `/sims/${sim.id}/customer-qr`,
           pin_1: sim?.pin_1,
           puk_1: sim?.puk_1,
           iccid: sim?.iccid,

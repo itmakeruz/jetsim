@@ -1,3 +1,7 @@
+import { AtGuard, RolesGuard } from '@guards';
+import { Roles } from '@decorators';
+import { UserRoles } from '@prisma/client';
+import { CustomerGuard } from '../../common/guards/customer.guard';
 import {
   Controller,
   Post,
@@ -42,7 +46,7 @@ export class PaymentController {
 
   @ApiOperation({ summary: 'Prepare payment request', description: 'Prepare payment request' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   @Post('prepare-payment')
   async preparePayment(
     @Req() request: IRequest,
@@ -53,7 +57,7 @@ export class PaymentController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   @Post('orders/:id/payment-link')
   resumePayment(
     @Req() request: IRequest,
@@ -76,11 +80,15 @@ export class PaymentController {
   }
 
   @Patch(':id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN)
   update(@Param() param: ParamId, @Body() data: UpdatePaymentDto) {
     return this.paymentService.update(param.id, data);
   }
 
   @Delete(':id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN)
   remove(@Param() param: ParamId) {
     return this.paymentService.remove(param.id);
   }

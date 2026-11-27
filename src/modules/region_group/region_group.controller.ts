@@ -1,3 +1,4 @@
+import { storePublicImage } from '../../security/image-upload';
 import {
   Controller,
   BadRequestException,
@@ -36,8 +37,8 @@ export class RegionGroupController {
 
   @ApiOperation({ summary: 'Get all region groups admin', description: 'Get all region groups admin' })
   @Get('admin')
-  // @UseGuards(AtGuard, RolesGuard)
-  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async getRegionGroupsAdmin(@Query() query: GetRegionDto) {
     return this.regionGroupService.findRegionGroupsAdmin(query);
   }
@@ -58,8 +59,8 @@ export class RegionGroupController {
 
   @ApiOperation({ summary: 'Get region group by id admin', description: 'Get region group by id admin' })
   @Get('admin/:id')
-  // @UseGuards(AtGuard, RolesGuard)
-  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async getRegionGroupByIdAdmin(@Param('id') id: string) {
     return this.regionGroupService.findRegionOneRegionGroup(+id);
   }
@@ -68,41 +69,23 @@ export class RegionGroupController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionGroupDto })
   @Post()
-  // @UseGuards(AtGuard, RolesGuard)
-  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
     FileFieldsInterceptor(
       [
         { name: 'image', maxCount: 1 },
         { name: 'cover_image', maxCount: 1 },
       ],
-      {
-        limits: { fileSize: 8 * 1024 * 1024 },
-        fileFilter: (_req, file, cb) => {
-          if (file.fieldname === 'cover_image' && !['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
-            return cb(new BadRequestException('Фото обложки: разрешены JPEG, PNG и WebP'), false);
-          }
-          cb(null, true);
-        },
-        storage: diskStorage({
-          destination: './uploads/region_group_icons',
-          filename: (req, file, cb) => {
-            if (file.fieldname === 'cover_image') {
-              const extension = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[file.mimetype];
-              return cb(null, uuidv4() + extension);
-            }
-            const name = file.originalname.replace(/\s+/g, '');
-            const uniqueName = uuidv4() + '-' + name;
-            cb(null, uniqueName);
-          },
-        }),
-      },
+      { limits: { fileSize: 8 * 1024 * 1024, files: 2 } },
     ),
   )
   async createRegionGroup(
     @Body() data: CreateRegionGroupDto,
     @UploadedFiles() files: { image?: Express.Multer.File[]; cover_image?: Express.Multer.File[] },
   ) {
+    if (files?.image?.[0]) files.image[0].filename = await storePublicImage(files.image[0], 'region_group_icons');
+    if (files?.cover_image?.[0]) files.cover_image[0].filename = await storePublicImage(files.cover_image[0], 'region_group_icons');
     return this.regionGroupService.createRegionGroup(
       data,
       files?.image?.[0]?.filename,
@@ -114,35 +97,15 @@ export class RegionGroupController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateRegionGroupDto })
   @Patch(':id')
-  // @UseGuards(AtGuard, RolesGuard)
-  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   @UseInterceptors(
     FileFieldsInterceptor(
       [
         { name: 'image', maxCount: 1 },
         { name: 'cover_image', maxCount: 1 },
       ],
-      {
-        limits: { fileSize: 8 * 1024 * 1024 },
-        fileFilter: (_req, file, cb) => {
-          if (file.fieldname === 'cover_image' && !['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
-            return cb(new BadRequestException('Фото обложки: разрешены JPEG, PNG и WebP'), false);
-          }
-          cb(null, true);
-        },
-        storage: diskStorage({
-          destination: './uploads/region_group_icons',
-          filename: (req, file, cb) => {
-            if (file.fieldname === 'cover_image') {
-              const extension = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[file.mimetype];
-              return cb(null, uuidv4() + extension);
-            }
-            const name = file.originalname.replace(/\s+/g, '');
-            const uniqueName = uuidv4() + '-' + name;
-            cb(null, uniqueName);
-          },
-        }),
-      },
+      { limits: { fileSize: 8 * 1024 * 1024, files: 2 } },
     ),
   )
   async updateRegionGroup(
@@ -150,6 +113,8 @@ export class RegionGroupController {
     @Body() data: UpdateRegionGroupDto,
     @UploadedFiles() files: { image?: Express.Multer.File[]; cover_image?: Express.Multer.File[] },
   ) {
+    if (files?.image?.[0]) files.image[0].filename = await storePublicImage(files.image[0], 'region_group_icons');
+    if (files?.cover_image?.[0]) files.cover_image[0].filename = await storePublicImage(files.cover_image[0], 'region_group_icons');
     return this.regionGroupService.updateRegionGroup(
       +id,
       data,
@@ -160,8 +125,8 @@ export class RegionGroupController {
 
   @ApiOperation({ summary: 'Delete region group', description: 'Delete region group' })
   @Delete(':id')
-  // @UseGuards(AtGuard, RolesGuard)
-  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async deleteRegionGroup(@Param('id') id: string) {
     return this.regionGroupService.removeRegionGroup(+id);
   }

@@ -1,3 +1,5 @@
+import { SecurityLimitsModule } from './security/rate-limit';
+import { BrowserSecurityModule } from './security/browser-sessions';
 import { validate } from '@config';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -33,6 +35,8 @@ import { join } from 'path';
 
 @Module({
   imports: [
+    SecurityLimitsModule,
+    BrowserSecurityModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validate,

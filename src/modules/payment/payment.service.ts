@@ -427,22 +427,10 @@ export class PaymentService {
       success: data?.Success,
     });
 
-    // Подпись считаем всегда, но отклоняем только при TBANK_VERIFY_WEBHOOK=true.
-    // Пока флаг выключен — копим в логах статистику совпадений на живом трафике:
-    // если сразу включить отклонение и алгоритм не сойдётся, платежи встанут молча.
     const signatureValid = this.TbankService.verifyNotification(data as unknown as Record<string, any>);
-
     if (!signatureValid) {
-      const meta = { orderId: data?.OrderId, paymentId: data?.PaymentId };
-
-      if (TBANK_VERIFY_WEBHOOK) {
-        this.logger.error('TBANK WEBHOOK REJECTED: invalid signature', meta);
-        return 'OK';
-      }
-
-      this.logger.warn(
-        `TBANK WEBHOOK SIGNATURE MISMATCH (проверка выключена, заказ обработан) | orderId=${meta.orderId} paymentId=${meta.paymentId}`,
-      );
+      this.logger.error('TBANK WEBHOOK REJECTED: invalid signature');
+      return 'OK';
     }
 
     const existTransactionId = Number(data?.OrderId);
@@ -458,6 +446,8 @@ export class PaymentService {
       select: {
         id: true,
         order_id: true,
+        amount: true,
+        partner_transaction_id: true,
         user: {
           select: {
             id: true,
@@ -485,17 +475,15 @@ export class PaymentService {
       return 'OK';
     }
 
-    // order_id появляется только здесь — поэтому событие о подписи пишем тут,
-    // а не в блоке проверки выше, где транзакция ещё не найдена.
-    if (!signatureValid && existTransaction.order_id) {
-      await this.orderEvents.record({
-        orderId: existTransaction.order_id,
-        event: 'payment_webhook_signature_mismatch',
-        severity: 'warning',
-        message: 'Подпись вебхука не совпала, но проверка выключена — заказ обработан как обычно',
-        meta: { paymentId: data?.PaymentId },
-      });
-    }
+    // Never let a callback substitute a different bank payment or amount.
+    if (String(existTransaction.partner_transaction_id) !== String(data.PaymentId) ||
+        Number(existTransaction.amount) !== Number((data as any).Amount)) return 'OK';
+    let bank: any;
+    try { bank = await this.TbankService.getPaymentStatus(Number(data.PaymentId)); }
+    catch { this.logger.warn('T-Bank verification unavailable; payment remains pending'); return 'OK'; }
+    if (String(bank?.PaymentId) !== String(data.PaymentId) ||
+        String(bank?.OrderId) !== String(existTransaction.id) ||
+        Number(bank?.Amount) !== Number(existTransaction.amount) || bank?.Status !== data.Status) return 'OK';
 
     // FAILED ham CAS bo‘lishi shart
     if (data.Success === false) {
@@ -730,7 +718,7 @@ export class PaymentService {
 
   async acceptPaymentTest(id: number, data: any) {
     const response = await this.TbankService.initPayment(data);
-    console.log(response);
+    this.logger.debug('Payment provider response received');
 
     return response;
   }

@@ -1,3 +1,4 @@
+import { redact } from '../security/redact';
 import { Injectable, LoggerService, LogLevel, OnModuleInit } from '@nestjs/common';
 import { functionname } from './throw-stack';
 import { AsyncLocalStorage } from 'async_hooks';
@@ -9,6 +10,7 @@ export class MyLogger implements LoggerService {
   constructor(private als: AsyncLocalStorage<Map<string, string>>) {}
 
   log(message: any) {
+    message = redact(message);
     let store = this.als.getStore();
     let logString = '';
     let path = store?.get('path');
@@ -76,6 +78,7 @@ export class MyLogger implements LoggerService {
   }
 
   error(message: any) {
+    message = redact(message);
     let store = this.als.getStore();
 
     let logString = '';

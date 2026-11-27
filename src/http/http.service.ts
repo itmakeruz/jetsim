@@ -67,15 +67,14 @@ export class HttpService {
 
       if (this.isLog) {
         Logger.log({
-          url: this.url,
-          request: this.params,
-          response: res.data,
+          provider: new URL(this.url).hostname,
+          status: res.status,
         });
       }
       return res.data;
     } catch (error: any) {
       if (isJoytel) observeProvider('Joytel', start, error.response?.status ?? 0);
-      console.log('error.response.data', error.response?.data || error.message);
+      Logger.warn('Provider request failed');
       throw new HttpException(error.response?.data || error.message, error.response?.status || 500);
     }
   }

@@ -1,0 +1,21 @@
+name: Security checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.10.0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit
+      - run: pnpm exec prisma generate
+      - run: pnpm run build
+      - name: Security unit regressions (database scenarios run in the isolated integration environment)
+        run: pnpm exec jest src/security --runInBand --watchman=false --forceExit

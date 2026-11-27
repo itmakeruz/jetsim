@@ -4,14 +4,14 @@ import axios from 'axios';
 
 export async function sendMailHelper(to: string, subject: string, text: string, html?: string, qrBuffer?: Buffer) {
   const transporter = nodemailer.createTransport({
-    host: 'mail.jetsim.ru',
+    host: process.env.MAIL_HOST || 'mail.hosting.reg.ru',
     port: 465,
     secure: true,
     auth: {
       user: MAIL_USER,
       pass: MAIL_PASS,
     },
-    tls: { rejectUnauthorized: false },
+    tls: { rejectUnauthorized: true },
   });
 
   const mailOptions: any = {
@@ -163,9 +163,19 @@ export function otpEmailTemplate(userEmail: string, otp: string, ttlMinutes: num
 }
 
 export function sendOtpFromAnotherService(userEmail: string, otpCode: string, ttlMinutes: number) {
-  return axios.post('http://80.78.242.23:4000/mail/send-otp', {
+  const base = new URL(process.env.OTP_SENDER_URL || 'http://127.0.0.1:4000');
+  if (base.protocol !== 'https:' && !['127.0.0.1', 'localhost', '[::1]'].includes(base.hostname)) throw new Error('OTP sender requires HTTPS');
+  if (!process.env.MAIL_SERVICE_KEY) throw new Error('Mail service authentication not configured');
+
+  return axios.post(`${process.env.OTP_SENDER_URL || 'http://127.0.0.1:4000'}/mail/send-otp`, {
     userEmail,
     otpCode,
     ttlMinutes,
-  });
+  }, { headers: { 'X-Service-Key': process.env.MAIL_SERVICE_KEY }, timeout: 15000 });
+}
+
+/** Installation data is attached; public upload URLs are never placed in email. */
+export function sendEsimReadyMail(to: string, simId: number, qrBuffer: Buffer) {
+  return sendMailHelper(to, 'Your JetSIM eSIM is ready', 'Your eSIM QR code is attached. Installation details are available in your account.',
+    '<p>Your eSIM is ready. Scan the attached QR code or open your JetSIM account.</p><img src="cid:qrimage" alt="eSIM QR code">', qrBuffer);
 }

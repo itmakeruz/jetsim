@@ -12,12 +12,22 @@ import { MyLogger } from './logging/logger.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.getHttpAdapter().getInstance().set('trust proxy', 'loopback');
+  app.use((req, res, next) => {
+    let decodedPath: string;
+    try { decodedPath = decodeURIComponent(req.path); } catch { return res.sendStatus(400); }
+    if (/^\/uploads\/qr(?:\/|$)/i.test(require('path').posix.normalize(decodedPath))) return res.sendStatus(404);
+    if (decodedPath.startsWith('/uploads/')) { res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox"); }
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
   const logger = app.get(WinstonLoggerService);
   app.useGlobalInterceptors(new LoggingInterceptor(logger));
-  // app.useLogger(app.get(MyLogger));
+  app.useLogger(logger);
 
   app.enableCors({
-    origin: '*',
+    origin: (process.env.CORS_ORIGINS || 'https://jetsim.ru,https://admin.jetsim.ru').split(',').map(s => s.trim()).filter(Boolean),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

@@ -107,7 +107,7 @@ describe('T-Bank and provider flow (mock)', () => {
     expect(gateway.verifyNotification({ ...notification, Amount: 1, Token: expectedToken })).toBe(false);
   });
 
-  it('logs a signature mismatch but still processes while TBANK_VERIFY_WEBHOOK is off', async () => {
+  it('rejects invalid signature without looking up or changing any transaction', async () => {
     // Флаг выключен по умолчанию: сначала копим статистику на живом трафике,
     // чтобы включение отклонения не остановило платежи молча
     const prisma = {
@@ -137,8 +137,9 @@ describe('T-Bank and provider flow (mock)', () => {
       } as any),
     ).resolves.toBe('OK');
 
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('SIGNATURE MISMATCH'));
-    expect(prisma.transaction.findUnique).toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('REJECTED'));
+    expect(prisma.transaction.findUnique).not.toHaveBeenCalled();
+    expect(prisma.transaction.updateMany).not.toHaveBeenCalled();
   });
 
   it('stores a provider timeout, marks SIM failed and sends its real message', async () => {
@@ -244,6 +245,7 @@ describe('T-Bank and provider flow (mock)', () => {
 
   it('marks the order failed and notifies the client socket when a SIM fails', async () => {
     const prisma = {
+      transaction: { findFirst: jest.fn().mockResolvedValue({ id: 4248 }) },
       order: {
         findFirst: jest.fn().mockResolvedValue({
           id: 3641,

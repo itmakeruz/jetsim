@@ -164,7 +164,7 @@ export class AuthService {
       throw new BadRequestException(otp_expired[lang]);
     }
 
-    const isValid = storedOtp === otp;
+    const isValid = await this.redisService.consumeOtp(key, otp);
 
     if (!isValid) {
       throw new UnauthorizedException(invalid_otp[lang]);
@@ -304,7 +304,7 @@ export class AuthService {
       throw new BadRequestException(otp_expired[lang]);
     }
 
-    const isValid = storedOtp === data.confirmation_code;
+    const isValid = await this.redisService.consumeOtp(key, data.confirmation_code);
 
     if (!isValid) {
       throw new UnauthorizedException(invalid_otp[lang]);

@@ -1,3 +1,5 @@
+import { CustomerGuard } from '../../common/guards/customer.guard';
+import { storeAvatar } from '../../security/image-upload';
 import {
   Controller,
   Get,
@@ -44,22 +46,10 @@ export class UsersController {
   @ApiBody({ type: UpdateProfileDto })
   @Post()
   @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/user_profile_image',
-        filename: (req, file, cb) => {
-          if (!file) {
-            throw new BadRequestException('Требуется изображение!');
-          }
-          const name = file.originalname.replace(/\s+/g, '');
-          const uniqueName = uuidv4() + '-' + name;
-          cb(null, uniqueName);
-        },
-      }),
-    }),
+    FileInterceptor('image', { limits: { fileSize: 5 * 1024 * 1024, files: 1 } }),
   )
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   @Post('update-profile')
   async updateProfile(
     @Req() request: IRequest,
@@ -67,11 +57,11 @@ export class UsersController {
     @HeadersValidation() headers: DeviceHeadersDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.usersService.updateProfile(request?.user?.id, data, file?.filename, headers?.lang);
+    return this.usersService.updateProfile(request?.user?.id, data, await storeAvatar(file), headers?.lang);
   }
 
   @ApiOperation({ summary: 'delete profile image', description: 'delete profile image' })
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   @Delete('delete-profile-image/:id')
   async removeProfile(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.usersService.removeProfile(request?.user?.id, headers.lang);

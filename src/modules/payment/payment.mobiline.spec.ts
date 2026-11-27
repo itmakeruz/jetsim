@@ -52,6 +52,7 @@ describe('Mobiline payment preparation and routing', () => {
   it('routes paid SIMs by provider type rather than their row ID', async () => {
     const mobiline = { submit: jest.fn().mockResolvedValue(true) };
     const prisma = {
+      transaction: { findFirst: jest.fn().mockResolvedValue({ id: 8 }) },
       order: {
         findFirst: jest.fn().mockResolvedValue({
           id: 9,

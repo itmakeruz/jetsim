@@ -11,6 +11,7 @@ export class LoggingInterceptor implements NestInterceptor {
   private sanitizeData(data: any): any {
     if (!data || typeof data !== 'object') return data;
     const sensitiveFields = [
+      'otp', 'cid', 'coupon', 'sn_code', 'sn_pin', 'qrcode', 'qr_code', 'activation', 'lpa', 'iccid', 'pin', 'puk', 'api_key', 'apikey', 'authorization', 'cookie',
       'password',
       'token',
       'accessToken',
@@ -27,7 +28,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const sanitized = { ...data };
 
     for (const key of Object.keys(sanitized)) {
-      if (sensitiveFields.some((field) => key.toLowerCase().includes(field))) {
+      if (sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
         sanitized[key] = '[REDACTED]';
       } else if (typeof sanitized[key] === 'object') {
         sanitized[key] = this.sanitizeData(sanitized[key]);
@@ -41,7 +42,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const { method, url, params, query, body, ip, headers } = request;
 
     let logLine =
-      `| ${method} ${url}` +
+      `| ${method} ${request.route?.path || '<unmatched>'}` +
       ` | status=${statusCode}` +
       ` | elapsed=${elapsed}ms` +
       ` | ip=${ip}` +
@@ -50,12 +51,7 @@ export class LoggingInterceptor implements NestInterceptor {
       ` | query=${JSON.stringify(this.sanitizeData(query))}` +
       ` | body=${JSON.stringify(this.sanitizeData(body))}`;
 
-    if (error) {
-      logLine +=
-        ` | error="${error.message}"` +
-        ` | stack=${error.stack || 'no stack trace'}` +
-        ` | details=${JSON.stringify(error.response || null)}`;
-    }
+    if (error) logLine += ` | error_status=${error.status || 500}`;
 
     return logLine;
   }

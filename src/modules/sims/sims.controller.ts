@@ -1,3 +1,4 @@
+import { CustomerGuard } from '../../common/guards/customer.guard';
 import { Controller, Get, Param, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { UsageService } from '../usage/usage.service';
@@ -30,7 +31,7 @@ export class SimsController {
 
   @ApiOperation({ summary: 'Get all sims static' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   @Get('static')
   async findAllStaticSims(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.simsService.staticSims(request?.user?.id, headers?.lang);
@@ -38,7 +39,7 @@ export class SimsController {
 
   @ApiOperation({ summary: 'Get all sims active working' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   @Get('active')
   async findAllActiveStaticSims(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.simsService.getActiveSimsStatic(request?.user?.id, headers?.lang);
@@ -46,7 +47,7 @@ export class SimsController {
 
   @ApiOperation({ summary: 'Get all sims already activated also no actiive' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   @Get('activated')
   async findAllActivatedStaticSims(@Req() request: IRequest, @HeadersValidation() headers: DeviceHeadersDto) {
     return this.simsService.activatedStaticSims(request?.user?.id, headers?.lang);
@@ -63,7 +64,7 @@ export class SimsController {
 
   @ApiOperation({ summary: 'Get all sims' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   @Get('usage')
   async getUsage(@Req() request: IRequest) {
     return this.simsService.getUsage(request.user.id);
@@ -78,7 +79,7 @@ export class SimsController {
     const buffer = await this.simsService.getQrCode(param.id);
 
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'private, max-age=300');
+    res.setHeader('Cache-Control', 'private, no-store');
     res.send(buffer);
   }
 
@@ -92,16 +93,31 @@ export class SimsController {
 
   @Get(':id/usage')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CustomerGuard)
   async simUsage(@Param() param: ParamId, @Req() request: IRequest) {
     return this.usageService.forSim(param.id, request.user.id);
   }
 
-  @ApiOperation({ summary: 'Get sim by id' })
+  @Get('admin/:id')
+  @UseGuards(AtGuard, RolesGuard)
+  @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
+  async adminFindOne(@Param() param: ParamId) {
+    return this.simsService.findOneAdmin(param.id);
+  }
+
+  @Get(':id/customer-qr')
+  @UseGuards(CustomerGuard)
+  async customerQr(@Param() param: ParamId, @Req() request: IRequest, @Res() res: Response) {
+    await this.simsService.findOne(param.id, request.user.id);
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.send(await this.simsService.getQrCode(param.id));
+  }
+
   @Get(':id')
-  // @UseGuards(AtGuard, RolesGuard)
-  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
-  async findOne(@Param() param: ParamId) {
-    return this.simsService.findOne(param.id);
+  @UseGuards(CustomerGuard)
+  async findOne(@Param() param: ParamId, @Req() request: IRequest) {
+    return this.simsService.findOne(param.id, request.user.id);
   }
 }

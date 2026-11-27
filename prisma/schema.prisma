@@ -706,3 +706,19 @@ model ResellerOrder {
   @@index([reseller_id, updated_at])
   @@map("reseller_order")
 }
+
+model BrowserSession {
+  id String @id
+  family String
+  subject String
+  refresh_hash String @unique
+  fingerprint String
+  payload Json
+  expires_at DateTime @db.Timestamptz(6)
+  revoked Boolean @default(false)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  @@index([family], map: "browser_session_family_idx")
+  @@index([subject], map: "browser_session_subject_idx")
+  @@index([expires_at], map: "browser_session_expiry_idx")
+  @@map("browser_session")
+}

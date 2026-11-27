@@ -38,8 +38,8 @@ export class CreateSimService {
 
     try {
       const response = await this.callJoyTel(item);
-      this.logger.log('JT INIT ORDER RESPONSE: ', response);
-      console.log(response);
+      this.logger.log('JT INIT ORDER RESPONSE received');
+
 
       if (response?.code !== 0) {
         providerResponse = response;
@@ -220,9 +220,9 @@ export class CreateSimService {
 
     try {
       const response = await this.callBillion(item);
-      console.log(response);
 
-      this.logger.log('BC INIT ORDER RESPONSE: ', response);
+
+      this.logger.log('BC INIT ORDER RESPONSE received');
 
       if (response?.tradeCode !== '1000' || response?.tradeData?.successFlag !== 'true') {
         providerResponse = response;
@@ -234,7 +234,7 @@ export class CreateSimService {
       return true;
     } catch (e) {
       const errorResponse = this.normalizeProviderError(e, providerResponse);
-      console.log(errorResponse);
+
       await this.failSim(
         item.id,
         order_id,

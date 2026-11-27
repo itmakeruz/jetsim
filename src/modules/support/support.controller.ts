@@ -7,6 +7,8 @@ import { Roles } from '@decorators';
 import { UserRoles } from '@prisma/client';
 
 @Controller('support')
+@UseGuards(AtGuard, RolesGuard)
+@Roles(UserRoles.SUPER_ADMIN)
 export class SupportController {
   constructor(private readonly supportService: SupportService) {}
 
@@ -15,13 +17,6 @@ export class SupportController {
   // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
   async findAll(@Query() query: any) {
     return this.supportService.findAll(query);
-  }
-
-  @Get()
-  // @UseGuards(AtGuard, RolesGuard)
-  // @Roles(UserRoles.SUPER_ADMIN, UserRoles.ADMIN)
-  async getUserOrders(@Body() data: GetUserInfosDto) {
-    return this.supportService.ordersByUserId(data);
   }
 
   @Get(':id')

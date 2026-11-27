@@ -1,5 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
+import { randomUUID } from 'crypto';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -33,10 +34,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
     // Oddiy Error uchun (masalan throw new Error('Nimadir noto‘g‘ri');)
     else if (exception instanceof Error) {
-      message = exception.message;
+      message = 'Internal server error';
     }
 
+    const requestId = randomUUID();
+    if (status === 500) { message = 'Internal server error'; code = undefined; }
+    response.setHeader('X-Request-ID', requestId);
     response.status(status).json({
+      request_id: requestId,
       success: false,
       message,
       statusCode: status,

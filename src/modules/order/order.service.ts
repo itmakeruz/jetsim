@@ -9,6 +9,7 @@ import {
   paginate,
   QrService,
   sendMailHelper,
+  sendEsimReadyMail,
   generateFastEsimInstallmentString,
   newOrderMessage,
   saveQrCode,
@@ -327,7 +328,7 @@ export class OrderService {
           status: sim?.status,
           sim_status: sim?.sim_status,
           usage_snapshot: sim?.usage_snapshot,
-          qr_code: sim?.qrcode ? `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png` : null,
+          qr_code: sim?.qrcode ? `/sims/${sim.id}/customer-qr` : null,
           activation_code: sim?.qrcode ?? null,
           tariff: {
             id: sim?.tariff?.id,
@@ -414,7 +415,7 @@ export class OrderService {
             is_5g: sim?.tariff?.is_5g,
             quantity_internet: sim?.tariff?.quantity_internet,
             validity_period: sim?.tariff?.validity_period,
-            qrcode: `${FilePath.QR_CODE_IMAGES}/qr_content_${sim?.id}.png`,
+            qrcode: `/sims/${sim.id}/customer-qr`,
             regions: sim?.tariff?.regions?.map((region: any) => ({
               id: region?.id,
               name: region?.[`name_${lang}`],
@@ -429,10 +430,10 @@ export class OrderService {
     };
   }
 
-  async findOne(id: number) {
-    const order = await this.prisma.order.findUnique({
+  async findOne(id: number, userId: number) {
+    const order = await this.prisma.order.findFirst({
       where: {
-        id: id,
+        id: id, user_id: userId,
       },
       select: {
         id: true,
@@ -448,7 +449,7 @@ export class OrderService {
     });
 
     if (!order) {
-      throw new BadRequestException();
+      throw new NotFoundException('Order not found');
     }
 
     return {
@@ -545,7 +546,7 @@ export class OrderService {
   //           item.tariff.sku_id,
   //           1,
   //         );
-  //         console.log(response);
+  //
 
   //         // response = {
   //         //   tradeCode: '1000',
@@ -649,7 +650,7 @@ export class OrderService {
   //         //     ],
   //         //   },
   //         // };
-  //         console.log(response);
+  //
 
   //         let status = true;
   //         if (response.tradeCode !== '1000') {
@@ -719,6 +720,11 @@ export class OrderService {
   // }
 
   async create(user_id: number, transactionId: number) {
+    const paid = await this.prisma.transaction.findFirst({
+      where: { id: transactionId, user_id: user_id, status: 'SUCCESS' }, select: { id: true },
+    });
+    if (!paid) throw new BadRequestException('Confirmed payment required');
+
     this.logger.log('Creating order for user:', user_id);
 
     const newOrder = await this.prisma.order.findFirst({
@@ -779,7 +785,7 @@ export class OrderService {
       let hasFailedSims = false;
 
       for (const sim of newOrder.sims) {
-        console.log(sim, sim.partner_id);
+
 
         try {
           const item = {
@@ -1163,7 +1169,7 @@ export class OrderService {
   }
 
   async redeemCoupon(data: JoyTelCallbackResponse) {
-    this.logger.log('JoyTel Redeem Coupon:', data);
+    this.logger.log('JoyTel Redeem Coupon received');
 
     const sim = await this.prisma.sims.findFirst({
       where: {
@@ -1265,7 +1271,7 @@ export class OrderService {
   }
 
   async notifyCoupon(data: NotifyResponseJoyTel) {
-    this.logger.log('JoyTel Notify Coupon:', data);
+    this.logger.log('JoyTel Notify Coupon received');
     const sim = await this.prisma.sims.findFirst({
       where: {
         sn_pin: data.data.coupon,
@@ -1346,7 +1352,10 @@ export class OrderService {
         updatedOrder?.puk_1,
         updatedOrder?.puk_2,
       );
-      // await sendMailHelper(updatedOrder.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+      if (!updatedOrder.reseller_order_id && updatedOrder.user?.email) {
+        try { await sendEsimReadyMail(updatedOrder.user.email, updatedOrder.id, qrBuffer); }
+        catch { this.logger.warn('eSIM issued; email delivery failed'); }
+      }
       // B2B-eSIM не кладём в публичный /uploads/qr: путь перечислим по id
       if (!updatedOrder.reseller_order_id) saveQrCode(updatedOrder.id, qrBuffer);
     } catch (error) {
@@ -1371,8 +1380,8 @@ export class OrderService {
   }
 
   async bcCallback(data: BillionConnectCallbackResponse) {
-    this.logger.log('BillionConnect callback data:', data);
-    console.log(data);
+    this.logger.log('BillionConnect callback received');
+
 
     const sim = await this.prisma.sims.findUnique({
       where: {
@@ -1459,7 +1468,10 @@ export class OrderService {
         updatedSim?.puk_1,
         updatedSim?.puk_2,
       );
-      // await sendMailHelper(updatedSim.user.email, 'Ваш eSIM заказ готов!', '', html, qrBuffer);
+      if (!updatedSim.reseller_order_id && updatedSim.user?.email) {
+        try { await sendEsimReadyMail(updatedSim.user.email, updatedSim.id, qrBuffer); }
+        catch { this.logger.warn('eSIM issued; email delivery failed'); }
+      }
       if (!updatedSim.reseller_order_id) saveQrCode(updatedSim.id, qrBuffer);
     } catch (error) {
       // БД уже обновлена в COMPLETED — см. аналогичный комментарий в notifyCoupon.
@@ -1516,7 +1528,7 @@ export class OrderService {
 
     if (sim?.partner?.identified_number === PartnerIds.JOYTEL) {
       response = await this.joyTel.getUsage({ coupon: sim?.coupon });
-      console.log(response);
+
     }
     if (sim?.partner?.identified_number === PartnerIds.BILLION_CONNECT) {
       response = await this.billionConnect.getUsage({

@@ -40,9 +40,9 @@ export class TelegramBotService {
     }
 
     this.bot.on('message', (msg) => {
-      console.log(msg);
 
-      this.logger.log(`Получено сообщение от ${msg.chat.id}: ${msg.text}`);
+
+      this.logger.debug('Получено сообщение Telegram');
     });
 
     this.logger.log('Телеграм бот инициализирован.');
@@ -209,7 +209,7 @@ export class TelegramBotService {
 
       this.logger.log(`Сообщение отправлено в чат ${targetChatId}.`);
     } catch (error) {
-      this.logger.error(`Ошибка отправки сообщения в чат ${targetChatId}: ${error.message}`);
+      this.logger.error('Ошибка отправки сообщения Telegram');
     }
   }
 
@@ -227,7 +227,7 @@ export class TelegramBotService {
 
       this.logger.log(`QR-код отправлен администратору.`);
     } catch (error) {
-      this.logger.error(`Ошибка отправки фото: ${error.message}`);
+      this.logger.error('Ошибка отправки фото Telegram');
     }
   }
 }

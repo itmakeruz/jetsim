@@ -1,3 +1,4 @@
+jest.mock('../../common/helpers/email-sender.helper', () => ({ ...jest.requireActual('../../common/helpers/email-sender.helper'), sendEsimReadyMail: jest.fn().mockResolvedValue({}) }));
 import { MobilineActivationService } from './mobiline-activation.service';
 import { MobilineCallbackDto } from './dto/mobiline-callback.dto';
 import { plainToInstance } from 'class-transformer';

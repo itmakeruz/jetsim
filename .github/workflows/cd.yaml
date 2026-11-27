@@ -1,9 +1,7 @@
 name: CD
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -26,7 +24,7 @@ jobs:
           script: |
             cd /var/www/jetsim
             git pull origin main
-            pnpm install
+            pnpm install --frozen-lockfile
             # Клиент Prisma обязан пересобираться после каждого изменения схемы:
             # postinstall-хука у нас нет, а pnpm не запускает build-скрипты
             # зависимостей — без этого шага nest start падает на несуществующих полях
